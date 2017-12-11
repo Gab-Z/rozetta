@@ -36,7 +36,7 @@ window.onload=function(){
 var keys = {
 	"JEUNE" : {
 		children : {
-			"BINÔME" : {	
+			"BINÔME" : {
 				Type : "array",
 				children : {
 					"ENGAGÉ" : {
@@ -45,7 +45,7 @@ var keys = {
 					"SUIVI" : {
 						Type : "array"
 					}
-				}	
+				}
 			}
 		}
 	}
@@ -65,7 +65,14 @@ function compileArray(array, keys){
 		alert( tag + " - " + title )
 	}
 }
-var arrayToTable = function(array){
+var arrayToTable = function( array ){
+  /*
+  var keys = array
+
+
+  return false;
+  */
+  //start of dom viewing
 	var table=document.createElement('table'),
 		thead=table.appendChild(document.createElement('thead')),
 		tbody=table.appendChild(document.createElement('tbody')),
@@ -82,14 +89,54 @@ var arrayToTable = function(array){
 	document.body.appendChild(table)
 		//compileArray(array, keys)
 }
+var getKeys = function( array, _delimiters ){
+  var delimiters = _delimiters || { start: "[", end: "]" }, ds = delimiters.start || "[", de = delimiters.end || "]",
+      firstRow = array[0],
+      frl = firstRow.length,
+      retKeys = {},
+      retAr = [];
+  for( var i = 0; i < frl; i++ ){
+    var cell = firstRow[ i ],
+        si = cell.indexOf( ds ),
+        ei = cell.indexOf( de ),
+        key = getKey(  ),
+        key = getKey( array, delimiters ),
+        content = cell.slice( ei + 1 ).slice( regexIndexOf( rez, /./ ) );
+    retKeys[ key ] = retKeys[ key ] || {};
+    retKeys[ key ][ content ] = i;
+    retAr.push( { key: key, content: content } );
+  };
+  return { keys: retKeys, array: retAr };
+};
+var getKey = function( str, delimiters ){
+  var ds = ( delimiters && delimiters.start ) || "[", de = ( delimiters && delimiters.end ) || "]",
+  si = str.indexOf( ds ),
+  ei = str.indexOf( de );
+  return si > -1 && ei > -1 ? str.slice( si + 1, ei ) : "no Key";
+};
+var getContent = function( array, _keysMap ){
+  var keysMap = _keysMap || getKeys( array ),
+      al = array.length,
+      rl = array[ 0 ].length,
+      retAr = [];
+  for( var i = 1; i < al; i++ ){
+    var row = array [ i ];
+    for( var j = 0; j < rl; j++ ){
+      var content = row[ j ],
+          refs = keysMap.array[ j ];
+      retAr.push({
 
+      })
+    }
+  }
+};
 var loadForm = function(file){
 	var reader = new FileReader();
 	reader.onload =function(e){
 		var rez = reader.result,
 			str = rez.slice(regexIndexOf(rez,/./)),
 			ar = Papa.parse(str).data,
-			arl = ar.length,		
+			arl = ar.length,
 			newAr = ar.map( function( row ){
 				newRow = row.map( function( cell ){
 					return cell.replace(/\&#039;/g,"'")
@@ -97,7 +144,7 @@ var loadForm = function(file){
 				return newRow
 			});
 		arrayToTable(newAr)
-	}	
+	}
 	reader.readAsText(file,"ISO-8859-1");//"ISO-8859-1"
 }
 
@@ -119,7 +166,7 @@ function drop_handler(ev) {
     // Use DataTransfer interface to access the file(s)
     for (var i=0; i < dt.files.length; i++) {
       loadForm(dt.files[i])
-    }  
+    }
   }
 }
 
@@ -159,7 +206,7 @@ table, tr, td {
 	<form id="form">
 		<input type="file" id="fileInput">
 		<input type="submit">
-	<div 	id="drop_zone" 
+	<div 	id="drop_zone"
 			ondrop="drop_handler(event);"
 			ondragover="dragover_handler(event);"
 			ondragend="dragend_handler(event);"
