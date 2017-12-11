@@ -50,6 +50,22 @@ var keys = {
 		}
 	}
 };
+function getnbAIbyAction = function( array ){
+  var ret = {},
+      keys = getKeys( array ),
+      l = array.length,
+      ar = keys.array;
+  for( var i = 0; i < l; i++ ){
+    var row = array[ i ],
+        key = ar[ i ].key,
+        content = ar[ i ].content;
+    if( ! ret[ content ] && key == "Action locale" && content == "nom") ret[ content ] = {name:array[]};
+    for(var j = 0; j< rl; j++ ){
+      var
+
+    }
+  };
+}
 function compileArray(array, keys){
 	var arl = array.length,
 		headers = array[0],
@@ -99,7 +115,7 @@ var getKeys = function( array, _delimiters ){
     var cell = firstRow[ i ],
         si = cell.indexOf( ds ),
         ei = cell.indexOf( de ),
-        key = getKey(  ),
+        key = getKey( cell ),
         key = getKey( array, delimiters ),
         content = cell.slice( ei + 1 ).slice( regexIndexOf( rez, /./ ) );
     retKeys[ key ] = retKeys[ key ] || {};
