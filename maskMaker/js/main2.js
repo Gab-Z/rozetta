@@ -52,7 +52,7 @@ window.onload = function(){
           matchB = compareVec3( triangle.ptB, testedTriangle.ptA ) || compareVec3( triangle.ptB, testedTriangle.ptB ) || compareVec3( triangle.ptB, testedTriangle.ptC ) || false,
           matchC = compareVec3( triangle.ptC, testedTriangle.ptA ) || compareVec3( triangle.ptC, testedTriangle.ptB ) || compareVec3( triangle.ptC, testedTriangle.ptC ) || false;
       if( matchA && matchB ){
-        triangles[ i2 ].neighbours.ab = j;
+        triangles[ i2 ].neighbours.ab = {j};
       }else if( matchB && matchC ){
         triangles[ i2 ].neighbours.bc = j;
       }else if( matchC && matchA ){
@@ -293,7 +293,7 @@ var update = function(){
   ctx.lineTo( c2d.x, c2d.y );
   ctx.closePath();
   ctx.stroke();
-  for( var k in triangle.neighbours ){
+
     var neighbourIdx = triangle.neighbours[ k ];
     if( neighbourIdx == "none" ) continue;
     var neighbour = triangles[ neighbourIdx ],
