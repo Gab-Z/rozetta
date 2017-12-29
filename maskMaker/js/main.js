@@ -1,22 +1,20 @@
 "use strict"
 var points,
     triangles,
-    meshParts =[],
+    meshParts,
     triangleSelectionIndex = 0;
 window.onload = function(){
-  init( positions, indices );
-  start3dPreview( positions, indices );
+  var deerMesh = deer.meshes[0],
+      deerPositions = deerMesh.positions,
+      deerIndices = deerMesh.indices;
+  init( deerPositions, deerIndices );
+  start3dPreview( deerPositions, deerIndices );
 };
 var init = function( _positions, _indices){
   points = positionsToPoints( _positions );
   triangles = indicesToTriangles( _indices, points );
+  meshParts = getMeshParts( triangles.triangles )
 
-  var tl = triangles.triangles.length;
-  for( var tr = 0; tr < tl; tr++ ){
-    trianglesToParts( triangles.triangles[ tr ], triangles.triangles, meshParts )
-  }
-
-  alert(JSON.stringify(meshParts))
   var firstTri = triangles.triangles[ 0 ],
       intersct = intersection(0, 0, firstTri.CtoA, 0, firstTri.AtoB, firstTri.BtoC)
   firstTri.pts2d = {
@@ -46,18 +44,57 @@ var init = function( _positions, _indices){
   canvas.id = "canvas";
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 0.5;
   ctx.restore();
   ctx.save();
   ctx.clearRect( 0,0, canvas.width, canvas.height );
   ctx.translate( canvas.width / 2, canvas.height / 2 );
+  ctx.save();
+  ctx.scale(400,400)
+  ctx.beginPath();
   edges.forEach(( val, pts, map ) => {
-    ctx.beginPath();
+
     ctx.moveTo( pts[0].x, pts[0].y );
     ctx.lineTo( pts[1].x, pts[1].y );
-    ctx.stroke();
-  })
 
+  })
+  ctx.restore();
+ctx.stroke();
 };
+function getMeshParts( _triangles ){
+  var l = triangles.length,
+      parts = [],
+      refs = _triangles.map( el => el.idx);
+  for( var i = 0; refs.length > 0; i++ ){
+    var search = searchPart( _triangles, refs );
+    if( search.part.length > 0 ){
+      parts.push( search.part );
+      var ol = search.part.length;
+      for( var o = 0; o < ol; o++ ){
+        var triangleId = search.part[ o ];
+        refs.splice( refs.indexOf( triangleId ), 1 );
+      }
+    }
+  }
+  return parts;
+}
+function searchPart( _triangles, refs ){
+  var openList = [ refs[ 0 ] ];
+  for( var i = 0; i < openList.length; i++ ){
+    var triangle = _triangles[ openList[ i ] ],
+        neighbours = triangle.neighbours;
+    if( neighbours.ab !== "none" && openList.indexOf( neighbours.ab.id ) == -1 ){
+      openList.push( neighbours.ab.id );
+    }
+    if( neighbours.bc !== "none" && openList.indexOf( neighbours.bc.id ) == -1 ){
+       openList.push( neighbours.bc.id );
+    }
+    if( neighbours.ca !== "none" && openList.indexOf( neighbours.ca.id ) == -1 ){
+      openList.push( neighbours.ca.id );}
+    }
+  return {part: openList, refs: refs};
+}
 function getSmallerPoint(pt1,pt2){
   if( pt1.x < pt2.x || ( pt1.x == pt2.x && pt1.y <= pt2.y ) ){
     return [ pt1, pt2 ]
@@ -160,39 +197,6 @@ var positionsToPoints = function( _positions ){
   }
   return ret;
 }
-function trianglesToParts( triangle, _triangles, _parts ){
-  var firstTriangle = triangle,
-      prtsL = _parts.length,
-      prezens = false;
-  for( var pn = 0; pn < prtsL; pn++ ){
-    if( _parts[ pn ].indexOf( firstTriangle.idx ) > -1 ){
-      prezens = true;
-      break;
-    }
-  }
-  if( prezens ) return false;
-  var firstPart = [ firstTriangle.idx ];
-  _parts.push( firstPart )
-  for( var i = 0; i < firstPart.length; i++ ){
-    var tri = firstPart[ i ],
-        neighb = getTriNeighbours( _triangles[ tri ] ),
-        nl = neighb.length,
-        pl = _parts.length,
-        presences = [];
-    for( var n = 0; n < nl; n++ ){
-      var neig = neighb[ n ],
-          prez = false;
-      for( var p = 0; p < pl; p++ ){
-        if( _parts[ p ].indexOf( neig ) > -1 ){
-          prez = true;
-          break;
-        }
-      }
-      if( !prez ) firstPart.push( neig );
-    }
-  }
-  return _parts
-}
 function getTriNeighbours( tri ){
   var n = tri.neighbours,
       ret = [];
@@ -200,23 +204,6 @@ function getTriNeighbours( tri ){
   if( n.bc != "none" ) ret.push( n.bc.id );
   if( n.ca != "none" ) ret.push( n.ca.id );
   return ret;
-}
-function trianglesToParts2( _triangles ){
-  var parts = [],
-      l = _triangles.length,
-      part = [];
-  findTriangleNeighbours( _triangles[ 0 ], _triangles, parts, part );
-  /*
-  for( var i = 0; i < l; i++ ){
-    var tri = _triangles[ i ],
-  }
-  if( searchTri == "none" )return parts;
-  var triangle =  _triangles[ searchTri ],
-      neighbours = triangle.neighbours;
-  for( var k in neighbours ){
-    if( neighbours[ k ] == "none" ) continue;
-  }
-  */
 }
 function findTriangleNeighbours( triangle, _triangles, parts, part ){
   var neighbours = triangle.neighbours;
@@ -236,42 +223,6 @@ function findTriangleNeighbours( triangle, _triangles, parts, part ){
     part.push( neighbourId );
     findTriangleNeighbours( neighbour, _triangles, parts, part )
   }
-}
-function trianglesToParts2( _triangles ){
-  var parts = [],
-      l = _triangles.length;
-  for( var i = 0; i < l; i++ ){
-    var tri = _triangles[ i ],
-        isInParts = false,
-        pl = parts.length;
-    for( var p = 0; p < pl; p++ ){
-      if( parts[ p ].indexOf( tri.idx ) > -1 ){
-        isInParts = true;
-        break;
-      }
-    }
-    if( isInParts ) continue;
-    var part = [ tri.idx ];
-    parts.push( part );
-    for( var n = 0; n < part.length; n++ ){
-      var triangle = _triangles[ part[ n ] ],
-          neighbours = triangle.neighbours;
-      for( var k in neighbours ){
-        if( neighbours[ k ] == "none" ) continue;
-        var triId = neighbours[ k ].id,
-            partsL = parts.length,
-            inParts = false;
-        for( var t = 0; t < partsL; t++ ){
-          if( parts[ t ].indexOf( triId ) > -1 ){
-            inParts = true;
-            break;
-          }
-        }
-        if( !inParts ) part.push( triId );
-      }
-    }
-  }
-  return parts;
 }
 var indicesToTriangles = function( _indices, _points ){
   var nbTriangles = _indices.length / 3,
@@ -308,6 +259,7 @@ var indicesToTriangles = function( _indices, _points ){
                     };
     ret.push( triangle )
   };
+var doubleNeighbours = [];
   for( var i2 = 0; i2 < nbTriangles; i2++ ){
     var triangle = ret[ i2 ];
     for( var j = 0; j < nbTriangles; j++ ){
@@ -336,17 +288,70 @@ var indicesToTriangles = function( _indices, _points ){
         matchs.c = "c";
       }
       if( matchs.a && matchs.b ){
-        ret[ i2 ].neighbours.ab = { id: j, matchs: matchs };
+        //ret[ i2 ].neighbours.ab = { id: j, matchs: matchs };
+        if( ret[ i2 ].neighbours.ab == "none" ){
+          ret[ i2 ].neighbours.ab = [ { id: j, matchs: matchs } ]
+        }else{
+          ret[ i2 ].neighbours.ab.push( { id: j, matchs: matchs } );
+        }
       }else if( matchs.b && matchs.c ){
-        ret[ i2 ].neighbours.bc = { id: j, matchs: matchs };
+        //ret[ i2 ].neighbours.bc = { id: j, matchs: matchs };
+        if( ret[ i2 ].neighbours.bc == "none" ){
+          ret[ i2 ].neighbours.bc = [ { id: j, matchs: matchs } ]
+        }else{
+          ret[ i2 ].neighbours.bc.push( { id: j, matchs: matchs } );
+        }
       }else if( matchs.c && matchs.a ){
-        ret[ i2 ].neighbours.ca = { id: j, matchs: matchs };
+        //ret[ i2 ].neighbours.ca = { id: j, matchs: matchs };
+        if( ret[ i2 ].neighbours.ca == "none" ){
+          ret[ i2 ].neighbours.ca = [ { id: j, matchs: matchs } ]
+        }else{
+          ret[ i2 ].neighbours.ca.push( { id: j, matchs: matchs } );
+        }
       }
     }
+    if( triangle.neighbours.ab !== "none" && triangle.neighbours.ab.length > 1) doubleNeighbours.push( {id: triangle.idx, neighbour: "ab", neighbours : triangle.neighbours.ab} );
+    if( triangle.neighbours.bc !== "none" && triangle.neighbours.bc.length > 1) doubleNeighbours.push( {id: triangle.idx, neighbour: "bc", neighbours : triangle.neighbours.bc} );
+    if( triangle.neighbours.ca !== "none" && triangle.neighbours.ca.length > 1) doubleNeighbours.push( {id: triangle.idx, neighbour: "ca", neighbours : triangle.neighbours.ca} );
   }
+  var doublNeighboursL = doubleNeighbours.length,
+      doublesReturner = [];
+  for( var d = 0; d < doublNeighboursL; d++ ){
+    var dn = doubleNeighbours[ d ],
+        triangleId = dn.id,
+        dNeib = dn.neighbours,
+        dnL = dNeib.length,
+        idxs = [triangleId];
+    for( var s = 0; s < dnL; s++ ){
+      idxs.push( dNeib[ s ].id )
+    }
+    idxs.sort(sortNumber);
+    var il = idxs.length,
+        drl = doublesReturner.length,
+        isNew = true;
+    for( var q = 0; q < drl; q++ ){
+      var dbr = doublesReturner[ q ];
+      if( dbr.length !== il ) continue;
+      var anyDif = false;
+      for( var z = 0; z < il; z++ ){
+        if( dbr[ z ] !== idxs[ z ] ){
+          anyDif = true;
+          break;
+        }
+      }
+      if( ! anyDif ) isNew = false;
+    }
+    if( isNew ) doublesReturner.push( idxs );
+  }
+  console.log(JSON.stringify(doubleNeighbours))
+  console.log("////////////////")
+  console.log(JSON.stringify(doublesReturner))
   return {  indices: _indices,
             triangles: ret };
 };
+function sortNumber(a,b) {
+    return a - b;
+}
 function distanceVector( v1, v2 ){
     var dx = v1.x - v2.x;
     var dy = v1.y - v2.y;
@@ -447,7 +452,7 @@ function start3dPreview( _positions, _indices ){
   var engine = new BABYLON.Engine(babylonCanvas, true);
   var scene = new BABYLON.Scene(engine);
   scene.clearColor =  new BABYLON.Color4(0,0,0,0);
-  var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 30, 0), scene);
+  var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 0), scene);
   camera.attachControl(babylonCanvas, true);
   // Add lights to the scene
   var light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, -1, 0), scene);
@@ -465,12 +470,14 @@ function start3dPreview( _positions, _indices ){
   customMesh.position.x = 0;
   customMesh.position.y = 0;
   customMesh.position.z = 0;
+  customMesh.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
 
   var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene);
   myMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
   myMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
   myMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
   myMaterial.ambientColor = new BABYLON.Color3(0.23, 0.98, 0.53);
+  myMaterial.backFaceCulling = false;
 
   customMesh.material = myMaterial;
   customMesh.convertToFlatShadedMesh()
@@ -478,13 +485,11 @@ function start3dPreview( _positions, _indices ){
   babylonCanvas.addEventListener("click", function () {
      // We try to pick an object
      var pickResult = scene.pick(scene.pointerX, scene.pointerY);
-     //alert(JSON.stringify(pickResult))
      if(pickResult.hit){
         var indices = pickResult.pickedMesh.getIndices();
         var index0 = indices[pickResult.faceId * 3];
         var index1 = indices[pickResult.faceId * 3 + 1];
         var index2 = indices[pickResult.faceId * 3 + 2];
-        alert( index0 + ", " + index1 + ", " + index2 )
      }
   }),
 
