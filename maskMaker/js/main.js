@@ -2,13 +2,17 @@
 var points,
     triangles,
     meshParts,
-    triangleSelectionIndex = 0;
+    triangleSelectionIndex = 0,
+    dynamicTex,
+    texCanvas,
+    gridWidth,
+    deerMesh;
 window.onload = function(){
-  var deerMesh = deer.meshes[0],
-      deerPositions = deerMesh.positions,
-      deerIndices = deerMesh.indices;
-  init( deerPositions, deerIndices );
-  start3dPreview( deerPositions, deerIndices );
+  var mesh = deer.meshes[0];
+  var meshPositions = mesh.positions,
+      meshIndices = mesh.indices;
+  init( meshPositions, meshIndices );
+  start3dPreview( meshPositions, meshIndices );
 };
 var init = function( _positions, _indices){
   points = positionsToPoints( _positions );
@@ -84,14 +88,14 @@ function searchPart( _triangles, refs ){
   for( var i = 0; i < openList.length; i++ ){
     var triangle = _triangles[ openList[ i ] ],
         neighbours = triangle.neighbours;
-    if( neighbours.ab !== "none" && openList.indexOf( neighbours.ab.id ) == -1 ){
-      openList.push( neighbours.ab.id );
+    if( neighbours.ab !== "none" && openList.indexOf( neighbours.ab[0].id ) == -1 ){
+      openList.push( neighbours.ab[0].id );
     }
-    if( neighbours.bc !== "none" && openList.indexOf( neighbours.bc.id ) == -1 ){
-       openList.push( neighbours.bc.id );
+    if( neighbours.bc !== "none" && openList.indexOf( neighbours.bc[0].id ) == -1 ){
+       openList.push( neighbours.bc[0].id );
     }
-    if( neighbours.ca !== "none" && openList.indexOf( neighbours.ca.id ) == -1 ){
-      openList.push( neighbours.ca.id );}
+    if( neighbours.ca !== "none" && openList.indexOf( neighbours.ca[0].id ) == -1 ){
+      openList.push( neighbours.ca[0].id );}
     }
   return {part: openList, refs: refs};
 }
@@ -108,8 +112,8 @@ function setNeighboursPos( triangle ){
   for( var k in neighbours ){
     if( neighbours [ k ] == "none" ) continue;
     var mainEdgeName = k,
-        neighbour = triangles.triangles[ neighbours[ k ].id ],
-        matchs = neighbours[ k ].matchs;
+        neighbour = triangles.triangles[ neighbours[ k ][0].id ],
+        matchs = neighbours[ k ][0].matchs;
     if( neighbour.pts2d.a && neighbour.pts2d.b && neighbour.pts2d.c ) continue;
     var thirdPt;
     if(k=="ab"){
@@ -200,9 +204,9 @@ var positionsToPoints = function( _positions ){
 function getTriNeighbours( tri ){
   var n = tri.neighbours,
       ret = [];
-  if( n.ab != "none" ) ret.push( n.ab.id );
-  if( n.bc != "none" ) ret.push( n.bc.id );
-  if( n.ca != "none" ) ret.push( n.ca.id );
+  if( n.ab != "none" ) ret.push( n.ab[0].id );
+  if( n.bc != "none" ) ret.push( n.bc[0].id );
+  if( n.ca != "none" ) ret.push( n.ca[0].id );
   return ret;
 }
 function findTriangleNeighbours( triangle, _triangles, parts, part ){
@@ -459,21 +463,52 @@ function start3dPreview( _positions, _indices ){
 
   var customMesh = new BABYLON.Mesh("custom", scene);
   var vertexData = new BABYLON.VertexData();
-
+  deerMesh = customMesh;
   vertexData.positions = _positions;
   vertexData.indices = _indices;
   var normals = [];
   BABYLON.VertexData.ComputeNormals(_positions, _indices, normals);
   vertexData.normals = normals;
+  var nbTriangles = _indices.length / 3,
+      _uvs = [];
+  gridWidth = Math.floor( Math.sqrt( nbTriangles ) ) + 3;
+  var cellWidth = 1 / gridWidth,
+      offset = cellWidth / 10,
+      triangleIdx = 0;
+  for( let y = 1; y < gridWidth - 1; y++ ){
+    if( triangleIdx >=  nbTriangles ) break;
+    for( let x = 1; x < gridWidth - 1; x++ ){
+      if( triangleIdx >=  nbTriangles ) break;
+      _uvs.push(   ( x + 1 ) * cellWidth - offset, y * cellWidth + offset,
+                  x * cellWidth + offset, y * cellWidth + offset,
+                  x * cellWidth + cellWidth * 0.5, ( y + 1 ) * cellWidth - offset
+      );
+      triangleIdx++;
+    }
+  }
 
+  vertexData.uvs = _uvs;
   vertexData.applyToMesh(customMesh);
   customMesh.position.x = 0;
   customMesh.position.y = 0;
   customMesh.position.z = 0;
-  customMesh.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
 
-  var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene);
-  myMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+  var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene),
+      cellTextureSize = 512 / gridWidth,
+      cvSize = 512;
+  texCanvas = document.createElement("canvas");
+  texCanvas.classList.add("texCanvas");
+  texCanvas.id = "texCanvas";
+  texCanvas.width = 512;
+  texCanvas.height = 512;
+  document.body.appendChild( texCanvas );
+  dynamicTex = new BABYLON.DynamicTexture("dynamicTex", texCanvas, scene, true);
+  var texCtx = dynamicTex.getContext();
+  texCtx.fillStyle = "#41b8b3";
+  texCtx.fillRect( 0, 0,  cvSize, cvSize )
+  dynamicTex.update(false)
+  myMaterial.diffuseTexture = dynamicTex;
+  //myMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
   myMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
   myMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
   myMaterial.ambientColor = new BABYLON.Color3(0.23, 0.98, 0.53);
@@ -481,19 +516,101 @@ function start3dPreview( _positions, _indices ){
 
   customMesh.material = myMaterial;
   customMesh.convertToFlatShadedMesh()
-
+  drawUvs( customMesh.getIndices(), _uvs )
+  dynamicTex.update(false)
   babylonCanvas.addEventListener("click", function () {
      // We try to pick an object
      var pickResult = scene.pick(scene.pointerX, scene.pointerY);
      if(pickResult.hit){
-        var indices = pickResult.pickedMesh.getIndices();
-        var index0 = indices[pickResult.faceId * 3];
-        var index1 = indices[pickResult.faceId * 3 + 1];
-        var index2 = indices[pickResult.faceId * 3 + 2];
+       console.log(pickResult.faceId)
+        var mesh = pickResult.pickedMesh,
+            indices = mesh.getIndices(),
+            index0 = indices[pickResult.faceId * 3],
+            index1 = indices[pickResult.faceId * 3 + 1],
+            index2 = indices[pickResult.faceId * 3 + 2],
+            uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind),
+            u0 = uvs[ index0 * 2 ] * 512,
+            v0 = uvs[ index0 * 2 + 1 ] * 512,
+            u1 = uvs[ index1 * 2 ] * 512,
+            v1 = uvs[ index1 * 2 + 1 ] * 512,
+            u2 = uvs[ index2 * 2 ] * 512,
+            v2 = uvs[ index2 * 2 + 1 ] * 512,
+            vPos = Math.floor( pickResult.faceId / gridWidth ),
+            uPos = pickResult.faceId - ( gridWidth * vPos ),
+            cellW = 512 / gridWidth,
+            texCtx = dynamicTex.getContext();
+        clearTexCanvas()
+        texCtx.fillStyle = "#da9e2b";
+        texCtx.beginPath();
+        texCtx.moveTo(u0,v0);
+        texCtx.lineTo(u1,v1);
+        texCtx.lineTo(u2,v2);
+        texCtx.closePath();
+        texCtx.fill();
+        dynamicTex.update(false)
      }
   }),
 
   engine.runRenderLoop(function () { // Register a render loop to repeatedly render the scene
     scene.render();
   });
+}
+function clearTexCanvas(){
+  var canvas = document.getElementById( "texCanvas" ),
+      ctx = canvas.getContext( "2d" ),
+      cw = canvas.width,
+      nbTile = gridWidth,
+      tileSize = cw / nbTile;
+  ctx.fillStyle = "#41b8b3";
+  ctx.fillRect( 0, 0,  cw, cw );
+  ctx.beginPath();
+  for( var y = 0; y < nbTile; y++ ){
+    ctx.moveTo( 0, y * tileSize);
+    ctx.lineTo( cw, y * tileSize);
+  }
+  for( var x = 0; x < nbTile; x++ ){
+    ctx.moveTo( x * tileSize, 0 );
+    ctx.lineTo( x * tileSize, cw );
+  }
+  ctx.strokeStyle = "#000000";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  drawUvs( deerMesh.getIndices(), deerMesh.getVerticesData(BABYLON.VertexBuffer.UVKind) )
+}
+function drawUvs(_indices, _uvs){
+  var mesh = deerMesh,
+      indices = mesh.getIndices(),
+      uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind),
+      canvas = document.getElementById( "texCanvas" ),
+      texCtx = canvas.getContext( "2d" ),
+      cw = canvas.width,
+      l = indices.length / 3;
+
+
+
+  texCtx.fillRect( 0, 0,  cw, cw );
+
+  for( let i = 0; i < l; i++ ){
+      texCtx.save();
+      texCtx.transform(1, 0, 0, -1, 0, 512);
+    var index0 = _indices[ i * 3 ],
+        index1 = _indices[ i * 3 + 1 ],
+        index2 = _indices[ i * 3 + 2 ],
+        u0 = _uvs[ index0 * 2 ] * 512,
+        v0 = _uvs[ index0 * 2 + 1 ] * 512,
+        u1 = _uvs[ index1 * 2 ] * 512,
+        v1 = _uvs[ index1 * 2 + 1 ] * 512,
+        u2 = _uvs[ index2 * 2 ] * 512,
+        v2 = _uvs[ index2 * 2 + 1 ] * 512;
+    texCtx.beginPath();
+    texCtx.moveTo(u0,v0);
+    texCtx.lineTo(u1,v1);
+    texCtx.lineTo(u2,v2);
+    texCtx.lineTo(u0,v0);
+    texCtx.restore();
+
+    texCtx.stroke();
+
+  }
+
 }
