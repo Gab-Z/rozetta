@@ -550,7 +550,9 @@ function start3dPreview( _positions, _indices ){
         dynamicTex.update(false)
      }
   }),
-
+console.log(JSON.stringify(_uvs ))
+console.log("aaaaaaaaaaaaa")
+console.log(JSON.stringify(deerMesh.getVerticesData(BABYLON.VertexBuffer.UVKind)))
   engine.runRenderLoop(function () { // Register a render loop to repeatedly render the scene
     scene.render();
   });
