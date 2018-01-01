@@ -6,13 +6,18 @@ var points,
     dynamicTex,
     texCanvas,
     gridWidth,
-    deerMesh;
+    deerMesh,
+    engine,
+    scene,
+    camera,
+    texSize = 1024;
 window.onload = function(){
   var mesh = deer.meshes[0];
   var meshPositions = mesh.positions,
       meshIndices = mesh.indices;
   init( meshPositions, meshIndices );
   start3dPreview( meshPositions, meshIndices );
+  drawUvs( deerMesh.getIndices(), deerMesh.getVerticesData(BABYLON.VertexBuffer.UVKind) )
 };
 var init = function( _positions, _indices){
   points = positionsToPoints( _positions );
@@ -64,7 +69,7 @@ var init = function( _positions, _indices){
 
   })
   ctx.restore();
-ctx.stroke();
+  ctx.stroke();
 };
 function getMeshParts( _triangles ){
   var l = triangles.length,
@@ -453,22 +458,77 @@ var compareVec3 = function(pta,ptb){
 function start3dPreview( _positions, _indices ){
   var babylonCanvas = document.body.appendChild( document.createElement( "canvas" ) );
   babylonCanvas.id = "babylonCanvas";
-  var engine = new BABYLON.Engine(babylonCanvas, true);
-  var scene = new BABYLON.Scene(engine);
+  engine = new BABYLON.Engine(babylonCanvas, true);
+  scene = new BABYLON.Scene(engine);
   scene.clearColor =  new BABYLON.Color4(0,0,0,0);
-  var camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 0), scene);
+  camera = new BABYLON.ArcRotateCamera("Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3(0, 0, 0), scene);
   camera.attachControl(babylonCanvas, true);
   // Add lights to the scene
   var light1 = new BABYLON.HemisphericLight("light1", new BABYLON.Vector3(1, -1, 0), scene);
 
   var customMesh = new BABYLON.Mesh("custom", scene);
   var vertexData = new BABYLON.VertexData();
+
+  var pickMesh = new BABYLON.Mesh("pick", scene);
+  var pickVertexData  = new BABYLON.VertexData();
   deerMesh = customMesh;
+
+  var nbTriangles = _indices.length / 3,
+      separatePositions = new Array( _indices.length * 3 ),
+      separateIndices = new Array( _indices.length * 3 ),
+      _uvs =  new Array( _indices.length * 2 );
+  gridWidth = Math.floor( Math.sqrt( nbTriangles ) ) + 3;
+  var cellWidth = 1 / gridWidth,
+      offset = cellWidth / 10,
+      triangleIdx = 0;
+
+  for( var h = 0; h < _indices.length; h++ ){
+    separatePositions[ h * 3 ] = _positions[ _indices[ h ] * 3 ];
+    separatePositions[ h * 3 + 1 ] = _positions[ _indices[ h ] * 3 + 1 ];
+    separatePositions[ h * 3 + 2 ] = _positions[ _indices[ h ] * 3 + 2 ];
+
+    separateIndices[ h ] = h;
+  }
+  for( var u = 0; u < _indices.length / 3; u++ ){
+    var v0 = Math.floor( u / ( gridWidth - 2 ) ),
+        u0 = u - ( v0 * ( gridWidth - 2 ) );
+    //alert(u + " / " + gridWidth)
+    _uvs[ u * 6 ] = u0 * cellWidth + offset;
+    _uvs[ u * 6 + 1 ] = v0 * cellWidth  + offset;
+
+    _uvs[ u * 6 + 2 ] = u0 * cellWidth + cellWidth - offset;
+    _uvs[ u * 6 + 3 ] = v0 * cellWidth  + offset;
+
+    _uvs[ u * 6 + 4 ] = u0 * cellWidth + cellWidth * 0.5;
+    _uvs[ u * 6 + 5 ] = v0 * cellWidth + cellWidth - offset;
+  }
+
+  vertexData.uvs = _uvs;
+  var normals = [];
+
+  BABYLON.VertexData.ComputeNormals( separatePositions, separateIndices, normals );
+  vertexData.positions = separatePositions;
+  vertexData.indices = separateIndices;
+  vertexData.normals = normals;
+
+  vertexData.applyToMesh( customMesh );
+
+  var pickNormals = [];
+  BABYLON.VertexData.ComputeNormals( _positions, _indices, pickNormals );
+  pickVertexData.positions = _positions;
+  pickVertexData.indices = _indices;
+  pickVertexData.normals = pickNormals;
+  pickVertexData.uvs = _uvs;
+
+  pickVertexData.applyToMesh( pickMesh );
+
+  /*
+  BABYLON.VertexData.ComputeNormals( _positions, _indices, normals );
   vertexData.positions = _positions;
   vertexData.indices = _indices;
-  var normals = [];
-  BABYLON.VertexData.ComputeNormals(_positions, _indices, normals);
   vertexData.normals = normals;
+  */
+  /*
   var nbTriangles = _indices.length / 3,
       _uvs = [];
   gridWidth = Math.floor( Math.sqrt( nbTriangles ) ) + 3;
@@ -486,27 +546,27 @@ function start3dPreview( _positions, _indices ){
       triangleIdx++;
     }
   }
+  */
 
-  vertexData.uvs = _uvs;
-  vertexData.applyToMesh(customMesh);
-  customMesh.position.x = 0;
-  customMesh.position.y = 0;
-  customMesh.position.z = 0;
+
+  //customMesh.position.x = 0;
+  //customMesh.position.y = 0;
+  //customMesh.position.z = 0;
 
   var myMaterial = new BABYLON.StandardMaterial("myMaterial", scene),
-      cellTextureSize = 512 / gridWidth,
-      cvSize = 512;
+      cvSize = texSize,
+      cellTextureSize = cvSize / gridWidth;
   texCanvas = document.createElement("canvas");
   texCanvas.classList.add("texCanvas");
   texCanvas.id = "texCanvas";
-  texCanvas.width = 512;
-  texCanvas.height = 512;
+  texCanvas.width = cvSize;
+  texCanvas.height = cvSize;
   document.body.appendChild( texCanvas );
   dynamicTex = new BABYLON.DynamicTexture("dynamicTex", texCanvas, scene, true);
   var texCtx = dynamicTex.getContext();
-  texCtx.fillStyle = "#41b8b3";
-  texCtx.fillRect( 0, 0,  cvSize, cvSize )
-  dynamicTex.update(false)
+  //texCtx.fillStyle = "#41b8b3";
+  //texCtx.fillRect( 0, 0,  cvSize, cvSize )
+  //dynamicTex.update( false );
   myMaterial.diffuseTexture = dynamicTex;
   //myMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
   myMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
@@ -515,29 +575,33 @@ function start3dPreview( _positions, _indices ){
   myMaterial.backFaceCulling = false;
 
   customMesh.material = myMaterial;
-  customMesh.convertToFlatShadedMesh()
-  drawUvs( customMesh.getIndices(), _uvs )
+  customMesh.convertToFlatShadedMesh();
+  pickMesh.isPickable = true;
+  pickMesh.visibility = 0;
+  customMesh.isPickable = false;
+  drawUvs( customMesh.getIndices(), customMesh.getVerticesData(BABYLON.VertexBuffer.UVKind) )
   dynamicTex.update(false)
-  babylonCanvas.addEventListener("click", function () {
+
+  babylonCanvas.addEventListener("click", function (evt) {
      // We try to pick an object
+
      var pickResult = scene.pick(scene.pointerX, scene.pointerY);
+
      if(pickResult.hit){
-       console.log(pickResult.faceId)
-        var mesh = pickResult.pickedMesh,
+
+        var mesh = deerMesh,//pickResult.pickedMesh,
             indices = mesh.getIndices(),
             index0 = indices[pickResult.faceId * 3],
             index1 = indices[pickResult.faceId * 3 + 1],
             index2 = indices[pickResult.faceId * 3 + 2],
             uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind),
-            u0 = uvs[ index0 * 2 ] * 512,
-            v0 = uvs[ index0 * 2 + 1 ] * 512,
-            u1 = uvs[ index1 * 2 ] * 512,
-            v1 = uvs[ index1 * 2 + 1 ] * 512,
-            u2 = uvs[ index2 * 2 ] * 512,
-            v2 = uvs[ index2 * 2 + 1 ] * 512,
-            vPos = Math.floor( pickResult.faceId / gridWidth ),
-            uPos = pickResult.faceId - ( gridWidth * vPos ),
-            cellW = 512 / gridWidth,
+            cvSize = texSize,
+            u0 = uvs[ index0 * 2 ] * cvSize,
+            v0 = uvs[ index0 * 2 + 1 ] * cvSize,
+            u1 = uvs[ index1 * 2 ] * cvSize,
+            v1 = uvs[ index1 * 2 + 1 ] * cvSize,
+            u2 = uvs[ index2 * 2 ] * cvSize,
+            v2 = uvs[ index2 * 2 + 1 ] * cvSize,
             texCtx = dynamicTex.getContext();
         clearTexCanvas()
         texCtx.fillStyle = "#da9e2b";
@@ -548,15 +612,32 @@ function start3dPreview( _positions, _indices ){
         texCtx.closePath();
         texCtx.fill();
         dynamicTex.update(false)
+
+        var cv = document.getElementById( "canvas" ),
+            ctx = cv.getContext( "2d" ),
+            pts2d = triangles.triangles[ pickResult.faceId ].pts2d;
+          //  alert(JSON.stringify( triangles.triangles[ pickResult.faceId ].pts2d ))
+
+        ctx.restore();
+
+        ctx.save();
+        ctx.translate( cv.width / 2, cv.height / 2 );
+        ctx.scale(400,400)
+        ctx.beginPath();
+        ctx.moveTo( pts2d.a.x, pts2d.a.y );
+        ctx.lineTo( pts2d.b.x, pts2d.b.y );
+        ctx.lineTo( pts2d.c.x, pts2d.c.y );
+        ctx.closePath();
+        ctx.fillStyle = "#d08243";
+        ctx.restore();
+        ctx.fill();
      }
-  }),
-console.log(JSON.stringify(_uvs ))
-console.log("aaaaaaaaaaaaa")
-console.log(JSON.stringify(deerMesh.getVerticesData(BABYLON.VertexBuffer.UVKind)))
+  });
+
   engine.runRenderLoop(function () { // Register a render loop to repeatedly render the scene
     scene.render();
   });
-}
+};
 function clearTexCanvas(){
   var canvas = document.getElementById( "texCanvas" ),
       ctx = canvas.getContext( "2d" ),
@@ -580,39 +661,59 @@ function clearTexCanvas(){
   drawUvs( deerMesh.getIndices(), deerMesh.getVerticesData(BABYLON.VertexBuffer.UVKind) )
 }
 function drawUvs(_indices, _uvs){
-  var mesh = deerMesh,
-      indices = mesh.getIndices(),
-      uvs = mesh.getVerticesData(BABYLON.VertexBuffer.UVKind),
-      canvas = document.getElementById( "texCanvas" ),
+  var canvas = document.getElementById( "texCanvas" ),
       texCtx = canvas.getContext( "2d" ),
       cw = canvas.width,
-      l = indices.length / 3;
-
-
-
+      l = _indices.length / 3;
+  texCtx.fillStyle = "#41b8b3";
   texCtx.fillRect( 0, 0,  cw, cw );
-
+  texCtx.lineWidth = 0.5;
   for( let i = 0; i < l; i++ ){
-      texCtx.save();
-      texCtx.transform(1, 0, 0, -1, 0, 512);
+    //  texCtx.save();
+    //  texCtx.transform(1, 0, 0, -1, 0, 512);
     var index0 = _indices[ i * 3 ],
         index1 = _indices[ i * 3 + 1 ],
         index2 = _indices[ i * 3 + 2 ],
-        u0 = _uvs[ index0 * 2 ] * 512,
-        v0 = _uvs[ index0 * 2 + 1 ] * 512,
-        u1 = _uvs[ index1 * 2 ] * 512,
-        v1 = _uvs[ index1 * 2 + 1 ] * 512,
-        u2 = _uvs[ index2 * 2 ] * 512,
-        v2 = _uvs[ index2 * 2 + 1 ] * 512;
+        u0 = _uvs[ index0 * 2 ] * cw,
+        v0 = _uvs[ index0 * 2 + 1 ] * cw,
+        u1 = _uvs[ index1 * 2 ] * cw,
+        v1 = _uvs[ index1 * 2 + 1 ] * cw,
+        u2 = _uvs[ index2 * 2 ] * cw,
+        v2 = _uvs[ index2 * 2 + 1 ] * cw;
     texCtx.beginPath();
     texCtx.moveTo(u0,v0);
     texCtx.lineTo(u1,v1);
     texCtx.lineTo(u2,v2);
     texCtx.lineTo(u0,v0);
-    texCtx.restore();
+  //  texCtx.restore();
 
     texCtx.stroke();
 
   }
 
+}
+function vecToLocal(vector, mesh){
+    var m = mesh.getWorldMatrix();
+    var v = BABYLON.Vector3.TransformCoordinates(vector, m);
+    return v;
+}
+function castRay(){
+  var origin = camera.position;
+
+  var forward = new BABYLON.Vector3(0,0,1);
+  forward = vecToLocal(forward, camera);
+
+  var direction = forward.subtract(origin);
+  direction = BABYLON.Vector3.Normalize(direction);
+
+  var length = 1000;
+
+  var ray = new BABYLON.Ray(origin, direction, length);
+  // ray.show(scene, new BABYLON.Color3(1, 1, 0.1));
+
+  var hit = scene.pickWithRay(ray);
+
+  if (hit.pickedMesh){
+    alert("pop")
+  }
 }
