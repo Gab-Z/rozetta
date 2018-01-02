@@ -475,7 +475,7 @@ function start3dPreview( _positions, _indices ){
 
   var nbTriangles = _indices.length / 3,
       separatePositions = new Array( _indices.length * 3 ),
-      separateIndices = new Array( _indices.length * 3 ),
+      separateIndices = new Array( _indices.length ),
       _uvs =  new Array( _indices.length * 2 );
   gridWidth = Math.floor( Math.sqrt( nbTriangles ) ) + 3;
   var cellWidth = 1 / gridWidth,
