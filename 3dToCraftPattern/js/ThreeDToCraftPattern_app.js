@@ -23,7 +23,8 @@ class ThreeDToCraftPattern_app{
 
   }
   createMesh( name, positions, indices ){
-
+    let newMesh = new ThreeDToCraftPattern_mesh( name, positions, indices, this.scene );
+    this.meshes.push( newMesh );
   }
   addMesh(  ){
 
