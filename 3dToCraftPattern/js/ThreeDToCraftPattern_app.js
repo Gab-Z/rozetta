@@ -1,33 +1,38 @@
 const ThreeDToCraftPattern_app_defaults = {
-
+  canvas3dWidth:512,
+  canvas3dHeight:512
 };
 class ThreeDToCraftPattern_app{
   constructor( options = {} ){
     let opts = Object.assign( ThreeDToCraftPattern_app_defaults, options );
     this.container = document.createElement( "div" );
     this.container.id = "ThreeDToCraft_container";
-    this.canvas3d = this.container.appendChild( document.createElement( "canvas" ) );
-    this.canvas3d.id = "ThreeDToCraft_canvas3d";
+    ( opts.parent || document.body ).appendChild( this.container );
     this.canvas2d = this.container.appendChild( document.createElement( "canvas" ) );
     this.canvas2d.id = "ThreeDToCraft_canvas2d";
     this.meshes = [];
     this.activeMesh = "none";
     this.BABYLON = {};
-    this.BABYLON.engine = new BABYLON.Engine( this.canvas3d, true );
-    this.BABYLON.scene = new BABYLON.Scene( this.BABYLON.engine );
-    this.BABYLON.clearColor =  new BABYLON.Color4( 0, 0, 0, 0 );
-    this.BABYLON.camera = new BABYLON.ArcRotateCamera( "Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3( 0, 0, 0 ), this.BABYLON.scene );
-    this.BABYLON.camera.attachControl( this.canvas3d, true );
-    // Add lights to the scene
-    this.BABYLON.hemiLight = new BABYLON.HemisphericLight( "hemiLight", new BABYLON.Vector3( 1, -1, 0 ), this.BABYLON.scene );
+    let BABL = this.BABYLON;
+    BABL.canvas3d = this.container.appendChild( document.createElement( "canvas" ) );
+    BABL.canvas3d.id = "ThreeDToCraft_canvas3d";
 
+    BABL.engine = new BABYLON.Engine( BABL.canvas3d, true );
+    BABL.scene = new BABYLON.Scene( BABL.engine );
+    BABL.scene.clearColor =  new BABYLON.Color4( 0.2, 0.2, 0.2, 1 );
+    BABL.camera = new BABYLON.ArcRotateCamera( "Camera", Math.PI / 2, Math.PI / 2, 2, new BABYLON.Vector3( 0, 0, 0 ), BABL.scene );
+    BABL.camera.attachControl( BABL.canvas3d, true );
+    BABL.hemiLight = new BABYLON.HemisphericLight( "hemiLight", new BABYLON.Vector3( 1, -1, 0 ), BABL.scene );
+    let self = this;
+    self.BABYLON.engine.runRenderLoop( function(){
+      let self = this;
+      self.BABYLON.scene.render();
+    }.bind( self ) );
   }
   createMesh( name, positions, indices ){
-    let newMesh = new ThreeDToCraftPattern_mesh( name, positions, indices, this.scene );
-    this.meshes.push( newMesh );
-  }
-  addMesh(  ){
-
+    let self = this;
+    let newMesh = new ThreeDToCraftPattern_mesh( name, positions, indices, self.BABYLON.scene );
+    self.meshes.push( newMesh );
   }
 }
 function intersection(x0, y0, r0, x1, y1, r1) {
