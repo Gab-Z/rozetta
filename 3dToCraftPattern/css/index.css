@@ -16,13 +16,13 @@ html,body{
   position:fixed;
   top:0;
   right:0;
-  width:25vw;
-  height:25vw;
+  width:50vh;
+  height:50vh;
 }
 .texCanvas{
   position:fixed;
   bottom:0;
   right:0;
-  width:25vw;
-  height:25vw;
+  width:50vh;
+  height:50vh;
 }

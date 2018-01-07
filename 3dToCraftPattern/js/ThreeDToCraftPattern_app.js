@@ -16,7 +16,8 @@ class ThreeDToCraftPattern_app{
     let BABL = this.BABYLON;
     BABL.canvas3d = this.container.appendChild( document.createElement( "canvas" ) );
     BABL.canvas3d.id = "ThreeDToCraft_canvas3d";
-
+    BABL.canvas3d.width = opts.canvas3dWidth;
+    BABL.canvas3d.height = opts.canvas3dHeight;
     BABL.engine = new BABYLON.Engine( BABL.canvas3d, true );
     BABL.scene = new BABYLON.Scene( BABL.engine );
     BABL.scene.clearColor =  new BABYLON.Color4( 0.2, 0.2, 0.2, 1 );
@@ -33,6 +34,45 @@ class ThreeDToCraftPattern_app{
     let self = this;
     let newMesh = new ThreeDToCraftPattern_mesh( name, positions, indices, self.BABYLON.scene );
     self.meshes.push( newMesh );
+    this.BABYLON.canvas3d.addEventListener("click", function (evt) {
+      let self = this;
+      self.clickMesh( evt );
+    }.bind( self ));
+  }
+  findMeshByName( name ){
+    return this.meshes.find( mesh => mesh.name === name );
+  }
+  clickMesh( e ){
+    let scene = this.BABYLON.scene,
+        pickResult = scene.pick(scene.pointerX, scene.pointerY);
+    if(pickResult.hit){
+       let BabylonMesh = pickResult.pickedMesh,
+           mesh = this.findMeshByName( BabylonMesh.name ),
+           indices = BabylonMesh.getIndices(),
+           index0 = indices[pickResult.faceId * 3],
+           index1 = indices[pickResult.faceId * 3 + 1],
+           index2 = indices[pickResult.faceId * 3 + 2],
+           uvs = BabylonMesh.getVerticesData(BABYLON.VertexBuffer.UVKind),
+           texCv = mesh.BABYLON.textureCanvas,
+           cvSize = texCv.width,
+           u0 = uvs[ index0 * 2 ] * cvSize,
+           v0 = uvs[ index0 * 2 + 1 ] * cvSize,
+           u1 = uvs[ index1 * 2 ] * cvSize,
+           v1 = uvs[ index1 * 2 + 1 ] * cvSize,
+           u2 = uvs[ index2 * 2 ] * cvSize,
+           v2 = uvs[ index2 * 2 + 1 ] * cvSize,
+           dynamicTex = mesh.BABYLON.dynamicTexture,
+           texCtx = dynamicTex.getContext();
+       mesh.drawTexUvs();
+       texCtx.fillStyle = "#da9e2b";
+       texCtx.beginPath();
+       texCtx.moveTo(u0,v0);
+       texCtx.lineTo(u1,v1);
+       texCtx.lineTo(u2,v2);
+       texCtx.closePath();
+       texCtx.fill();
+       dynamicTex.update(false);
+    }
   }
 }
 function intersection(x0, y0, r0, x1, y1, r1) {
@@ -62,3 +102,9 @@ function intersection(x0, y0, r0, x1, y1, r1) {
 function sortNumber(a,b) {
     return a - b;
 }
+function distanceVector( v1, v2 ){
+    var dx = v1.x - v2.x;
+    var dy = v1.y - v2.y;
+    var dz = v1.z - v2.z;
+    return Math.sqrt( dx * dx + dy * dy + dz * dz );
+};
