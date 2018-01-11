@@ -50,7 +50,32 @@ var keys = {
 		}
 	}
 };
-function getnbAIbyAction = function( array ){
+var keysParAction ={
+  root : [
+    { tag : "Action locale",
+      children :[
+        {
+          tag:"Jeune",
+          children:[
+            { tag: "Repérant"},
+            { tag: "Binôme",
+              children:[
+                { tag: "Engagé" }
+              ]}
+          ]
+        }
+      ]
+    }
+  ]
+}
+var newKeys = {
+  "Action locale": "root",
+  "Jeune": "Action locale",
+  "Repérant": "Jeune",
+  "Binôme": "Jeune",
+  "Engagé": "Binôme"
+}
+function getnbAIbyAction( array ){
   var ret = {},
       keys = getKeys( array ),
       l = array.length,
@@ -59,27 +84,38 @@ function getnbAIbyAction = function( array ){
     var row = array[ i ],
         key = ar[ i ].key,
         content = ar[ i ].content;
-    if( ! ret[ content ] && key == "Action locale" && content == "nom") ret[ content ] = {name:array[]};
-    for(var j = 0; j< rl; j++ ){
-      var
+    if( ! ret[ content ] && key == "Action locale" && content == "nom") ret[ content ] = { name: array[ i ] };
 
-    }
   };
 }
-function compileArray(array, keys){
+function compileArray( array ){
 	var arl = array.length,
-		headers = array[0],
-		hl = headers.length,
-		ret = {};
+  		headers = array[0],
+  		hl = headers.length,
+      headerRef = [];
 	for( var i = 0; i < hl; i++ ){
 		var head = headers[i],
-			tagStart = head.indexOf( "[" ) + 1,
-			tagEnd = head.indexOf( "]" ),
-			titleStart = tagEnd + 2,
-			tag = head.slice(tagStart, tagEnd - tagStart),
-			title = head.slice( titleStart );
-		alert( tag + " - " + title )
+  			tagStart = head.indexOf( "[" ) + 1,
+  			tagEnd = head.indexOf( "]" ),
+  			titleStart = tagEnd + 2,
+  			objectName = head.slice( tagStart, tagEnd - tagStart + 1 ),
+  			propertyName = head.slice( titleStart );
+		headerRef.push( { objectName: objectName, propertyName: propertyName } );
 	}
+  var tl = array.length,
+      ret = [];
+  for( var r = 1; r < tl; r++ ){
+    var newRow = {};
+    for( var c = 0; c < hl; c++ ){
+      var ref = headerRef[ c ],
+          obName = ref.objectName,
+          propName = ref.propertyName;
+      if( !newRow[ obName ] ) newRow[ obName ] = {};
+      newRow[ obName ][ propName ] = array[ r ][ c ];
+    }
+    ret.push( newRow );
+  }
+  return ret;
 }
 var arrayToTable = function( array ){
   /*
@@ -146,24 +182,28 @@ var getContent = function( array, _keysMap ){
     }
   }
 };
-var loadForm = function(file){
+var loadForm = function( file ){
 	var reader = new FileReader();
-	reader.onload =function(e){
-		var rez = reader.result,
-			str = rez.slice(regexIndexOf(rez,/./)),
-			ar = Papa.parse(str).data,
-			arl = ar.length,
-			newAr = ar.map( function( row ){
-				newRow = row.map( function( cell ){
-					return cell.replace(/\&#039;/g,"'")
-				})
-				return newRow
-			});
-		arrayToTable(newAr)
-	}
+	reader.onload = loadFormCallback;
 	reader.readAsText(file,"ISO-8859-1");//"ISO-8859-1"
 }
-
+function loadFormCallback ( e ){
+  var reader = e.currentTarget,
+      rez = reader.result,
+      str = rez.slice( regexIndexOf( rez, /./ ) ),
+      ar = Papa.parse( str ).data,
+      arl = ar.length,
+      newAr = ar.map( function( row ){
+        newRow = row.map( function( cell ){
+          return cell.replace( /\&#039;/g, "'" )
+        })
+        return newRow
+      });
+  //arrayToTable(newAr)
+  var compiledAr = compileArray( newAr ),
+      treeOb = compiledArrayToTree( compileArray( newAr ), keysParAction.root );
+  parseOb(treeOb)
+}
 function drop_handler(ev) {
   console.log("Drop");
   ev.preventDefault();
@@ -185,14 +225,11 @@ function drop_handler(ev) {
     }
   }
 }
-
-
 function dragover_handler(ev) {
   console.log("dragOver");
   // Prevent default select and drag behavior
   ev.preventDefault();
 }
-
 function dragend_handler(ev) {
   console.log("dragEnd");
   // Remove all of the drag data
@@ -207,7 +244,83 @@ function dragend_handler(ev) {
     ev.dataTransfer.clearData();
   }
 }
+function compiledArrayToTree2( array, keys ){
+  var al = array.length,
+      ret = {};
+  for( var i = 0; i < al; i++ ){
+    var obRow = array[ i ];
+    for( var k in obRow ){
+      var key = keys[ k ];
+    }
+  }
+}
+function compiledArrayToTree( array, keysRoot, matchs ){
 
+  var al = array.length,
+      ret = {},
+      root = keysRoot,
+      rl = root.length;
+  for( var i = 0; i < rl; i++ ){
+    var child = root[ i ],
+        tag = child.tag;
+    if( !ret[ tag ] ) ret[ tag ] = {};
+    var retProp = ret[ tag ];
+    for( var j = 0; j < al; j++ ){
+      var arrayob = array[ j ];
+
+      if( matchs ){
+
+        var cut = false;
+        for( var k in matchs ){
+          if( ! arrayob[ k ] || !isSameObject( arrayob[ k ], matchs[ k ] ) ){
+            cut = true;
+            break;
+          }
+        }
+        if( cut ) continue;
+      }
+
+      var value = arrayob[ tag ];
+      //alert(JSON.stringify(value)+" / "+tag)
+      if( value ){
+
+        var ob = { value: array[ j ][ tag ] };
+        if( child.children ){
+          var oldMatchs = matchs || {},
+              newMatchs = copyObject( oldMatchs );
+          newMatchs[ tag ] = copyObject( value );
+          ob.children = compiledArrayToTree( array, child.children, newMatchs );
+        }
+        ret[ tag ][ value ] = ob;
+      }
+    }
+  }
+  return ret;
+}
+function isSameObject( a, b ){
+  for( var k in a ){
+    if( ! b[ k ] || b[ k ] !== a[ k ] ) return false;
+  }
+  return true;
+}
+function copyObject( a ){
+  return JSON.parse(JSON.stringify(a));
+}
+function isAnObject( ob ){
+  if( ob instanceof String )return 0;
+  if( ! isNaN( ob ) )return 0;
+  return 1;
+}
+function parseOb( ob ){
+  for( var k in ob ){
+    var prop =  ob[ k ];
+    if( isAnObject( prop ) ){
+      parseOb( prop )
+    }else{
+      alert( prop )
+    }
+  }
+}
 </script>
 
 <style type="text/css">
