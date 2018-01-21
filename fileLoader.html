@@ -74,7 +74,18 @@ var newKeys = {
   "Repérant": "Jeune",
   "Binôme": "Jeune",
   "Engagé": "Binôme"
+};
+var mKeys = {
+  "Action locale": {
+    "Jeune": {
+      "Repérant": 0,
+      "Binôme": {
+        "Engagé": 0
+      }
+    }
+  }
 }
+
 function getnbAIbyAction( array ){
   var ret = {},
       keys = getKeys( array ),
@@ -87,6 +98,156 @@ function getnbAIbyAction( array ){
     if( ! ret[ content ] && key == "Action locale" && content == "nom") ret[ content ] = { name: array[ i ] };
 
   };
+}
+function nestArray( array, keys ){
+
+  var arl = array.length,
+  		headers = array[0],
+  		hl = headers.length,
+      headerRef = [],
+      refs = {},
+      nbKeys = 0;
+  for( var r in keys ){
+    refs[ r ] = {};
+    nbKeys++;
+  }
+	for( var i = 0; i < hl; i++ ){
+		var head = headers[i],
+  			tagStart = head.indexOf( "[" ) + 1,
+  			tagEnd = head.indexOf( "]" ),
+  			titleStart = tagEnd + 2,
+  			objectName = head.slice( tagStart, tagEnd - tagStart + 1 ),
+  			propertyName = head.slice( titleStart );
+		headerRef.push( { objectName: objectName, propertyName: propertyName } );
+    if( ! refs[ objectName ] )refs[ objectName ] = {};
+    refs[ objectName ][ propertyName ] = i;
+	};
+  var ret = {};
+  for( var j = 1; j < arl; j++ ){
+    var row = array[ j ];
+    rowToOb( row, keys, refs, ret )
+  }
+  return ret;
+};
+function nestedArrayToTable( arrayOb, parent, _margin ){
+  var margin = _margin || 0,
+      children = arrayOb.children,
+      cont = parent.appendChild( document.createElement( "div" ) );
+  cont.style.marginLeft = margin+"px";
+  for ( var k in children ){
+    var child = children[ k ],
+        cl = child.length;
+    for( var i = 0; i < cl; i++ ){
+      var subChild = child[ i ],
+          subCont = cont.appendChild( document.createElement( "div" ) ),
+          titleCont = subCont.appendChild( document.createElement( "div" ) ),
+          hasChild = false;
+      var typeSpan = titleCont.appendChild( document.createElement( "span" ) );
+      typeSpan.textContent = k.toUpperCase();
+      for( var kb in subChild){
+        if( kb == "children" ){
+          hasChild = true;
+          continue;
+        }else{
+          var infoSpan = titleCont.appendChild( document.createElement( "span" ) );
+          infoSpan.textContent = kb+" : "+ subChild[ kb ];
+        }
+      }
+      if( hasChild ){
+        nestedArrayToTable( subChild, subCont, margin + 30 )
+      }
+    }
+  }
+}
+function getChildren( keys, array, ret, refs ){
+  var al = array.length,
+    childRefs = [];
+  for( var k in keys ){
+    var key = keys[k]
+        childName = k,
+        ref = refs[ k ];
+    for( var ck in key ){
+      childRefs.push(ck)
+    }
+      //alert(JSON.stringify(refs))
+    for( var i = 1; i < al; i++ ){
+      var row = array[ i ],
+      ob = {};
+      for( var p in ref ){
+        ob[ p ] = row[ ref[ p ] ];
+      }
+      if( checkDoublon( ret, ob ) ) continue;
+    //  alert(JSON.stringify(ob))
+      ret.push( ob );
+    }
+    var nbChild = childRefs.length;
+    for( var c = 0; c < nbChild; c++ ){
+      var childName = childRefs[ c ],
+          childKey = key[ childName ];
+
+    }
+
+
+
+    alert(JSON.stringify(ret) + " \n " + k  + " \n " + JSON.stringify(childRefs))
+    var l = ret.length;
+    var rl = childRefs.length;
+    for( var n = 0; n < l; n++ ){
+      var retOb = ret[ n ],
+          nRet = [];
+      for( var j = 0; j < rl; j++ ){
+      //  alert(JSON.stringify(childRefs[ j ]))
+        getChildren( childRefs[ j ], array, refs )
+      };
+  //  alert(JSON.stringify(nRet))
+      retOb.children = nRet;
+    };
+  };
+
+};
+function rowToOb( row, keys, refs, retOb ){
+  retOb.children = retOb.children || {};
+  for( var z in keys ){
+    var usedKey = z,
+        ref = refs[ usedKey ],
+        ob = {};
+    retOb.children[ z ] = retOb.children[ z ]  || [];
+    var ret = retOb.children[ z ];
+    for( var p in ref ){
+      ob[ p ] = row[ ref[ p ] ];
+    };
+    var testDoublon = checkDoublon( ret, ob )
+    if( ! testDoublon ){
+      ret.push( ob );
+    }else{
+      ob = testDoublon;
+    }
+    var keyOb = keys[ z ],
+        children = [];
+    for( var t in keyOb ){
+      ob.children = ob.children || {};
+      ob.children[ t ] = ob.children[ t ] || []
+      children.push( t );
+    }
+    var cl = children.length;
+    if( cl > 0 ){
+      //ob.children = ob.children || {} ;
+      for( var nc = 0; nc < cl; nc++ ){
+        var childName = children[ nc ],
+            cKey = keys[ z ];
+        //ob.children = ob.children || {};
+        //ob.children[ childName ] = ob.children[ childName ] || {};
+        rowToOb( row, cKey, refs, ob );
+      }
+    }
+  }
+};
+function checkDoublon( retAr, Ob ){
+  var l = retAr.length;
+  for( var i = 0; i < l; i++ ){
+    if( isSameObject( retAr[ i ], Ob ) )return retAr[ i ];
+  }
+  return false;
 }
 function compileArray( array ){
 	var arl = array.length,
@@ -196,13 +357,24 @@ function loadFormCallback ( e ){
       newAr = ar.map( function( row ){
         newRow = row.map( function( cell ){
           return cell.replace( /\&#039;/g, "'" )
-        })
+        }).filter( ( cell, i, ar ) => (  i < (ar.length - 1) ) );
         return newRow
       });
+
   //arrayToTable(newAr)
+  //var compiledAr = compileArray( newAr )
+  var nested = nestArray( newAr, mKeys );
+  //console.log( JSON.stringify( nested ))
+  nestedArrayToTable( nested, document.body )
+
+
+//  var ct = document.body.appendChild(document.createElement("div"))
+  //ct.textContent = JSON.stringify( nested)
+  /*
   var compiledAr = compileArray( newAr ),
-      treeOb = compiledArrayToTree( compileArray( newAr ), keysParAction.root );
+      treeOb = compiledArrayToTree( compiledAr, keysParAction.root );
   parseOb(treeOb)
+  */
 }
 function drop_handler(ev) {
   console.log("Drop");
@@ -299,7 +471,8 @@ function compiledArrayToTree( array, keysRoot, matchs ){
 }
 function isSameObject( a, b ){
   for( var k in a ){
-    if( ! b[ k ] || b[ k ] !== a[ k ] ) return false;
+    if( k == "children" ) continue;
+    if( ! b.hasOwnProperty( k ) || b[ k ] != a[ k ] ) return false;
   }
   return true;
 }
@@ -317,17 +490,17 @@ function parseOb( ob ){
     if( isAnObject( prop ) ){
       parseOb( prop )
     }else{
-      alert( prop )
+      alert("aa " + prop )
     }
   }
 }
 </script>
 
 <style type="text/css">
-table, tr, td {
-	border: 1px solid black;
-	 border-collapse: collapse;
-}
+  table, tr, td {
+  	border: 1px solid black;
+  	 border-collapse: collapse;
+  }
 </style>
 </head>
 
