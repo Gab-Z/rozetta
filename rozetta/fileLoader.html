@@ -6,13 +6,7 @@
 <meta http-equiv="content-type" content="text/html;charset=utf8" />
 <link rel="stylesheet" type="text/css" href="css/flex.css">
 <link rel="stylesheet" type="text/css" href="css/main.css">
-<style type="text/css">
-#drop_zone {
-  border: 5px solid blue;
-  width:  200px;
-  height: 100px;
-}
-</style>
+
 <script>
 	/*!
 	Papa Parse
@@ -137,24 +131,37 @@ function nestedArrayToTable( arrayOb, parent, _margin ){
   var margin = _margin || 0,
       children = arrayOb.children,
       cont = parent.appendChild( document.createElement( "div" ) );
-  cont.style.marginLeft = margin+"px";
+//  cont.style.marginLeft = margin+"px";
+  cont.classList.add( "fcwscc", "childrenCont" );
   for ( var k in children ){
     var child = children[ k ],
-        cl = child.length;
+        cl = child.length,
+        childCont = cont.appendChild( document.createElement( "div" ) ),
+        childTitle = childCont.appendChild( document.createElement( "div" ) ),
+        childTitleSpan = childTitle.appendChild( document.createElement( "span" ) ),
+        childListCont = childCont.appendChild( document.createElement( "div" ) );
+    childCont.classList.add( "fcwsss", "childCont" );
+    childTitle.classList.add( "frwscc", "childtitle" );
+    childListCont.classList.add( "fcwsss", "childListCont" );
+    childTitle.textContent = k;
     for( var i = 0; i < cl; i++ ){
       var subChild = child[ i ],
-          subCont = cont.appendChild( document.createElement( "div" ) ),
-          titleCont = subCont.appendChild( document.createElement( "div" ) ),
+          subCont = childListCont.appendChild( document.createElement( "div" ) ),
           hasChild = false;
-      var typeSpan = titleCont.appendChild( document.createElement( "span" ) );
-      typeSpan.textContent = k.toUpperCase();
+      subCont.classList.add( "frwscc", "childRow" );
       for( var kb in subChild){
         if( kb == "children" ){
           hasChild = true;
           continue;
         }else{
-          var infoSpan = titleCont.appendChild( document.createElement( "span" ) );
-          infoSpan.textContent = kb+" : "+ subChild[ kb ];
+          var propCont = subCont.appendChild( document.createElement( "div" ) ),
+              propNameSpan = propCont.appendChild( document.createElement( "span" ) ),
+              spaceSpan = propCont.appendChild( document.createElement( "span" ) ),
+              propValueSpan = propCont.appendChild( document.createElement( "span" ) );
+          propCont.classList.add( "frwscc", "propCont" );
+          propNameSpan.textContent = kb;
+          spaceSpan.textContent = " : ";
+          propValueSpan.textContent = subChild[ kb ];
         }
       }
       if( hasChild ){
@@ -500,12 +507,7 @@ function parseOb( ob ){
 }
 </script>
 
-<style type="text/css">
-  table, tr, td {
-  	border: 1px solid black;
-  	 border-collapse: collapse;
-  }
-</style>
+
 </head>
 
 <body>

@@ -1,0 +1,39 @@
+#drop_zone {
+  border: 5px solid blue;
+  width:  200px;
+  height: 100px;
+}
+table, tr, td {
+	border: 1px solid black;
+	 border-collapse: collapse;
+}
+html, body {
+  min-width: 100%;
+  min-height: 100%;
+}
+.childrenCont{
+  border: 1px solid #9dd6db;
+}
+.childCont{
+
+}
+.childtitle{
+
+}
+.childtitle span{
+
+}
+.childListCont{
+  margin-left:25px;
+}
+.childRow{
+
+}
+.propCont{
+  margin-left:20px;
+  margin-right:20px;
+}
+.propCont span{
+  margin-left:2px;
+  margin-right:2px;
+}
