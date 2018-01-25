@@ -22,7 +22,7 @@ var regexIndexOf = function(str, regex, startpos) {
 var form,
 	fileInput;
 window.onload=function(){
-	form = document.getElementById("form");
+  form = document.getElementById("form");
 	fileInput = document.getElementById("fileInput");
 	fileInput.addEventListener('change',function(e){
 		var input = e.target,
@@ -83,6 +83,60 @@ var mKeys = {
     }
   }
 }
+var mRenderers = {
+  "Action locale": function( parent, srcOb ){
+    parent.appendChild( domDivSpan( ( srcOb.nom || "NR" ) + ", " + ( srcOb[ "assigné à" ] || "NR" ) ) );
+    //parent.appendChild( domDivSpan( srcOb[ "assigné à" ] || "NR" ) );
+  },
+  "Jeune": function( parent, srcOb ){
+    var row = parent.appendChild( domEl( "div", "frnsss"));
+    row.appendChild( domDivSpan( ( srcOb[ "civilité:" ] || "" ) + " " + ( srcOb[ "nom" ] || "" ) + " " + ( srcOb[ "prénom" ] || "" ), "propCont"  ) );
+    row.appendChild( domDivSpan( ( srcOb[ "classe" ] || "" ) ) );
+    row.appendChild(  domDivSpan( srcOb[ "établissement scolaire" ] ? " - " + srcOb[ "établissement scolaire" ] : "", "propCont" ) );
+    row.appendChild(  domDivSpan( srcOb[ "date de naissance:" ] ? "date de naissance: " + srcOb[ "date de naissance:" ] : "", "propCont" ) );
+  },
+  "Repérant": function( parent, srcOb ){
+    var row = parent.appendChild( domEl( "div", "frnsss"));
+    row.appendChild( domDivSpan( ( srcOb[ "nom" ] || "" ), "propCont"  ) );
+    row.appendChild( domDivSpan( ( srcOb[ "prénom" ] || "" ), "propCont"  ) );
+    row.appendChild( domDivSpan( srcOb[ "fonction" ] ? " - " + srcOb[ "fonction" ] : "", "propCont" ) );
+  },
+  "Binôme": function( parent, srcOb ){
+    parent.appendChild( domDivSpan( ( srcOb[ "statut" ] || "" ), "propCont"  ) );
+  },
+  "Engagé": function( parent, srcOb ){
+    var row = parent.appendChild( domEl( "div", "frnsss"));
+    row.appendChild( domDivSpan(   ( srcOb[ "civilité:" ] || "" )
+                                    + " "
+                                    + ( srcOb[ "nom" ] || "" )
+                                    + " "
+                                    + ( srcOb[ "prénom:" ] || "" )
+                                    , "propCont"  ) );
+    if( srcOb[ "Volontaire pour l AFEV" ] && srcOb[ "Volontaire pour l AFEV" ] == "Oui") row.appendChild( domDivSpan( "Volontaire", "propCont"  ) );
+    if( srcOb[ "Est Kapseur" ] && srcOb[ "Est Kapseur" ] == "Oui" ) row.appendChild( domDivSpan( "Kapseur", "propCont"  ) );
+  },
+  "Suivi": function( parent, srcOb ){
+    var wrapper = parent.appendChild( domEl( "div", "frnsss", "boxSuivi") ),
+        metaCont = wrapper.appendChild( domEl( "div", "fcnsss") ),
+        textCont = wrapper.appendChild( domEl( "div", "fcnsss", "boxDescriptionSuivi") );
+    if( srcOb[ "Intitulé du suivi" ] ) metaCont.appendChild( domDivSpan( srcOb[ "Intitulé du suivi" ] ) );
+    if( srcOb[ "Interlocuteur" ] ) metaCont.appendChild( domDivSpan( "Interlocuteur : " + srcOb[ "Interlocuteur" ] ) );
+    if( srcOb[ "Date du suivi" ] ) metaCont.appendChild( domDivSpan( "Date du suivi : " + srcOb[ "Date du suivi" ] ) );
+    if( srcOb[ "Période concernée - Date de fin" ] ) metaCont.appendChild( domDivSpan( "Fin période : " + srcOb[ "Période concernée - Date de fin" ] ) );
+
+    if( srcOb[ "Nb séances" ] ) metaCont.appendChild( domDivSpan( "Nb séances : " + srcOb[ "Nb séances" ] ) );
+    if( srcOb[ "Nb annul par le bénévole" ] ) metaCont.appendChild( domDivSpan( "Nb annul par le bénévole : " + srcOb[ "Nb annul par le bénévole" ] ) );
+    if( srcOb[ "Nb annul par la famille" ] ) metaCont.appendChild( domDivSpan( "Nb annul par la famille : " + srcOb[ "Nb annul par la famille" ] ) );
+    if( srcOb[ "Nb heures totales en accompagnement" ] ) metaCont.appendChild( domDivSpan( "Nb heures totales en accompagnement : " + srcOb[ "Nb heures totales en accompagnement" ] ) );
+
+    if(srcOb[ "Description" ] ){
+      var titleCt = textCont.appendChild( domDivSpan( "Description : ", "frnscc" ) ),
+          txtCt = textCont.appendChild( domEl( "div", "frwsss" ) ),
+          txtP = txtCt.appendChild( domEl( "p", ) );
+      txtP.textContent = srcOb[ "Description" ];
+    }
+  }
+}
 
 function getnbAIbyAction( array ){
   var ret = {},
@@ -117,7 +171,7 @@ function nestArray( array, keys ){
   			objectName = head.slice( tagStart, tagEnd - tagStart + 1 ),
   			propertyName = head.slice( titleStart );
 		headerRef.push( { objectName: objectName, propertyName: propertyName } );
-    if( ! refs[ objectName ] )refs[ objectName ] = {};
+    if( ! refs[ objectName ] ) refs[ objectName ] = {};
     refs[ objectName ][ propertyName ] = i;
 	};
   var ret = {};
@@ -127,48 +181,185 @@ function nestArray( array, keys ){
   }
   return ret;
 };
-function nestedArrayToTable( arrayOb, parent, _margin ){
-  var margin = _margin || 0,
-      children = arrayOb.children,
-      cont = parent.appendChild( document.createElement( "div" ) );
-//  cont.style.marginLeft = margin+"px";
-  cont.classList.add( "fcwscc", "childrenCont" );
-  for ( var k in children ){
-    var child = children[ k ],
-        cl = child.length,
-        childCont = cont.appendChild( document.createElement( "div" ) ),
-        childTitle = childCont.appendChild( document.createElement( "div" ) ),
-        childTitleSpan = childTitle.appendChild( document.createElement( "span" ) ),
-        childListCont = childCont.appendChild( document.createElement( "div" ) );
-    childCont.classList.add( "fcwsss", "childCont" );
-    childTitle.classList.add( "frwscc", "childtitle" );
-    childListCont.classList.add( "fcwsss", "childListCont" );
-    childTitle.textContent = k;
-    for( var i = 0; i < cl; i++ ){
-      var subChild = child[ i ],
-          subCont = childListCont.appendChild( document.createElement( "div" ) ),
-          hasChild = false;
-      subCont.classList.add( "frwscc", "childRow" );
-      for( var kb in subChild){
-        if( kb == "children" ){
-          hasChild = true;
-          continue;
-        }else{
-          var propCont = subCont.appendChild( document.createElement( "div" ) ),
-              propNameSpan = propCont.appendChild( document.createElement( "span" ) ),
-              spaceSpan = propCont.appendChild( document.createElement( "span" ) ),
-              propValueSpan = propCont.appendChild( document.createElement( "span" ) );
-          propCont.classList.add( "frwscc", "propCont" );
-          propNameSpan.textContent = kb;
-          spaceSpan.textContent = " : ";
-          propValueSpan.textContent = subChild[ kb ];
+function nestedArrayToTable( arrayOb, parent, _renderers ){
+  var children = arrayOb.children,
+      deepness = depthOf( children ),
+      cont = parent.appendChild( domDiv( "container", "frnsss" ) );
+  for( var nbCol = 0; nbCol < deepness; nbCol++ ){
+    var col = cont.appendChild( domDiv( "columnOut", "fcnsss" ) );
+  }
+  if( deepness ) drawCol( 1, arrayOb )
+};
+function drawCol( deepness, arrayOb ){
+  var cont = document.querySelector( ".container" ),
+      col = cont.childNodes[ deepness - 1 ],
+      propNames = getPropNames( deepness, arrayOb );
+  col.innerHTML = "";
+  var colIn = col.appendChild( domEl( "div", "columnIn", "fcnsss" ));
+  propNames.forEach( colName => {
+    var colWrapper = colIn.appendChild( domEl( "div", "colSection", "fcnsss" )),
+        colTitle = colWrapper.appendChild( domDivSpan( colName, "colPropName", "fcnscc" )),
+        propWrapper = colWrapper.appendChild( domEl( "div", "colPropCont", "fcnsss", "wrapperFor" + colNameToId( colName ) ));
+  });
+  var props = getProps( deepness, arrayOb );
+  props.forEach( prop => {
+    //alert(JSON.stringify( prop))
+    propNames.forEach( propName =>{
+      if( prop[ propName ] ){
+        var wrapper = colIn.querySelector( "." + "wrapperFor" + colNameToId( propName ) ),
+            propDiv = wrapper.appendChild( domDiv( "propDiv", "fcwsss" ) ),
+            childOb = prop[ propName ];
+        for( var k in childOb ){
+          if( k == "children" ) continue;
+          var box = propDiv.appendChild( domDivSpan( k + " : " + childOb[ k ], "propRow", "frwscc" ) );
         }
       }
-      if( hasChild ){
-        nestedArrayToTable( subChild, subCont, margin + 30 )
+    });
+  });
+};
+const colIds = [];
+function colNameToId( colName ){
+  if( colIds.indexOf( colName ) < 0 ) colIds.push( colName );
+  return colIds.indexOf( colName );
+};
+function getProps( deepness, arrayOb, _depth ){
+  var props = [];
+      depth = ( _depth || 0 ) + 1,
+      children = arrayOb.children;
+  if( depth == deepness ){
+    for( var k in children ){
+      var childAr = children[ k ];
+      childAr.forEach( childob =>{
+        var ob = {};
+        ob[ k ] = childob;
+        props.push( ob );
+      })
+    }
+  }else{
+    for( var k in children ){
+      var childrenAr = children[ k ],
+          l = childrenAr.length;
+      for( var i = 0; i < l; i++ ){
+        var child = childrenAr[ i ];
+        if( !child.hasOwnProperty( "children" ) )continue;
+        props = getProps( deepness, child, depth );
       }
     }
   }
+  return props;
+}
+function getPropNames( deepness, arrayOb, _depth ){
+  var propNames = [],
+      depth = ( _depth || 0 ) + 1,
+      children = arrayOb.children;
+  if( depth == deepness ){
+    for( var k in children ){
+      propNames.push( k );
+    }
+  }else{
+    for( var k in children ){
+      var childrenAr = children[ k ],
+          l = childrenAr.length;
+      for( var i = 0; i < l; i++ ){
+        var child = childrenAr[ i ];
+        if( !child.hasOwnProperty( "children" ) )continue;
+        propNames = getPropNames( deepness, child, depth );
+      }
+    }
+  }
+  return propNames;
+};
+function depthOf( children ){
+  var level = 1;
+//  alert(JSON.stringify(children))
+    for( var k in children ){
+      var childrenAr = children[ k ],
+          l = childrenAr.length;
+      for( var i = 0; i < l; i++ ){
+        var child = childrenAr[ i ];
+        if( !child.hasOwnProperty( "children" ) )continue;
+        var depth = depthOf( child.children ) + 1;
+        level = Math.max(depth, level);
+      }
+    };
+  return level;
+};
+function nestedArrayToTable2( arrayOb, parent, _renderers ){
+  var children = arrayOb.children,
+      cont = parent.appendChild( domDiv( "container" ) ),
+      renderers = _renderers || {};
+  for( var k in children ){
+    var childArray = children[ k ],
+        cl = childArray.length,
+        ul = cont.appendChild( document.createElement( "ul" ) );
+    for( var i = 0; i < cl; i++ ){
+      var subChild = childArray[ i ],
+          hasChild = false,
+          li = ul.appendChild( domEl( "li", "fcwsss") ),
+          objectRow = li.appendChild( domEl( "div", "frnsss", "objectRow") ),
+          objectName = objectRow.appendChild( domDivSpan( k + " : ", "objectName", "frnscc" ) ),
+          objectProps = objectRow.appendChild( domEl( "div", "fcwsss") );
+      if( renderers[ k ] ){
+        if( subChild.children ) hasChild = true;
+        renderers[ k ]( objectProps, subChild );
+      }else{
+        for( var kb in subChild){
+          if( kb == "children" ){
+            hasChild = true;
+            continue;
+          }else if( ignoredProps.indexOf( kb ) < 0 ){
+            var propCont = objectProps.appendChild( domDivSpan( kb + " : " + subChild[ kb ], "propBox" ) );
+          }
+        }
+      }
+
+      if( hasChild ){
+        nestedArrayToTable( subChild, objectProps, renderers )
+      }
+
+    }
+  }
+};
+const ignoredProps = [
+  "ID", "Année scolaire", "Créé par", "Modifié par", "année scolaire"
+];
+function clickTreeHandler( e ){
+  var target = e.target;
+  if( target.classList.contains( "foldBut" ) ){
+    target.parentNode.classList.toggle( "folded" )
+  }else if( target.parentNode.classList.contains( "foldBut" ) ){
+    target.parentNode.parentNode.classList.toggle( "folded" )
+  }
+}
+function domEl( tag /* , class1, class2, ... */ ){
+  var args = domEl.arguments,
+      l = args.length,
+      el = document.createElement( tag );
+  for( var i = 1; i < l; i++ ){
+    el.classList.add(  args[ i ] );
+  }
+  return el;
+};
+function domDiv(){
+  var args = domDiv.arguments,
+      l = args.length,
+      div = document.createElement( "div" );
+  for( var i = 0; i < l; i++ ){
+    div.classList.add(  args[ i ] );
+  }
+  return div;
+}
+function domDivSpan(){
+  var args = domDivSpan.arguments,
+      value = args[ 0 ],
+      l = args.length,
+      div = document.createElement( "div" ),
+      span = div.appendChild( document.createElement( "span" ) );
+  span.textContent = value;
+  for( var i = 1; i < l; i++ ){
+    div.classList.add(  args[ i ] );
+  }
+  return div;
 }
 function getChildren( keys, array, ret, refs ){
   var al = array.length,
@@ -225,7 +416,9 @@ function rowToOb( row, keys, refs, retOb ){
     retOb.children[ z ] = retOb.children[ z ]  || [];
     var ret = retOb.children[ z ];
     for( var p in ref ){
-      ob[ p ] = row[ ref[ p ] ];
+      if( !isEmptyCell( row[ ref[ p ] ] )){
+        ob[ p ] = row[ ref[ p ] ];
+      }
     };
     var testDoublon = checkDoublon( ret, ob )
     if( ! testDoublon ){
@@ -366,17 +559,31 @@ function loadFormCallback ( e ){
       ar = Papa.parse( str ).data,
       arl = ar.length,
       newAr = ar.map( function( row ){
+
         newRow = row.map( function( cell ){
           return cell.replace( /\&#039;/g, "'" )
         }).filter( ( cell, i, ar ) => (  i < (ar.length - 1) ) );
+
         return newRow
+
+      }).filter( (row, i, ar ) => {
+        var hasData = false,
+            l = row.length;
+        for( var j = 0; j < l; j++ ){
+          if( [ "", "-", "^", "^^", "0"].indexOf( row[ j ] ) < 0 ){
+            hasData = true;
+            break;
+          }
+        }
+        return hasData;
       });
+
 
   //arrayToTable(newAr)
   //var compiledAr = compileArray( newAr )
   var nested = nestArray( newAr, mKeys );
   //console.log( JSON.stringify( nested ))
-  nestedArrayToTable( nested, document.body )
+  nestedArrayToTable( nested, document.body, mRenderers )
 
 
   //  var ct = document.body.appendChild(document.createElement("div"))
@@ -386,6 +593,14 @@ function loadFormCallback ( e ){
       treeOb = compiledArrayToTree( compiledAr, keysParAction.root );
   parseOb(treeOb)
   */
+}
+const emptyValues = [ "", "-", "^", "^^"]
+function isEmptyCell( cell ){
+  if( emptyValues.indexOf( cell ) > -1 ){
+     return true;
+  }else{
+    return false;
+  }
 }
 function drop_handler(ev) {
   console.log("Drop");

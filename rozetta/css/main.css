@@ -7,33 +7,18 @@ table, tr, td {
 	border: 1px solid black;
 	 border-collapse: collapse;
 }
-html, body {
-  min-width: 100%;
-  min-height: 100%;
+html, body, .container {
+  width: 100%;
+  height: 100%;
+  margin : 0;
+  padding: 0;
 }
-.childrenCont{
-  border: 1px solid #9dd6db;
-}
-.childCont{
+.container{
 
 }
-.childtitle{
-
-}
-.childtitle span{
-
-}
-.childListCont{
-  margin-left:25px;
-}
-.childRow{
-
-}
-.propCont{
-  margin-left:20px;
-  margin-right:20px;
-}
-.propCont span{
-  margin-left:2px;
-  margin-right:2px;
+.container > .columnOut{
+  flex: 1 1 0;
+  border: 1px solid black;
+  min-height:100%;
+  max-height:100%;
 }

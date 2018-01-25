@@ -1,0 +1,130 @@
+#drop_zone {
+  border: 5px solid blue;
+  width:  200px;
+  height: 100px;
+}
+table, tr, td {
+	border: 1px solid black;
+	 border-collapse: collapse;
+}
+html, body {
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.childrenCont{
+  border: 1px solid #9dd6db;
+  margin-left:25px;
+  max-width:100%;
+}
+.childCont{
+  max-width: 100%;
+}
+.childtitle{
+  flex: 1 1 auto;
+  position: relative;
+}
+.childtitle span{
+  white-space:nowrap;
+}
+.childListCont{
+  max-width: calc( 100% - 25px );
+}
+.childRow{
+  max-width: 100%;
+}
+.propCont{
+  margin-right:20px;
+}
+.propCont span{
+  margin-left:2px;
+  margin-right:2px;
+}
+.propsCont{
+  flex: 0 1 auto;
+}
+.borderCont{
+  min-height : 50%;
+  max-height : 50%;
+  width: 25px;
+  border-bottom: 1px solid black;
+  border-left: 1px solid black;
+  margin-right : 5px;
+  margin-left:5px;
+  flex: 1 1 auto;
+}
+
+
+.container, .container ul, .container li {
+     position: relative;
+}
+.container ul {
+    list-style: none;
+    padding-left: 32px;
+}
+.container li::before, .container li::after {
+    content: "";
+    position: absolute;
+    left: -12px;
+}
+.container li::before {
+    border-top: 1px solid #000;
+    top: 19px;
+    width: 8px;
+    height: 0;
+}
+.container li::after {
+    border-left: 1px solid #000;
+    height: 100%;
+    width: 0px;
+    top: 2px;
+}
+
+.container > ul:last-child > li:last-child::after {
+    height: 18px;
+}
+
+.objectName span{
+  margin-right: 10px;
+}
+
+.folded .container{
+  display: none;
+}
+
+.foldBut span:before{
+  content: "▼";
+}
+.folded .foldBut span:before{
+  content: "▶";
+}
+
+ul,
+.objectRow,
+.container,
+.container *{
+  max-width:100%;
+}
+.propBox{
+  flex: 1 1 0;
+}
+body > *{
+  max-width:90%;
+}
+.objectName span{
+  white-space:nowrap;
+}
+.propCont{
+  margin-right: 10px;
+}
+.objectRow{
+  margin-top: 10px;
+}
+.boxSuivi{
+  border-bottom: 1px solid black;
+}
+.boxDescriptionSuivi{
+  min-height: 100%;
+  border-left: 1px solid black;
+  padding-left: 5px;
+}
