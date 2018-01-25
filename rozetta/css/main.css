@@ -21,4 +21,18 @@ html, body, .container {
   border: 1px solid black;
   min-height:100%;
   max-height:100%;
+  overflow-y: scroll;
+}
+.container > .columnOut > .columnIn,
+.container > .columnOut > .columnIn > .colSection,
+.container > .columnOut > .columnIn > .colSection > .colPropName,
+.container > .columnOut > .columnIn > .colSection > .colPropCont,
+.container > .columnOut > .columnIn > .colSection > .colPropCont > .propDiv{
+  min-width: 100%;
+  max-width: 100%;
+}
+.container > .columnOut > .columnIn > .colSection > .colPropName,
+.container > .columnOut > .columnIn > .colSection > .colPropCont > .propDiv{
+  padding:3px;
+  border-bottom: 1px solid #000000;
 }
