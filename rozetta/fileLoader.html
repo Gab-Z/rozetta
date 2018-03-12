@@ -5,7 +5,7 @@
 <title>sans titre</title>
 <meta http-equiv="content-type" content="text/html;charset=utf8" />
 <link rel="stylesheet" type="text/css" href="css/flex.css">
-<link rel="stylesheet" type="text/css" href="css/main.css">
+<link rel="stylesheet" type="text/css" href="css/main2.css">
 
 <script>
 	/*!
@@ -181,7 +181,7 @@ function nestArray( array, keys ){
   }
   return ret;
 };
-function nestedArrayToTable( arrayOb, parent, _renderers ){
+function nestedArrayToTable2( arrayOb, parent, _renderers ){
   var children = arrayOb.children,
       deepness = depthOf( children ),
       cont = parent.appendChild( domDiv( "container", "frnsss" ) );
@@ -284,7 +284,7 @@ function depthOf( children ){
     };
   return level;
 };
-function nestedArrayToTable2( arrayOb, parent, _renderers ){
+function nestedArrayToTable( arrayOb, parent, _renderers ){
   var children = arrayOb.children,
       cont = parent.appendChild( domDiv( "container" ) ),
       renderers = _renderers || {};
