@@ -1,14 +1,26 @@
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
+const path = require('path')
+const url = require('url')
+const bindings = require("bindings")
+const whoami = bindings("module")
+const ipc = electron.ipcMain;
 
 let mainWindow;
 
 function createWindow () {
 
-  mainWindow = new BrowserWindow({width: 1800, height: 1200});
+  mainWindow = new BrowserWindow({width: 500, height: 300});
+  // Open the DevTools.
+  mainWindow.webContents.openDevTools();
+//  mainWindow.loadURL(`file://${__dirname}/index.html`);
 
-  mainWindow.loadURL(`file://${__dirname}/index.html`);
+  mainWindow.loadURL(url.format({
+        pathname: path.join(__dirname, 'index.html'),
+        protocol: 'file:',
+        slashes: true
+      }))
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -28,3 +40,9 @@ app.on('activate', () => {
     createWindow();
   }
 });
+console.log( whoami.Increment(1) )
+//console.log( "init array : " + whoami.initArray(10,10))
+ipc.on('bodyClick', () => {
+    console.log( whoami.Increment(1) )
+});
+console.log( "count array : " + whoami.GetArrayLength())
