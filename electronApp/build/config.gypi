@@ -29,7 +29,7 @@
     "node_shared_cares": "true",
     "node_shared_http_parser": "true",
     "node_shared_libuv": "true",
-    "node_shared_nghttp2": "false",
+    "node_shared_nghttp2": "true",
     "node_shared_openssl": "true",
     "node_shared_zlib": "true",
     "node_tag": "",

@@ -188,7 +188,7 @@ function pushIfNew( arr, pt ){
   }
   if( isNew ) arr.push( pt );
 }
-whoami.initArray(defaults.mapW,defaults.mapH);
+whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax );
 var map = whoami.getArray();//random2dMap(),
 alert(map.length)
 //var    pathMap = fillMap( map, 2, 2 ),
