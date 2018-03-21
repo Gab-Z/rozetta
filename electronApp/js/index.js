@@ -192,19 +192,9 @@ whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax
 var map = whoami.getArray();//random2dMap(),
 
 var pathMap = whoami.getFilledMap( 2, 2 );
-alert(map.length + " / " + pathMap.length );
 var mainCont = document.getElementById( "mainCont" ),
     cv = mainCont.appendChild( document.createElement( "canvas" ) ),
     ctx = cv.getContext( "2d" );
-
-  console.log( pathMap[2] )
-    console.log( pathMap[100] )
-      console.log( pathMap[358] )
-        console.log( pathMap[691] )
-          console.log( pathMap[809] )
-  console.log( pathMap[999] )
-
-
 cv.width = defaults.mapW * defaults.tileSize;
 cv.height = defaults.mapH * defaults.tileSize;
 cv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
@@ -220,7 +210,7 @@ map.forEach( ( cell, i, _map ) => {
   ctx.fillRect( pos[0] * defaults.tileSize, pos[1] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
 
 })
-/*
+
 var pathCv = mainCont.appendChild( document.createElement( "canvas" ) ),
     pathCtx = pathCv.getContext( "2d" );
 pathCv.id = "pathCv";
@@ -232,9 +222,23 @@ pathCv.style.position = "fixed";
 pathCv.style.left = 0;
 pathCv.style.top = 0;
 
-//pathCv.addEventListener( "mousemove", track );
+pathCv.addEventListener( "mousemove", track );
 const turnCoords = [ -1,0,   -1,-1,   0,-1,    1,-1,    1,0,   1,1,   0,1,   -1,1 ];
+
+console.log("val 2,2 : "+ pathMap[ to1d(2,2) ] )
+console.log("val 2,1 : "+ pathMap[ to1d(2,1) ] )
+console.log("val 2,3 : "+ pathMap[ to1d(2,3) ] )
+console.log("val 1,2 : "+ pathMap[ to1d(1,2) ] )
+console.log("val 1,1 : "+ pathMap[ to1d(1,1) ] )
+console.log("val 1,3 : "+ pathMap[ to1d(1,3) ] )
+console.log("val 3,2 : "+ pathMap[ to1d(3,2) ] )
+console.log("val 3,1 : "+ pathMap[ to1d(3,1) ] )
+console.log("val 3,3 : "+ pathMap[ to1d(3,3) ] )
+
+
 function track( e ){
+
+  console.log("track : "+e.clientX)
   let sx = Math.floor( e.clientX / defaults.tileSize ),
       sy = Math.floor( e.clientY / defaults.tileSize ),
       pt1d = to1d( sx, sy );
@@ -244,31 +248,49 @@ function track( e ){
       ctx = cv.getContext( "2d" ),
       ret = [ [ sx, sy ] ],
       end = false;
+      console.log( "x: "+sx+", y: "+sy)
+
+  if( sx < 0 || sy < 0 || sx >= maxX || sy >= maxY)return false;
   for( let i = 0; end == false; i++ ){
+
     let coords = ret[ i ],
         x = coords[ 0 ],
         y = coords[ 1 ],
         time = Infinity,
         target = false;
-      for( let n = 0; n < 8; n++ ){
-        let tx = x + turnCoords[ n * 2 ],
-            ty = y + turnCoords[ n * 2 + 1],
-            t1d = to1d( tx, ty );
-        if( tx < 0 || ty < 0 || tx > maxX || ty > maxY ) continue;
-        if( pathMap[ t1d ] < time ){
-          time = pathMap[ t1d ];
-          target = [ tx, ty ];
-        }
+    for( let n = 0; n < 8; n++ ){
+      let tx = x + turnCoords[ n * 2 ],
+          ty = y + turnCoords[ n * 2 + 1],
+
+          t1d = to1d( tx, ty );
+
+//      if(tx == 2 && ty == 2){
+//        alert("start: "+x+", "+y+", time: "+time+", target: "+pathMap[ t1d ] )
+//      }
+
+      if( tx < 0 || ty < 0 || tx >= maxX || ty >= maxY ) continue;
+      if( pathMap[ t1d ] < time ){
+        time = pathMap[ t1d ];
+        target = [ tx, ty ];
+        //  console.log( "target : "+tx+", "+ty)
       }
-      ret.push( target );
-      if( target[ 0 ] == 2 && target[ 1 ] == 2 ) end = true;
+    }
+
+    console.log( "target 2 : "+target)
+    ret.push( target );
+    if( target[0] == 2 && target[1] == 2 ){
+      alert("end")
+      end = true;
+    }
   }
-  ctx.clearRect( 0,0,cv.width,cv.height);
+//  ctx.clearRect( 0,0,cv.width,cv.height);
+  alert(ret.length)
+  console.log( ret)
   ret.forEach( cell => {
     ctx.fillRect( cell[ 0 ] * defaults.tileSize, cell[ 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize )
   })
 }
-*/
+
 document.body.addEventListener( "click", e => {
   ipc.send('bodyClick');
 })

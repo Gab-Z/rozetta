@@ -85,41 +85,42 @@ class Map{
         int y = searchList[ i * 2 + 1 ];
         int pos = to1d( x, y );
         int value = paths[ id ][ pos ];
-        int tp;
         if( x > 0 ){
           if( y > 0){
-            testTile( x, y, -1, -1, value, id, newList );
+            newList =  testTile( x, y, -1, -1, value, id, newList );
           }
-          testTile( x, y, -1, 0, value, id, newList );
+          newList = testTile( x, y, -1, 0, value, id, newList );
           if( y + 1 < arrH ){
-            testTile( x, y, -1, 1, value, id, newList );
+            newList =  testTile( x, y, -1, 1, value, id, newList );
           }
         }
         //MIDDLE
         if( y > 0 ){
-          testTile( x, y, 0, -1, value, id, newList );
+          newList =  testTile( x, y, 0, -1, value, id, newList );
         }
         if( y + 1 < arrH ){
-          testTile( x, y, 0, 1, value, id, newList );
+          newList =  testTile( x, y, 0, 1, value, id, newList );
         }
         //RIGHT
         if( x + 1 < arrW ){
           if( y > 0){
-            testTile( x, y, 1, -1, value, id, newList );
+            newList =  testTile( x, y, 1, -1, value, id, newList );
           }
-          testTile( x, y, 1, 0, value, id, newList );
+          newList =  testTile( x, y, 1, 0, value, id, newList );
           if( y + 1 < arrH ){
-            testTile( x, y, 1, 1, value, id, newList );
+            newList =  testTile( x, y, 1, 1, value, id, newList );
           }
         }
       }
       return newList;
     }
 
-    void testTile( int srcX, int srcY, int offsetX, int offsetY, int value, int id, std::vector<int> _list ){
+    std::vector<int>  testTile( int srcX, int srcY, int offsetX, int offsetY, int value, int id, std::vector<int> _list ){
       int tX = srcX + offsetX;
       int tY = srcY + offsetY;
       int pos1d = to1d( tX, tY );
+      std::vector<int> newList;
+      newList = _list;
       int retTarget = paths[id][ pos1d ];
       int srcTarget = arr[ pos1d ];
 
@@ -136,10 +137,11 @@ class Map{
           }
         }
         if( isNew == true ){
-          _list.push_back( tX );
-          _list.push_back( tY );
+          newList.push_back( tX );
+          newList.push_back( tY );
         }
       }
+      return newList;
     }
 
     private:
