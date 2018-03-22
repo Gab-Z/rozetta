@@ -68,6 +68,7 @@ class Map{
       for ( int i = 0; i < arrLength; i++ ) {
         paths[ p1d ].push_back( -1 );
       };
+      paths[ p1d ][ p1d ] = arr[ p1d ];
       std::vector<int> searchList;
       searchList.push_back( x );
       searchList.push_back( y );

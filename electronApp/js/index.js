@@ -3,12 +3,14 @@ const bindings = require("bindings");
 const whoami = bindings("module");
 
 const defaults = {
-  mapW:100,
-  mapH:100,
+  mapW:200,
+  mapH:200,
   depMin:1,
   depMax:10,
-  tileSize:10
+  tileSize:5,
+  start:{ x: 2, y: 2 }
 }
+var testJs = false;
 function to1d( tx, ty ){
   return ty * defaults.mapW + tx;
 }
@@ -25,7 +27,7 @@ function random2dMap( w = defaults.mapW, h = defaults.mapH, min = defaults.depMi
   for( let y = 0; y < h; y++ ){
     let xArr = [];
     for( let x = 0; x < w; x++ ){
-      xArr.push( min + Math.random() * delta )
+      xArr.push( Math.floor( min + Math.random() * delta ) );
     }
     yArr.push( xArr );
   }
@@ -45,7 +47,6 @@ function fillMap( map, x, y ){
     searchList = fillMapStep( map, retMap, searchList );
     if( searchList.length == 0 ) end = true;
   }
-
   return retMap;
 }
 
@@ -188,12 +189,49 @@ function pushIfNew( arr, pt ){
   }
   if( isNew ) arr.push( pt );
 }
-whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax );
-var map = whoami.getArray();//random2dMap(),
 
-var pathMap = whoami.getFilledMap( 2, 2 );
+function mapToTable(map){
+  var table = document.createElement("table"),
+      tbody = table.appendChild( document.createElement("tbody") );
+  for( let y = 0; y < defaults.mapH; y++ ){
+    var row = tbody.appendChild( document.createElement("tr") );
+    for(let x = 0; x < defaults.mapW; x++ ){
+      let cell = row.appendChild( document.createElement("td") );
+      cell.textContent = map[ to1d( x, y ) ];
+    }
+  }
+  return table;
+}
+function map2dToTable(_map){
+  var table = document.createElement("table"),
+      tbody = table.appendChild( document.createElement("tbody") );
+  for( let y = 0; y < defaults.mapH; y++ ){
+    var row = tbody.appendChild( document.createElement("tr") );
+    for(let x = 0; x < defaults.mapW; x++ ){
+      let cell = row.appendChild( document.createElement("td") );
+      cell.textContent = _map[ y ][x];
+    }
+  }
+  return table;
+}
+var startTime = Date.now();
+
+var map,
+    pathMap;
+
+if( testJs ){
+  var map = random2dMap(),
+      pathMap = fillMap( map, defaults.start.x, defaults.start.y );
+}else{
+  whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax );
+  map = whoami.getArray();//random2dMap(),
+  pathMap = whoami.getFilledMap( defaults.start.x, defaults.start.y );
+}
+alert( ( Date.now() - startTime ) / 1000 );
+document.body.appendChild(map2dToTable(pathMap))
+
 var mainCont = document.getElementById( "mainCont" ),
-    cv = mainCont.appendChild( document.createElement( "canvas" ) ),
+    cv =  mainCont.appendChild( document.createElement( "canvas" ) ),
     ctx = cv.getContext( "2d" );
 cv.width = defaults.mapW * defaults.tileSize;
 cv.height = defaults.mapH * defaults.tileSize;
@@ -202,57 +240,64 @@ cv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
 cv.style.position = "fixed";
 cv.style.left = 0;
 cv.style.top = 0;
-map.forEach( ( cell, i, _map ) => {
-  let pos = to2d( i );
-  let hue = 140 - ( ( ( cell - defaults.depMin ) / ( defaults.depMax - defaults.depMin) ) * 140 );
-  ctx.fillStyle = 'hsl('+ hue +',100%,50%)';
-//  alert( pos[0] * defaults.tileSize+","+ pos[1] * defaults.tileSize)
-  ctx.fillRect( pos[0] * defaults.tileSize, pos[1] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
+cv.style.zIndex = 10;
+if(testJs){
+  map.forEach( ( row, y ) => {
+    row.forEach( ( cell, i ) => {
+      let hue = 140 - ( ( ( cell - defaults.depMin ) / ( defaults.depMax - defaults.depMin) ) * 140 );
+      ctx.fillStyle = 'hsl('+ hue +',100%,50%)';
+      //  alert( pos[0] * defaults.tileSize+","+ pos[1] * defaults.tileSize)
+      ctx.fillRect( i * defaults.tileSize, y * defaults.tileSize, defaults.tileSize, defaults.tileSize );
 
-})
+    })
+  });
+}else{
+  map.forEach( ( cell, i, _map ) => {
+    let pos = to2d( i );
+    let hue = 140 - ( ( ( cell - defaults.depMin ) / ( defaults.depMax - defaults.depMin) ) * 140 );
+    ctx.fillStyle = 'hsl('+ hue +',100%,50%)';
+    //  alert( pos[0] * defaults.tileSize+","+ pos[1] * defaults.tileSize)
+    ctx.fillRect( pos[0] * defaults.tileSize, pos[1] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
+
+  });
+}
+
 
 var pathCv = mainCont.appendChild( document.createElement( "canvas" ) ),
     pathCtx = pathCv.getContext( "2d" );
+pathCv.style.zIndex = 20;
 pathCv.id = "pathCv";
-pathCv.width = cv.style.width
-pathCv.height = cv.style.height
+pathCv.width = defaults.mapW * defaults.tileSize;
+pathCv.height = defaults.mapH * defaults.tileSize;
 pathCv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
 pathCv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
 pathCv.style.position = "fixed";
 pathCv.style.left = 0;
 pathCv.style.top = 0;
+pathCtx.fillStyle = "black";
 
-pathCv.addEventListener( "mousemove", track );
+if(testJs){
+  pathCv.addEventListener( "mousemove", trackJs );
+}else{
+  pathCv.addEventListener( "mousemove", track );
+}
+
 const turnCoords = [ -1,0,   -1,-1,   0,-1,    1,-1,    1,0,   1,1,   0,1,   -1,1 ];
-
-console.log("val 2,2 : "+ pathMap[ to1d(2,2) ] )
-console.log("val 2,1 : "+ pathMap[ to1d(2,1) ] )
-console.log("val 2,3 : "+ pathMap[ to1d(2,3) ] )
-console.log("val 1,2 : "+ pathMap[ to1d(1,2) ] )
-console.log("val 1,1 : "+ pathMap[ to1d(1,1) ] )
-console.log("val 1,3 : "+ pathMap[ to1d(1,3) ] )
-console.log("val 3,2 : "+ pathMap[ to1d(3,2) ] )
-console.log("val 3,1 : "+ pathMap[ to1d(3,1) ] )
-console.log("val 3,3 : "+ pathMap[ to1d(3,3) ] )
-
-
 function track( e ){
-
-  console.log("track : "+e.clientX)
-  let sx = Math.floor( e.clientX / defaults.tileSize ),
+  var sx = Math.floor( e.clientX / defaults.tileSize ),
       sy = Math.floor( e.clientY / defaults.tileSize ),
       pt1d = to1d( sx, sy );
       maxX = defaults.mapW,
       maxY = defaults.mapH,
-      cv = document.getElementById( "pathCv" ),
-      ctx = cv.getContext( "2d" ),
+      pcv = e.currentTarget,
+      pctx = pcv.getContext( "2d" ),
       ret = [ [ sx, sy ] ],
       end = false;
-      console.log( "x: "+sx+", y: "+sy)
+  console.log( pcv.tagName );
 
   if( sx < 0 || sy < 0 || sx >= maxX || sy >= maxY)return false;
+  pctx.clearRect( 0,0,pcv.width,pcv.height);
   for( let i = 0; end == false; i++ ){
-
     let coords = ret[ i ],
         x = coords[ 0 ],
         y = coords[ 1 ],
@@ -261,34 +306,75 @@ function track( e ){
     for( let n = 0; n < 8; n++ ){
       let tx = x + turnCoords[ n * 2 ],
           ty = y + turnCoords[ n * 2 + 1],
-
           t1d = to1d( tx, ty );
-
-//      if(tx == 2 && ty == 2){
-//        alert("start: "+x+", "+y+", time: "+time+", target: "+pathMap[ t1d ] )
-//      }
 
       if( tx < 0 || ty < 0 || tx >= maxX || ty >= maxY ) continue;
       if( pathMap[ t1d ] < time ){
         time = pathMap[ t1d ];
         target = [ tx, ty ];
-        //  console.log( "target : "+tx+", "+ty)
       }
     }
 
-    console.log( "target 2 : "+target)
     ret.push( target );
-    if( target[0] == 2 && target[1] == 2 ){
-      alert("end")
+    if( target[0] == defaults.start.x && target[1] == defaults.start.y ){
       end = true;
     }
   }
-//  ctx.clearRect( 0,0,cv.width,cv.height);
-  alert(ret.length)
-  console.log( ret)
+
+  pctx.fillStyle = "black";
+  pctx.beginPath();
+
   ret.forEach( cell => {
-    ctx.fillRect( cell[ 0 ] * defaults.tileSize, cell[ 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize )
+    console.log( cell[ 0 ] + "," +  cell[ 1 ] + ":" + cell[ 0 ] * defaults.tileSize + "/" + cell[ 1 ] * defaults.tileSize );
+    pctx.rect( cell[ 0 ] * defaults.tileSize, cell[ 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
   })
+  pctx.fill();
+
+}
+function trackJs( e ){
+  var sx = Math.floor( e.clientX / defaults.tileSize ),
+      sy = Math.floor( e.clientY / defaults.tileSize ),
+      maxX = defaults.mapW,
+      maxY = defaults.mapH,
+      pcv = e.currentTarget,
+      pctx = pcv.getContext( "2d" ),
+      ret = [ [ sx, sy ] ],
+      end = false;
+      console.log("coucou"+sx+", "+sy)
+  if( sx < 0 || sy < 0 || sx >= maxX || sy >= maxY)return false;
+  pctx.clearRect( 0,0,pcv.width,pcv.height);
+  for( let i = 0; end==false; i++ ){
+    var coords = ret[ i ],
+        x = coords[ 0 ],
+        y = coords[ 1 ],
+        time = Infinity,
+        target = false;
+        console.log( "test : "+x+", "+y)
+    for( let n = 0; n < 8; n++ ){
+      let tx = x + turnCoords[ n * 2 ],
+          ty = y + turnCoords[ n * 2 + 1];
+
+      if( tx < 0 || ty < 0 || tx >= maxX || ty >= maxY ) continue;
+      if( pathMap[ ty ][ tx ] < time ){
+        time = pathMap[ ty ][ tx ];
+        target = [ tx, ty ];
+      }
+    }
+    if( target[0] == defaults.start.x && target[1] == defaults.start.y ){
+
+      end = true;
+    }
+    ret.push( target );
+  }
+console.log("move")
+  pctx.fillStyle = "black";
+  pctx.beginPath();
+
+  ret.forEach( cell => {
+    console.log( cell[ 0 ] + "," +  cell[ 1 ] + ":" + cell[ 0 ] * defaults.tileSize + "/" + cell[ 1 ] * defaults.tileSize );
+    pctx.rect( cell[ 0 ] * defaults.tileSize, cell[ 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
+  })
+  pctx.fill();
 }
 
 document.body.addEventListener( "click", e => {
