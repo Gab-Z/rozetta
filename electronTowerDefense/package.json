@@ -1,0 +1,21 @@
+{
+  "name": "electrontowerdefense",
+  "version": "0.0.1",
+  "description": "A tower defense based on electron",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "compile": "node-gyp rebuild",
+    "start": "electron .",
+    "rebuild": "electron-rebuild -v 1.8.2 -f -w module"
+  },
+  "dependencies": {
+    "bindings": "^1.3.0",
+    "nan": "^2.10.0"
+  },
+  "devDependencies": {
+    "electron-rebuild": "^1.7.3"
+  },
+  "author": "Gabz",
+  "license": "ISC"
+}

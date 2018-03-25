@@ -1,0 +1,1 @@
+cmd_Release/obj.target/towerdef_module.node := g++ -shared -pthread -rdynamic -m64  -Wl,-soname=towerdef_module.node -o Release/obj.target/towerdef_module.node -Wl,--start-group Release/obj.target/towerdef_module/cpp/towerdefense.o -Wl,--end-group 
