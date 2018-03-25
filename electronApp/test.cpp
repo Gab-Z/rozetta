@@ -2,9 +2,7 @@
 #include <cmath>
 const int maxValue = 10;
 int numberOfCalls = 0;
-std::vector<int> arr;
-
-
+const std::vector<int> turnCoords { -1,0,   -1,-1,   0,-1,    1,-1,    1,0,   1,1,   0,1,   -1,1 };
 
 NAN_METHOD(WhoAmI) {
     // Create an instance of V8's String type
@@ -31,12 +29,49 @@ NAN_METHOD(Increment) {
   v8::Local<v8::Number> currentNumberOfCalls = Nan::New(numberOfCalls);
   info.GetReturnValue().Set(currentNumberOfCalls);
 }
+#ifndef DEF_PATHMAP
+#define DEF_PATHMAP
 
-#ifndef DEF_PERSONNAGE
-#define DEF_PERSONNAGE
+class PathMap{
+  public:
+
+    void setStart( int x, int y ){
+      startx = x;
+      starty = y;
+    }
+    void clearMap(){
+      map.clear();
+    }
+    void setValue( int index, int value ){
+      map[ index ] = value;
+    }
+    void push( int value ){
+      map.push_back( value );
+    }
+    std::vector<int> getStart(){
+      std::vector<int> pos { startx, starty };
+      return pos;
+    }
+    int getValue( int index ){
+      return map[ index ];
+    }
+    std::vector<int> getMap(){
+      return map;
+    }
+
+  private:
+    int startx;
+    int starty;
+    std::vector<int> map;
+};
+
+#endif
+
+#ifndef DEF_MAP
+#define DEF_MAP
 class Map{
 
-    public:
+  public:
 
     void init( int w, int h, int depMin, int depMax ){
       arrW = w;
@@ -47,87 +82,108 @@ class Map{
       for (int i = 0; i < arrLength; i++){
         int b = rand() % rangeMax + rangeMin;
         arr.push_back(b);
-        std::vector<int> path( arrLength );
-        paths.push_back( path );
       }
     }
+
+    int getPathMapIndex( int x, int y ){
+      int size = paths.size();
+      for( int i = 0; i < size; i++ ){
+        PathMap& pm = paths[ i ];
+        std::vector<int> pos = pm.getStart();
+        if( pos[ 0 ] == x && pos[ 1 ] == y ){
+          return i;
+        }
+      }
+      return -1;
+    }
+
     std::vector<int> getArray(){
       return arr;
     }
+
     int getLength(){
       return arrLength;
     }
+
     std::vector<int> getFilledMap( int x, int y ){
-      int pos1d = to1d( x, y );
-      return paths[ pos1d ];
+      int index = getPathMapIndex( x, y );
+      return paths[ index ].getMap();
     }
 
     void fillMap( int x, int y ){
       int p1d = to1d( x, y);
-      paths[ p1d ].clear();
+      int pathId = getPathMapIndex( x, y );
+      if( pathId < 0 ){
+        PathMap newPathMap;
+        newPathMap.setStart( x, y );
+        paths.push_back( newPathMap );
+        pathId = getPathMapIndex( x, y );
+      }
+      PathMap& pathMap = paths[ pathId ];
+      pathMap.clearMap();
       for ( int i = 0; i < arrLength; i++ ) {
-        paths[ p1d ].push_back( -1 );
+        pathMap.push( -1 );
       };
-      paths[ p1d ][ p1d ] = arr[ p1d ];
+      pathMap.setValue( p1d, arr[ p1d ] );
       std::vector<int> searchList;
       searchList.push_back( x );
       searchList.push_back( y );
       for( std::vector<int>::size_type n = 0; n < searchList.size(); n++ ){
-    //paths[ p1d ][ 999 ] = 10;
-        searchList = fillMapStep(  p1d, searchList );
+        searchList = fillMapStep(  p1d, pathMap, searchList );
 
       }
     }
 
-    std::vector<int> fillMapStep( int id, std::vector<int> searchList ){
+    std::vector<int> fillMapStep( int id, PathMap& pathMap,  std::vector<int> searchList ){
       std::vector<int> newList;
       for( std::vector<int>::size_type i = 0; i < searchList.size() / 2; i++ ){
         int x  = searchList[ i * 2 ];
         int y = searchList[ i * 2 + 1 ];
         int pos = to1d( x, y );
-        int value = paths[ id ][ pos ];
+        int value = pathMap.getValue( pos );
         if( x > 0 ){
           if( y > 0){
-            newList =  testTile( x, y, -1, -1, value, id, newList );
+            newList =  testTile( x, y, -1, -1, value, pathMap, newList );
           }
-          newList = testTile( x, y, -1, 0, value, id, newList );
+          newList = testTile( x, y, -1, 0, value, pathMap, newList );
           if( y + 1 < arrH ){
-            newList =  testTile( x, y, -1, 1, value, id, newList );
+            newList =  testTile( x, y, -1, 1, value, pathMap, newList );
           }
         }
         //MIDDLE
         if( y > 0 ){
-          newList =  testTile( x, y, 0, -1, value, id, newList );
+          newList =  testTile( x, y, 0, -1, value, pathMap, newList );
         }
         if( y + 1 < arrH ){
-          newList =  testTile( x, y, 0, 1, value, id, newList );
+          newList =  testTile( x, y, 0, 1, value, pathMap, newList );
         }
         //RIGHT
         if( x + 1 < arrW ){
           if( y > 0){
-            newList =  testTile( x, y, 1, -1, value, id, newList );
+            newList =  testTile( x, y, 1, -1, value, pathMap, newList );
           }
-          newList =  testTile( x, y, 1, 0, value, id, newList );
+          newList =  testTile( x, y, 1, 0, value, pathMap, newList );
           if( y + 1 < arrH ){
-            newList =  testTile( x, y, 1, 1, value, id, newList );
+            newList =  testTile( x, y, 1, 1, value, pathMap, newList );
           }
         }
       }
       return newList;
     }
 
-    std::vector<int>  testTile( int srcX, int srcY, int offsetX, int offsetY, int value, int id, std::vector<int> _list ){
+    std::vector<int>  testTile( int srcX, int srcY, int offsetX, int offsetY, int value, PathMap& pathMap, std::vector<int> _list ){
       int tX = srcX + offsetX;
       int tY = srcY + offsetY;
       int pos1d = to1d( tX, tY );
       std::vector<int> newList;
       newList = _list;
-      int retTarget = paths[id][ pos1d ];
+      int retTarget = pathMap.getValue( pos1d );
       int srcTarget = arr[ pos1d ];
 
       if( retTarget < 0 || value + srcTarget < retTarget ){
-        paths[id][ pos1d ] = value + srcTarget;
-
+      //  pathMap[ pos1d ] = value + srcTarget;
+        int newVal = value + srcTarget;
+        pathMap.setValue( pos1d, newVal );
         bool isNew = true;
         for( std::vector<int>::size_type i = 0; i < _list.size() / 2; i++ ){
           int tx = _list[ i * 2 ];
@@ -145,6 +201,43 @@ class Map{
       return newList;
     }
 
+    std::vector<int> getPath( int startx, int starty, int destinationx, int destinationy ){
+      int pathMapIndex = getPathMapIndex( destinationx, destinationy );
+      if( pathMapIndex < 0 ){
+        fillMap( destinationx, destinationy );
+        pathMapIndex = getPathMapIndex( destinationx, destinationy );
+      }
+      PathMap& pathMap = paths[ pathMapIndex ];
+      std::vector<int> ret;
+      ret.push_back( startx );
+      ret.push_back( starty );
+      bool end = false;
+      for( std::vector<int>::size_type i = 0; i < ret.size(); i+=2 ){
+        int x = ret[ i ];
+        int y = ret[ i + 1 ];
+        int p1d = to1d( x, y );
+        int val = pathMap.getValue( p1d );
+        int rx = -1;
+        int ry = -1;
+        for( int j = 0; j < 8; j++ ){
+          int tx = x + turnCoords[ j * 2 ];
+          int ty = y + turnCoords[ j * 2 + 1 ];
+          int t1d = to1d( tx, ty );
+          int testVal = pathMap.getValue( t1d );
+          if( testVal < val ){
+            rx = tx;
+            ry = ty;
+            val = testVal;
+          }
+        }
+        if( rx > -1 ){
+          ret.push_back( rx );
+          ret.push_back( ry );
+        }
+      }
+      return ret;
+    }
+
     private:
 
     std::vector<int> arr;
@@ -153,7 +246,7 @@ class Map{
     int arrLength;
     int rangeMin;
     int rangeMax;
-    std::vector<std::vector<int>> paths;
+    std::vector<PathMap> paths;
 
     int to1d( int x, int y ){
       int pos = y * arrW + x;
@@ -171,13 +264,137 @@ class Map{
 
 };
 
+#endif
 
+#ifndef DEF_fillMapAsyncWorker
+#define DEF_fillMapAsyncWorker
 
+class FillMapAsyncWorker : public Nan::AsyncWorker {
+  public:
+  int x;
+  int y;
+  Map _map;
+  std::vector<int> filledMap;
+
+  FillMapAsyncWorker(int x, int y, Map& _Map, Nan::Callback *callback) : Nan::AsyncWorker(callback) {
+    this->x = x;
+    this->y = y;
+    this->_map = _Map;
+  }
+
+  void Execute() {
+    // mimic long running task
+    //delay(iterations);
+    _map.fillMap( x, y );
+    this->filledMap = _map.getFilledMap( x, y );
+  }
+
+  void HandleOKCallback() {
+
+    v8::Local<v8::Array> a = Nan::New<v8::Array>();
+    for (std::vector<int>::size_type i = 0; i < filledMap.size(); i++ ) {
+      Nan::Set(a, i, Nan::New(filledMap[i]));
+    }
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = {
+      Nan::Null(), // no error occured
+      a
+    };
+    callback->Call(2, argv);
+  }
+
+  void HandleErrorCallback() {
+    Nan::HandleScope scope;
+    v8::Local<v8::Value> argv[] = {
+      Nan::New(this->ErrorMessage()).ToLocalChecked(), // return error message
+      Nan::Null()
+    };
+    callback->Call(2, argv);
+  }
+
+};
+class SetDestinationAsyncWorker : public Nan::AsyncWorker {
+  public:
+    int x;
+    int y;
+    Map _map;
+
+    SetDestinationAsyncWorker( int x, int y, Map& _Map, Nan::Callback *callback) : Nan::AsyncWorker(callback) {
+      this->x = x;
+      this->y = y;
+      this->_map = _Map;
+    }
+
+    void Execute(){
+      _map.fillMap( x, y );
+    }
+
+    void HandleOKCallback(){
+      Nan::HandleScope scope;
+      v8::Local<v8::Value> argv[] = {
+        Nan::Null(), // no error occured
+        Nan::New("done").ToLocalChecked()
+      };
+      callback->Call(2, argv);
+    }
+
+    void HandleErrorCallback(){
+      Nan::HandleScope scope;
+      v8::Local<v8::Value> argv[] = {
+        Nan::New(this->ErrorMessage()).ToLocalChecked(), // return error message
+        Nan::Null()
+      };
+      callback->Call(2, argv);
+    }
+};
+class GetPathAsyncWorker : public Nan::AsyncWorker {
+  public:
+    int startx;
+    int starty;
+    int destinationx;
+    int destinationy;
+    Map _map;
+    std::vector<int> ret;
+
+    GetPathAsyncWorker( int sx, int sy, int dx, int dy, Map& _Map, Nan::Callback *callback) : Nan::AsyncWorker(callback){
+      this->startx = sx;
+      this->starty = sy;
+      this->destinationx = dx;
+      this->destinationy = dy;
+      this->_map = _Map;
+    }
+
+    void Execute(){
+      this->ret = _map.getPath( startx, starty, destinationx, destinationy );
+    }
+
+    void HandleOKCallback() {
+      v8::Local<v8::Array> a = Nan::New<v8::Array>();
+      for (std::vector<int>::size_type i = 0; i < ret.size(); i++ ) {
+        Nan::Set(a, i, Nan::New(ret[i]));
+      }
+      Nan::HandleScope scope;
+      v8::Local<v8::Value> argv[] = {
+        Nan::Null(), // no error occured
+        a
+      };
+      callback->Call(2, argv);
+    }
+
+    void HandleErrorCallback() {
+      Nan::HandleScope scope;
+      v8::Local<v8::Value> argv[] = {
+        Nan::New(this->ErrorMessage()).ToLocalChecked(), // return error message
+        Nan::Null()
+      };
+      callback->Call(2, argv);
+    }
+};
 #endif
 
 Map mainMap;
 
-NAN_METHOD(initArray){
+NAN_METHOD( initArray ){
   if (!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() || !info[3]->IsNumber() ) {
     Nan::ThrowTypeError("Argument must be a number");
     return;
@@ -195,11 +412,11 @@ NAN_METHOD(initArray){
   }
   info.GetReturnValue().Set(a);
 }
-NAN_METHOD(GetArrayLength){
+NAN_METHOD( GetArrayLength ){
   v8::Local<v8::Number> arrL = Nan::New(mainMap.getLength());
   info.GetReturnValue().Set(arrL);
 }
-NAN_METHOD(getArray){
+NAN_METHOD( getArray ){
   //v8::Local<v8::Array> a = Nan::New(arr);
   //v8::Local<v8::Array> a = New<v8::Array>(arrLength);
   v8::Local<v8::Array> a = Nan::New<v8::Array>();
@@ -214,118 +431,16 @@ NAN_METHOD(getArray){
   info.GetReturnValue().Set(a);
 }
 
-/*
-
-void pushIfNew( std::vector<int> _arr, int x, int y ){
-  bool isNew = true;
-  for( std::vector<int>::size_type i = 0; i != _arr.size() / 2; i++ ){
-    int tx = _arr[ i * 2 ];
-    int ty = _arr[ i * 2 + 1 ];
-    if( tx == x && ty == y ){
-      isNew = false;
-      break;
-    }
-  }
-  if( isNew == true ){
-    _arr.push_back( x );
-    _arr.push_back( y );
-  }
-}
-
-std::vector<int> testTile( int srcX, int srcY, int offsetX, int offsetY, int value, std::vector<int> _retMap, std::vector<int> _list ){
-  int tX = srcX + offsetX;
-  int tY = srcY + offsetY;
-  int pos1d = to1d( tX, tY );
-  int retTarget = _retMap[ pos1d ];
-  int srcTarget = arr[ pos1d ];
-  if( retTarget < 0 || value + srcTarget < retTarget ){
-    _retMap[ pos1d ] = value + srcTarget;
-    //alert(retMap[ y - 1 ][ x - 1 ])
-    //pushIfNew( _list, tX, tY );
-
-    bool isNew = true;
-    for( std::vector<int>::size_type i = 0; i != _list.size() / 2; i++ ){
-      int tx = _list[ i * 2 ];
-      int ty = _list[ i * 2 + 1 ];
-      if( tx == tX && ty == tY ){
-        isNew = false;
-        break;
-      }
-    }
-    if( isNew == true ){
-      _list.push_back( tX );
-      _list.push_back( tY );
-    }
-  }
-  return _list;
-}
-
-std::vector<int> fillMapStep( std::vector<int> retMap, std::vector<int> searchList ){
-  std::vector<int> newList;
-  for( std::vector<int>::size_type i = 0; i != searchList.size() / 2; i++ ){
-    int x  = searchList[ i * 2 ];
-    int y = searchList[ i * 2 + 1 ];
-    int pos = to1d( x, y );
-    int value = retMap[ pos ];
-
-    if( x > 0 ){
-      if( y > 0){
-        testTile( x, y, -1, -1, value, retMap, newList );
-      }
-      testTile( x, y, -1, 0, value, retMap, newList );
-      if( y + 1 < arrH ){
-        testTile( x, y, -1, 1, value, retMap, newList );
-      }
-    }
-    //MIDDLE
-    if( y > 0 ){
-      testTile( x, y, 0, -1, value, retMap, newList );
-    }
-    if( y + 1 < arrH ){
-      testTile( x, y, 0, 1, value, retMap, newList );
-    }
-    //RIGHT
-    if( x + 1 < arrW ){
-      if( y > 0){
-        testTile( x, y, 1, -1, value, retMap, newList );
-      }
-      testTile( x, y, 1, 0, value, retMap, newList );
-      if( y + 1 < arrH ){
-        testTile( x, y, 1, 1, value, retMap, newList );
-      }
-    }
-  }
-  return newList;
-}
-
-std::vector<int> fillMap( int x, int y ){
-  std::vector<int> retMap;
-  for ( int i = 0; i < arrLength; i++ ) {
-    retMap.push_back( -1 );
-  }
-  std::vector<int> searchList;
-  searchList.push_back( x );
-  searchList.push_back( y );
-  bool end = false;
-  for( int n = 0; end == false; n++ ){
-    searchList = fillMapStep( retMap, searchList );
-    if( searchList.size() == 0 ){
-      end = true;
-    }
-  }
-  return retMap;
-}
-
-*/
-
-
-NAN_METHOD(getFilledMap){
+NAN_METHOD( getFilledMap ){
   if ( !info[0]->IsNumber() || !info[1]->IsNumber() ) {
     Nan::ThrowTypeError("Argument must be a number");
     return;
   }
   int x = info[0]->NumberValue();
   int y = info[1]->NumberValue();
+
+  Nan::Callback *callback = new Nan::Callback(info[2].As<v8::Function>());
+
   mainMap.fillMap( x, y );
   std::vector<int> filledMap = mainMap.getFilledMap( x, y );
   int arrLength = mainMap.getLength();
@@ -334,10 +449,60 @@ NAN_METHOD(getFilledMap){
     Nan::Set(a, i, Nan::New(filledMap[i]));
   }
   info.GetReturnValue().Set(a);
+
 }
 
+NAN_METHOD( asyncGetFilledMap ) {
+  if ( !info[0]->IsNumber() || !info[1]->IsNumber() ) {
+    Nan::ThrowTypeError("Argument must be a number");
+    return;
+  }
+  if(!info[2]->IsFunction()) {
+    return Nan::ThrowError(Nan::New("expected arg 2: function callback").ToLocalChecked());
+  }
 
+  // starting the async worker
+  Nan::AsyncQueueWorker(new FillMapAsyncWorker(
+    info[0]->NumberValue(),
+    info[1]->NumberValue(),
+    mainMap,
+    new Nan::Callback(info[2].As<v8::Function>())
+  ));
+}
 
+NAN_METHOD( asyncSetDestination ){
+  if ( !info[0]->IsNumber() || !info[1]->IsNumber() ) {
+    Nan::ThrowTypeError("Argument must be a number");
+    return;
+  }
+  if(!info[2]->IsFunction()) {
+    return Nan::ThrowError(Nan::New("expected arg 2: function callback").ToLocalChecked());
+  }
+  Nan::AsyncQueueWorker(new SetDestinationAsyncWorker(
+    info[0]->NumberValue(),
+    info[1]->NumberValue(),
+    mainMap,
+    new Nan::Callback(info[2].As<v8::Function>())
+  ));
+}
+
+NAN_METHOD( asyncGetPath ){
+  if ( !info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() || !info[3]->IsNumber() ) {
+    Nan::ThrowTypeError("Argument must be a number");
+    return;
+  }
+  if(!info[4]->IsFunction()) {
+    return Nan::ThrowError(Nan::New("expected arg 4: function callback").ToLocalChecked());
+  }
+  Nan::AsyncQueueWorker(new GetPathAsyncWorker(
+    info[0]->NumberValue(),
+    info[1]->NumberValue(),
+    info[2]->NumberValue(),
+    info[3]->NumberValue(),
+    mainMap,
+    new Nan::Callback(info[4].As<v8::Function>())
+  ));
+}
 
 NAN_MODULE_INIT(Initialize) {
   NAN_EXPORT(target, WhoAmI);
@@ -346,6 +511,9 @@ NAN_MODULE_INIT(Initialize) {
   NAN_EXPORT(target, GetArrayLength);
   NAN_EXPORT(target, getArray);
   NAN_EXPORT(target, getFilledMap);
+  NAN_EXPORT(target, asyncGetFilledMap);
+  NAN_EXPORT(target, asyncSetDestination);
+  NAN_EXPORT(target, asyncGetPath);
 }
 
 NODE_MODULE(module_name, Initialize)

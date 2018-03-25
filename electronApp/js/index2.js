@@ -1,24 +1,15 @@
+
 const ipc = require('electron').ipcRenderer;
 const bindings = require("bindings");
 const whoami = bindings("module");
 
 const defaults = {
-  mapW:250,
-  mapH:250,
+  mapW:120,
+  mapH:120,
   depMin:1,
   depMax:10,
-  tileSize:1,
-  start:{ x: 2, y: 2 },
-  canvasTop : 100,
-  canvasLeft: 100,
-  mousex:false,
-  mousey:false,
-  clientx: false,
-  clienty: false,
-  waiting:false,
-  pendingx:false,
-  pendingy:false,
-  pending:false
+  tileSize:5,
+  start:{ x: 2, y: 2 }
 }
 var testJs = false;
 function to1d( tx, ty ){
@@ -224,34 +215,55 @@ function map2dToTable(_map){
   }
   return table;
 }
-var startTime;
+var startTime = Date.now();
 
 var map,
-    pathMap,
-    cppMapSet = false,
-    jsMapSet = false;
+    pathMap;
 
-function initDom(){
-  //document.body.appendChild(map2dToTable(pathMap))
-    var mainCont = document.getElementById( "mainCont" ),
-        cv;
-  if(!document.getElementById("backCv")){
-    cv =  mainCont.appendChild( document.createElement( "canvas" ) );
-    cv.id="backCv"
-    cv.width = defaults.mapW * defaults.tileSize;
-    cv.height = defaults.mapH * defaults.tileSize;
-    cv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
-    cv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
-    cv.style.position = "fixed";
-    cv.style.left = defaults.canvasLeft + "px";
-    cv.style.top = defaults.canvasTop + "px";
-    cv.style.zIndex = 10;
-  }else{
-    cv = document.getElementById("backCv");
-  }
-  ctx = cv.getContext( "2d" );
-  ctx.clearRect( 0, 0, cv.width, cv.height);
-  if( testJs ){
+if( testJs ){
+  var map = random2dMap(),
+      pathMap = fillMap( map, defaults.start.x, defaults.start.y );
+      initMap();
+}else{
+
+  whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax );
+
+  map = whoami.getArray();//random2dMap(),
+
+
+
+/*
+  pathMap = whoami.getFilledMap( "defaults.start.x", defaults.start.y );
+  initMap();
+*/
+  whoami.asyncGetFilledMap( defaults.start.x, defaults.start.y, ( err, result ) => {
+    alert("pop")
+    if(err){
+      ipc.send('err',err);
+      alert(err)
+    }
+    pathMap = result;
+    initMap();
+  });
+
+}
+
+function initMap(){
+  alert( ( Date.now() - startTime ) / 1000 );
+  document.body.appendChild(map2dToTable(pathMap))
+
+  var mainCont = document.getElementById( "mainCont" ),
+      cv =  mainCont.appendChild( document.createElement( "canvas" ) ),
+      ctx = cv.getContext( "2d" );
+  cv.width = defaults.mapW * defaults.tileSize;
+  cv.height = defaults.mapH * defaults.tileSize;
+  cv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
+  cv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
+  cv.style.position = "fixed";
+  cv.style.left = 0;
+  cv.style.top = 0;
+  cv.style.zIndex = 10;
+  if(testJs){
     map.forEach( ( row, y ) => {
       row.forEach( ( cell, i ) => {
         let hue = 140 - ( ( ( cell - defaults.depMin ) / ( defaults.depMax - defaults.depMin) ) * 140 );
@@ -271,90 +283,35 @@ function initDom(){
 
     });
   }
-  var pathCv;
-  if(!document.getElementById("pathCv")){
-    pathCv = mainCont.appendChild( document.createElement( "canvas" ) );
-    pathCv.style.zIndex = 20;
-    pathCv.id = "pathCv";
-    pathCv.width = defaults.mapW * defaults.tileSize;
-    pathCv.height = defaults.mapH * defaults.tileSize;
-    pathCv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
-    pathCv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
-    pathCv.style.position = "fixed";
-    pathCv.style.left = defaults.canvasLeft + "px";
-    pathCv.style.top = defaults.canvasTop + "px";
-  }else{
-    pathCv = document.getElementById("pathCv");
-  }
-  var pathCtx = pathCv.getContext( "2d" );
-  pathCtx.clearRect( 0, 0, pathCv.width, pathCv.height);
+
+  var pathCv = mainCont.appendChild( document.createElement( "canvas" ) ),
+      pathCtx = pathCv.getContext( "2d" );
+  pathCv.style.zIndex = 20;
+  pathCv.id = "pathCv";
+  pathCv.width = defaults.mapW * defaults.tileSize;
+  pathCv.height = defaults.mapH * defaults.tileSize;
+  pathCv.style.width = ( defaults.mapW * defaults.tileSize ) + "px";
+  pathCv.style.height = ( defaults.mapH * defaults.tileSize ) + "px";
+  pathCv.style.position = "fixed";
+  pathCv.style.left = 0;
+  pathCv.style.top = 0;
   pathCtx.fillStyle = "black";
+
   if(testJs){
-    pathCv.removeEventListener( "click", setDestination );
-    pathCv.removeEventListener( "mousemove", trackStep );
-    pathCv.addEventListener( "click", setDestinationJs );
     pathCv.addEventListener( "mousemove", trackJs );
   }else{
-    pathCv.removeEventListener( "click", setDestinationJs );
-      pathCv.removeEventListener( "mousemove", trackJs );
-    pathCv.addEventListener( "click", setDestination );
-    pathCv.addEventListener( "mousemove", trackStep );
+    pathCv.addEventListener( "mousemove", track );
   }
-  /*
   document.body.addEventListener( "click", e => {
     ipc.send('bodyClick');
   })
-  */
 }
 
-const turnCoords = [ -1,0,   -1,-1,   0,-1,    1,-1,    1,0,   1,1,   0,1,   -1,1 ];
-function track( ){
-  var sx = Math.floor( ( defaults.clientx - defaults.canvasLeft ) / defaults.tileSize ),
-      sy = Math.floor( ( defaults.clienty - defaults.canvasTop)  / defaults.tileSize );
-  if( ( defaults.mousex == sx && defaults.mousey == sy ) || sx < 0 || sy < 0 || sx >= defaults.mapW || sy >= defaults.mapH ) return false;
-  defaults.mousex = sx;
-  defaults.mousey = sy;
-  if( ! defaults.waiting ){
-    defaults.waiting = true;
-    getPath(defaults.mousex, defaults.mousey, defaults.start.x, defaults.start.y)
-  }else{
-    defaults.pendingx = sx;
-    defaults.pendingy = sy;
-    defaults.pending = true;
-  }
-
-}
-function trackStep( e ){
-  defaults.clientx = e.clientX;
-  defaults.clienty = e.clientY;
-  requestAnimationFrame( track );
-}
-function getPath( sx, sy, dx, dy ){
-  whoami.asyncGetPath( sx, sy, dx, dy, ( err, result ) => {
-    if( err ) alert( "err :: " + err );
-    var pcv = document.getElementById( "pathCv" ),
-        pctx = pcv.getContext( "2d" ),
-        pl = result.length / 2;
-    pctx.clearRect( 0,0,pcv.width,pcv.height);
-    pctx.fillStyle = "#000000";
-    for( let i = 0; i < pl; i++ ){
-      pctx.fillRect( result[ i * 2 ] * defaults.tileSize, result[ i * 2 + 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize  )
-    }
-    if( defaults.pending ){
-      getPath( defaults.pendingx, defaults.pendingy, defaults.start.x, defaults.start.y  );
-      defaults.pending = false;
-    }else{
-      defaults.waiting = false;
-    }
-  } );
-}
-function track2( e ){
+const turnCoords = [ -1,0,   -1,-1,   0,-1,    1,-1,    1,0, 1,1,   0,1,   -1,1 ];
+function track( e ){
   var sx = Math.floor( e.clientX / defaults.tileSize ),
-      sy = Math.floor( e.clientY / defaults.tileSize );
-  if( defaults.mousex == sx && defaults.mousey == sy ) return false;
-  defaults.mousex = sx;
-  defaults.mousey = sy;
-  var pt1d = to1d( sx, sy );
+      sy = Math.floor( e.clientY / defaults.tileSize ),
+      pt1d = to1d( sx, sy );
       maxX = defaults.mapW,
       maxY = defaults.mapH,
       pcv = e.currentTarget,
@@ -400,12 +357,9 @@ function track2( e ){
 
 }
 function trackJs( e ){
-  var sx = Math.floor( ( e.clientX - defaults.canvasLeft ) / defaults.tileSize ),
-      sy = Math.floor( ( e.clientY - defaults.canvasTop)  / defaults.tileSize );
-  if( defaults.mousex == sx && defaults.mousey == sy ) return false;
-  defaults.mousex = sx;
-  defaults.mousey = sy;
-  var maxX = defaults.mapW,
+  var sx = Math.floor( e.clientX / defaults.tileSize ),
+      sy = Math.floor( e.clientY / defaults.tileSize ),
+      maxX = defaults.mapW,
       maxY = defaults.mapH,
       pcv = e.currentTarget,
       pctx = pcv.getContext( "2d" ),
@@ -437,7 +391,7 @@ function trackJs( e ){
     }
     ret.push( target );
   }
-console.log("move")
+  console.log("move")
   pctx.fillStyle = "black";
   pctx.beginPath();
 
@@ -446,51 +400,4 @@ console.log("move")
     pctx.rect( cell[ 0 ] * defaults.tileSize, cell[ 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
   })
   pctx.fill();
-}
-
-var jsbut = document.getElementById( "jsbut" ),
-    cppbut = document.getElementById( "cppbut" );
-jsbut.addEventListener( "click", startJs  );
-cppbut.addEventListener( "click", startCpp  );
-
-function startJs(){
-  if( ! jsMapSet ){
-    jsMapSet = true;
-    map = random2dMap(),
-    pathMap = fillMap( map, defaults.start.x, defaults.start.y );
-  }
-  testJs = true;
-  startTime = Date.now();
-  initDom();
-  alert( ( Date.now() - startTime ) / 1000 );
-}
-function startCpp( e ){
-  console.log("startCpp");
-  if( ! cppMapSet ){
-    whoami.initArray( defaults.mapW, defaults.mapH, defaults.depMin, defaults.depMax );
-    mapSet = true;
-  }
-  testJs = false;
-  startTime = Date.now();
-  map = whoami.getArray();//random2dMap(),
-  whoami.asyncGetFilledMap( defaults.start.x, defaults.start.y, (err, result) => {
-    pathMap = result;
-    initDom();
-    alert( ( Date.now() - startTime ) / 1000 );
-  } );
-}
-
-function setDestinationJs( e ){
-  var sx = Math.floor( ( e.clientX - defaults.canvasLeft ) / defaults.tileSize ),
-      sy = Math.floor( ( e.clientY - defaults.canvasTop)  / defaults.tileSize );
-  defaults.start.x = sx;
-  defaults.start.y = sy;
-  pathMap = fillMap( map, defaults.start.x, defaults.start.y );
-}
-
-function setDestination( e ){
-  var sx = Math.floor( ( e.clientX - defaults.canvasLeft ) / defaults.tileSize ),
-      sy = Math.floor( ( e.clientY - defaults.canvasTop)  / defaults.tileSize );
-  defaults.start.x = sx;
-  defaults.start.y = sy;
 }
