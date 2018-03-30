@@ -1,5 +1,5 @@
 #include <cmath>
-#include "towerdef_PathMap.cpp"
+#include "towerdef_PathMap.h"
 #ifndef DEF_MAP
 #define DEF_MAP
 class Map{
@@ -23,6 +23,12 @@ class Map{
     std::vector<int>  testTile( int srcX, int srcY, int offsetX, int offsetY, int value, PathMap& pathMap, std::vector<int> _list );
 
     std::vector<int> getPath( int startx, int starty, int destinationx, int destinationy );
+
+    int getWidth();
+
+    int getHeight();
+
+    
 
     private:
 

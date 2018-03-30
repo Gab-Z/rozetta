@@ -1,6 +1,6 @@
-cmd_Release/obj.target/towerdef_module/cpp/towerdefense.o := g++ '-DNODE_GYP_MODULE_NAME=towerdef_module' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DBUILDING_NODE_EXTENSION' -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/include/node -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -m64 -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/towerdef_module/cpp/towerdefense.o.d.raw   -c -o Release/obj.target/towerdef_module/cpp/towerdefense.o ../cpp/towerdefense.cpp
-Release/obj.target/towerdef_module/cpp/towerdefense.o: \
- ../cpp/towerdefense.cpp ../node_modules/nan/nan.h \
+cmd_Release/obj.target/towerdef/cpp/towerdef_Main.o := g++ '-DNODE_GYP_MODULE_NAME=towerdef' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DBUILDING_NODE_EXTENSION' -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/include/node -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include -I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -m64 -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/towerdef/cpp/towerdef_Main.o.d.raw   -c -o Release/obj.target/towerdef/cpp/towerdef_Main.o ../cpp/towerdef_Main.cpp
+Release/obj.target/towerdef/cpp/towerdef_Main.o: ../cpp/towerdef_Main.cpp \
+ ../node_modules/nan/nan.h \
  /home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src/node_version.h \
  /home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include/uv.h \
  /home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include/uv-errno.h \
@@ -27,10 +27,9 @@ Release/obj.target/towerdef_module/cpp/towerdefense.o: \
  ../node_modules/nan/nan_weak.h ../node_modules/nan/nan_object_wrap.h \
  ../node_modules/nan/nan_private.h \
  ../node_modules/nan/nan_typedarray_contents.h \
- ../node_modules/nan/nan_json.h ../cpp/towerdef_Map.cpp \
- ../cpp/towerdef_Map.h ../cpp/towerdef_PathMap.cpp \
+ ../node_modules/nan/nan_json.h ../cpp/towerdef.h ../cpp/towerdef_Map.h \
  ../cpp/towerdef_PathMap.h
-../cpp/towerdefense.cpp:
+../cpp/towerdef_Main.cpp:
 ../node_modules/nan/nan.h:
 /home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src/node_version.h:
 /home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include/uv.h:
@@ -60,7 +59,6 @@ Release/obj.target/towerdef_module/cpp/towerdefense.o: \
 ../node_modules/nan/nan_private.h:
 ../node_modules/nan/nan_typedarray_contents.h:
 ../node_modules/nan/nan_json.h:
-../cpp/towerdef_Map.cpp:
+../cpp/towerdef.h:
 ../cpp/towerdef_Map.h:
-../cpp/towerdef_PathMap.cpp:
 ../cpp/towerdef_PathMap.h:

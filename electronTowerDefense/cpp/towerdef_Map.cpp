@@ -179,3 +179,9 @@ std::vector<int> Map::to2d( int p ){
   pos.push_back(y);
   return pos;
 }
+int Map::getWidth(){
+  return arrW;
+}
+int Map::getHeight(){
+  return arrH;
+}

@@ -303,8 +303,8 @@ $(obj).$(TOOLSET)/%.o: $(obj)/%.s FORCE_DO_CMD
 
 ifeq ($(strip $(foreach prefix,$(NO_LOAD),\
     $(findstring $(join ^,$(prefix)),\
-                 $(join ^,towerdef_module.target.mk)))),)
-  include towerdef_module.target.mk
+                 $(join ^,towerdef.target.mk)))),)
+  include towerdef.target.mk
 endif
 
 quiet_cmd_regen_makefile = ACTION Regenerating $@

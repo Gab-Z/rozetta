@@ -1,6 +1,6 @@
 #ifndef DEF_PATHMAP
 #define DEF_PATHMAP
-
+#include <nan.h>
 class PathMap{
   public:
 
