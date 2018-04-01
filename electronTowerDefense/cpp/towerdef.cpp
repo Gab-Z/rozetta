@@ -32,12 +32,12 @@ NAN_METHOD(TowerDefense::New) {
   }
 
   // expect exactly 3 arguments
-  if(info.Length() != 2) {
-    return Nan::ThrowError(Nan::New("TowerDefense::New - expected arguments width, height").ToLocalChecked());
+  if(info.Length() != 6) {
+    return Nan::ThrowError(Nan::New("TowerDefense::New - expected arguments width, height, startX, startY, endX, endY").ToLocalChecked());
   }
 
   // expect arguments to be numbers
-  if(!info[0]->IsNumber() || !info[1]->IsNumber() ) {
+  if(!info[0]->IsNumber() || !info[1]->IsNumber() || !info[2]->IsNumber() || !info[3]->IsNumber() || !info[4]->IsNumber() || !info[5]->IsNumber() ) {
     return Nan::ThrowError(Nan::New("TowerDefense::New - expected arguments to be numbers").ToLocalChecked());
   }
 
@@ -48,7 +48,7 @@ NAN_METHOD(TowerDefense::New) {
   // initialize it's values
   towerDef->store = Map();
 
-  towerDef->store.init( info[0]->NumberValue(), info[1]->NumberValue(), 1, 1 );
+  towerDef->store.init( info[0]->NumberValue(), info[1]->NumberValue(), 1, 1, info[2]->NumberValue(), info[3]->NumberValue(), info[4]->NumberValue(), info[5]->NumberValue()  );
 
   //vec->x = info[0]->NumberValue();
   //vec->y = info[1]->NumberValue();
@@ -86,9 +86,9 @@ NAN_GETTER(TowerDefense::HandleGetters) {
 NAN_SETTER(TowerDefense::HandleSetters) {
   //TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
 
-//  if(!value->IsNumber()) {
-//    return Nan::ThrowError(Nan::New("expected value to be a number").ToLocalChecked());
-//  }
+  //  if(!value->IsNumber()) {
+  //    return Nan::ThrowError(Nan::New("expected value to be a number").ToLocalChecked());
+  //  }
 
   std::string propertyName = std::string(*Nan::Utf8String(property));
   if (propertyName == "map") {
@@ -101,11 +101,11 @@ NAN_SETTER(TowerDefense::HandleSetters) {
     return Nan::ThrowError(Nan::New("length property of TowerDefense Class is read only").ToLocalChecked());
   }
 
-//  else if (propertyName == "y") {
-//    self->y = value->NumberValue();
-//  } else if (propertyName == "z") {
-//    self->z = value->NumberValue();
-//  }
+  //  else if (propertyName == "y") {
+  //    self->y = value->NumberValue();
+  //  } else if (propertyName == "z") {
+  //    self->z = value->NumberValue();
+  //  }
 
 }
 
@@ -118,19 +118,36 @@ NAN_METHOD( TowerDefense::addStructure ){
     return Nan::ThrowError(Nan::New("TowerDefense::New - expected arguments to be numbers").ToLocalChecked());
   }
   Nan::Utf8String utf8_value(info[2]);
-//  std::string utf8_value = std::string(*Nan::Utf8String(info[2]));
+  //  std::string utf8_value = std::string(*Nan::Utf8String(info[2]));
   int len = utf8_value.length();
   if (len <= 0) {
      return Nan::ThrowTypeError("arg must be a non-empty string");
   }
   /// work with string data here....
   // e.g. convert to a std::string
-  std::string propertyName = std::string(*Nan::Utf8String(utf8_value));
-  bool addRez = self->store.addStructure( info[0]->NumberValue(), info[1]->NumberValue(), propertyName )
+  std::string propertyName(*utf8_value, len);
+  //  std::string propertyName = std::string( *Nan::Utf8String( utf8_value ) );
+  bool addRez = self->store.addStructure( info[0]->NumberValue(), info[1]->NumberValue(), propertyName );
 
-//  if( propertyName == "Wall" ){
-//    self->store.addWall( info[0]->NumberValue(), info[1]->NumberValue(), propertyName )
-//  }else{
-//    return Nan::ThrowError(Nan::New("unknown structure type").ToLocalChecked());
-//  }
+  if( addRez == true ){
+    v8::Local<v8::Array> jsArr = self->store.getStructures();
+    info.GetReturnValue().Set(jsArr);
+  }else{
+
+    std::vector<int> fmap =  self->store.getFilledMap( self->store.getStartX(), self->store.getStartY() );
+
+    v8::Local<v8::Array> a = Nan::New<v8::Array>();
+  //Local<Array> a = New<v8::Array>(arrLength);
+    for (int i = 0; i < fmap.size(); i++ ) {
+      //a[i] = arr[i];
+      Nan::Set(a, i, Nan::New(fmap[i]));
+    }
+    info.GetReturnValue().Set(a);
+  }
+
+  //  if( propertyName == "Wall" ){
+  //    self->store.addWall( info[0]->NumberValue(), info[1]->NumberValue(), propertyName )
+  //  }else{
+  //    return Nan::ThrowError(Nan::New("unknown structure type").ToLocalChecked());
+  //  }
 }

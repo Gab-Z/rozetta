@@ -11,6 +11,8 @@ class PathMap{
     std::vector<int> getStart();
     int getValue( int index );
     std::vector<int> getMap();
+    int getLength();
+    bool isOpen();
 
   private:
     int startx;

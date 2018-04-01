@@ -35,10 +35,10 @@ CFLAGS_CC_Debug := \
 	-std=gnu++0x
 
 INCS_Debug := \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/include/node \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/include/node \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/src \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include \
 	-I$(srcdir)/node_modules/nan
 
 DEFS_Release := \
@@ -71,17 +71,19 @@ CFLAGS_CC_Release := \
 	-std=gnu++0x
 
 INCS_Release := \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/include/node \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/src \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include \
-	-I/home/uaio/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/include/node \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/src \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/deps/uv/include \
+	-I/home/afev/.electron-gyp/.node-gyp/iojs-1.8.2/deps/v8/include \
 	-I$(srcdir)/node_modules/nan
 
 OBJS := \
 	$(obj).target/$(TARGET)/cpp/towerdef_Main.o \
 	$(obj).target/$(TARGET)/cpp/towerdef.o \
 	$(obj).target/$(TARGET)/cpp/towerdef_Map.o \
-	$(obj).target/$(TARGET)/cpp/towerdef_PathMap.o
+	$(obj).target/$(TARGET)/cpp/towerdef_PathMap.o \
+	$(obj).target/$(TARGET)/cpp/towerdef_Structure.o \
+	$(obj).target/$(TARGET)/cpp/towerdef_Struct_Wall.o
 
 # Add to the list of files we specially track dependencies for.
 all_deps += $(OBJS)

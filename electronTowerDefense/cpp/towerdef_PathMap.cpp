@@ -23,3 +23,14 @@ int PathMap::getValue( int index ){
 std::vector<int> PathMap::getMap(){
   return map;
 }
+int PathMap::getLength(){
+  return map.size();
+}
+bool PathMap::isOpen(){
+  for( std::vector<int>::size_type i = 0; i < map.size(); i++ ){
+    if(map[i] == 0-1 ){
+      return false;
+    }
+  }
+  return true;
+}
