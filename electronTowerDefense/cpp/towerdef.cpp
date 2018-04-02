@@ -111,13 +111,23 @@ NAN_SETTER(TowerDefense::HandleSetters) {
 
 NAN_METHOD( TowerDefense::addStructure ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
-  if(info.Length() != 3) {
-    return Nan::ThrowError(Nan::New("TowerDefense::addStructure - expected arguments x, y, typeName").ToLocalChecked());
+  if(info.Length() != 2) {
+    return Nan::ThrowError(Nan::New("TowerDefense::addStructure - expected arguments typeName, [ positions, ... ]").ToLocalChecked());
   }
-  if(!info[0]->IsNumber() || !info[1]->IsNumber()  ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::New - expected arguments to be numbers").ToLocalChecked());
+  if( !info[1]->IsArray() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::New - expected argument 2 to be an array").ToLocalChecked());
   }
-  Nan::Utf8String utf8_value(info[2]);
+
+  v8::Local<v8::Array> posArr = v8::Local<v8::Array>::Cast(info[1]);
+  std::vector<int> posVec;
+  int vl = posArr->Length();
+  for (int i = 0; i < vl; i++) {
+    v8::Local<v8::Value> jsElement = posArr->Get(i);
+    int number = jsElement->NumberValue();
+    posVec.push_back(number);
+  }
+
+  Nan::Utf8String utf8_value(info[0]);
   //  std::string utf8_value = std::string(*Nan::Utf8String(info[2]));
   int len = utf8_value.length();
   if (len <= 0) {
@@ -127,10 +137,28 @@ NAN_METHOD( TowerDefense::addStructure ){
   // e.g. convert to a std::string
   std::string propertyName(*utf8_value, len);
   //  std::string propertyName = std::string( *Nan::Utf8String( utf8_value ) );
-  bool addRez = self->store.addStructure( info[0]->NumberValue(), info[1]->NumberValue(), propertyName );
+  bool addRez = self->store.addStructure( propertyName, posVec );
+
+  if(addRez == true ){
+    v8::Local<v8::Array> jsArr = self->store.getStructures();
+    info.GetReturnValue().Set(jsArr);
+  }else{
+    info.GetReturnValue().Set(Nan::False());
+  }
+
+
+
+/*
 
   if( addRez == true ){
-    v8::Local<v8::Array> jsArr = self->store.getStructures();
+    //v8::Local<v8::Array> jsArr = self->store.getStructures();
+
+    std::vector<int> fill = self->store.fillAccessMap( self->store.getStartX(), self->store.getStartY() );
+    v8::Local<v8::Array> jsArr;
+    for( std::vector<int>::size_type i = 0; i < fill.size(); i++ ){
+      //std::unique_ptr<Structure> structure = structures[i];
+      jsArr->Set(i, Nan::New(fill[i]));
+    }
     info.GetReturnValue().Set(jsArr);
   }else{
 
@@ -138,13 +166,13 @@ NAN_METHOD( TowerDefense::addStructure ){
 
     v8::Local<v8::Array> a = Nan::New<v8::Array>();
   //Local<Array> a = New<v8::Array>(arrLength);
-    for (int i = 0; i < fmap.size(); i++ ) {
+    for ( std::vector<int>::size_type i = 0; i < fmap.size(); i++ ) {
       //a[i] = arr[i];
       Nan::Set(a, i, Nan::New(fmap[i]));
     }
     info.GetReturnValue().Set(a);
   }
-
+*/
   //  if( propertyName == "Wall" ){
   //    self->store.addWall( info[0]->NumberValue(), info[1]->NumberValue(), propertyName )
   //  }else{

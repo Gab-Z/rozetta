@@ -19,23 +19,30 @@ class Map{
 
     void fillMap( int x, int y );
 
-    std::vector<int> fillMapStep( int id, PathMap& pathMap,  std::vector<int> searchList );
+    std::vector<int> fillMapStep( PathMap& pathMap,  std::vector<int> searchList );
 
     std::vector<int>  testTile( int srcX, int srcY, int offsetX, int offsetY, int value, PathMap& pathMap, std::vector<int> _list );
 
     std::vector<int> getPath( int startx, int starty, int destinationx, int destinationy );
 
+    std::vector<int> fillAccessMap( int _startx, int _starty, std::vector<int>& arrMap );
+
+    std::vector<int> fillAccessMapStep( std::vector<int>& ret, std::vector<int> searchList, std::vector<int>& arrMap );
+
+    std::vector<int> testAccessTile( int srcX, int srcY, int offsetX, int offsetY, int value, std::vector<int>& ret, std::vector<int> _list, std::vector<int>& arrMap );
+
     int getWidth();
 
     int getHeight();
 
-    bool addStructure( int _x, int _y, std::string _className );
+    bool addStructure( std::string _className, std::vector<int> positions );
 
     v8::Local<v8::Array> getStructures();
     int getStartX();
     int getStartY();
     int getEndX();
     int getEndY();
+
 
     private:
 

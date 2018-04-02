@@ -1,11 +1,17 @@
 const ipc = require('electron').ipcRenderer;
 const bindings = require("bindings");
 const td = bindings("towerdef");
-const towerDef = new td.TowerDefense( 8,6, 0,0, 7,5 );
-console.log( towerDef.width +", "+towerDef.height+", "+towerDef.length);
+
+
 const defaults = {
-  tileSize:60
+  tileSize:50,
+  mapW:8,
+  mapH:8,
+  start:{x:0,y:3},
+  end:{x:7,y:3}
 }
+const towerDef = new td.TowerDefense( defaults.mapW,defaults.mapH, defaults.start.x,defaults.start.y, defaults.end.x,defaults.end.y );
+
 function drawMap( _map, _options = {} ){
   let options = Object.assign( defaults, _options ),//{ ...defaults, ...moptions },
       cv = document.createElement( "canvas" ),
@@ -38,15 +44,11 @@ function drawMap( _map, _options = {} ){
         ctx = cv.getContext( "2d" ),
         x = Math.floor( ( e.pageX - cv.offsetLeft ) / defaults.tileSize ),
         y = Math.floor( ( e.pageY - cv.offsetTop ) / defaults.tileSize );
-
-    let add = towerDef.addStructure( x, y, "Wall")
-    console.log( "job : " + x+", "+y+" / "+( add==false ? "false" :("true"+ add.length)));
-    if(add == false ){
-      console.log("false")
-    }else{
-      console.log("array: "+add.length+" : "+ add.toString())
-    }
-    if(add.length){
+    let add = towerDef.addStructure( "Wall", [ x, y ] );
+    if(add == false)console.log(add)
+    console.log( "add : " + add);
+    document.body.appendChild( arrToTable(add) )
+    if(add.forEach){
     //  ctx.clearRect(0,0,cv.width, cv.height)
       add.forEach( el => {
         if(el.hasOwnProperty("x")){
@@ -58,3 +60,15 @@ function drawMap( _map, _options = {} ){
   return cv;
 }
 document.getElementById( "mainCont" ).appendChild( drawMap( towerDef ) )
+function arrToTable(ar){
+  var table = document.createElement("table"),
+  tb = table.appendChild(document.createElement("tbody"));
+  for( let r = 0; r < defaults.mapH; r++ ){
+    let row = tb.appendChild(document.createElement("tr"));
+    for( let c = 0; c < defaults.mapW; c++ ){
+      let cell = row.appendChild(document.createElement("td"));
+      cell.textContent = ar[ r * defaults.mapW + c ];
+    }
+  }
+  return table;
+}

@@ -13,8 +13,8 @@ void Map::init( int w, int h, int depMin, int depMax, int _startX, int _startY, 
   endX = _endX;
   endY = _endY;
   for (int i = 0; i < arrLength; i++){
-    int b = rand() % rangeMax + rangeMin;
-    arr.push_back(b);
+    //int b = rand() % rangeMax + rangeMin;
+    arr.push_back(1);
   }
 }
 
@@ -61,13 +61,13 @@ void Map::fillMap( int x, int y ){
   std::vector<int> searchList;
   searchList.push_back( x );
   searchList.push_back( y );
-  for( std::vector<int>::size_type n = 0; n < searchList.size(); n++ ){
-    searchList = fillMapStep(  p1d, pathMap, searchList );
+  for( std::vector<int>::size_type n = 0; searchList.size() > 0; n++ ){
+    searchList = fillMapStep( pathMap, searchList );
 
   }
 }
 
-std::vector<int> Map::fillMapStep( int id, PathMap& pathMap,  std::vector<int> searchList ){
+std::vector<int> Map::fillMapStep( PathMap& pathMap,  std::vector<int> searchList ){
   std::vector<int> newList;
   for( std::vector<int>::size_type i = 0; i < searchList.size() / 2; i++ ){
     int x  = searchList[ i * 2 ];
@@ -205,33 +205,48 @@ int Map::getEndX(){
 int Map::getEndY(){
   return endY;
 }
-bool Map::addStructure( int _x, int _y, std::string _className ){
 
-  for( std::vector<std::unique_ptr<Structure>>::size_type i = 0; i != structures.size(); i++ ){
-      if(structures[i]){
-        if( structures[i]->getx() == _x && structures[i]->gety() == _y ){
-          return false;
-        }
-     }
+bool Map::addStructure( std::string _className, std::vector<int> positions ){
+  std::vector<int> copyMap( arr.size() );
+  for( std::vector<int>::size_type j = 0; j < positions.size() / 2; j++ ){
+    int _x = positions[ j * 2 ];
+    int _y = positions[ j * 2 + 1 ];
+    if( ( _x == startX && _y == startY ) || ( _x == endX && _y == endY ) ){
+      return false;
+    }
+    bool structurePlaced = false;
+    for( std::vector<std::unique_ptr<Structure>>::size_type i = 0; i != structures.size(); i++ ){
+        if(structures[i]){
+          if( structures[i]->getx() == _x && structures[i]->gety() == _y ){
+            return false;
+          }else if( structurePlaced == false ){
+            int p1d = to1d( structures[i]->getx(), structures[i]->gety() );
+            copyMap[ p1d ] = -2;
+          }
+       }
+       structurePlaced = true;
+    }
+    int t1d = to1d( _x, _y );
+    copyMap[ t1d ] = -2;
   }
-  int pt1d = to1d( _x, _y );
-  int mem = arr[pt1d];
-  arr[pt1d] = 0-2;
-  fillMap( startX, startY );
-  //PathMap& pathmap = paths[getPathMapIndex( startX, startY )].isOpen();
-  bool isOpen = paths[getPathMapIndex( startX, startY )].isOpen();
-  if( isOpen == false ){
-    arr[pt1d] = mem;
-    return false;
+  for( std::vector<int>::size_type c = 0; c < arr.size(); c++ ){
+    if( copyMap[ c ] != -2 ){
+      copyMap[ c ] = 1;
+    }
   }
-
   if( _className == "Wall" ){
-    structures.push_back( std::unique_ptr<Structure>( new Wall( _x, _y ) ) );
+    std::vector<int> filled = fillAccessMap( startX, startY, copyMap );
+    for( std::vector<int>::size_type i = 0; i < filled.size(); i++ ){
+      if( filled[ i ] == -1 ){
+        return false;
+      }
+    }
+    for( std::vector<int>::size_type z = 0; z < positions.size() / 2; z++ ){
+      structures.push_back( std::unique_ptr<Structure>( new Wall( positions[ z * 2 ], positions[ z * 2 + 1 ] ) ) );
+    }
     return true;
-  }else{
-    return false;
   }
-
+  return false;
 }
 
 v8::Local<v8::Array> Map::getStructures(){
@@ -255,4 +270,77 @@ v8::Local<v8::Array> Map::getStructures(){
   //info.GetReturnValue().Set(jsArr);
 
   return jsArr;
+}
+
+std::vector<int> Map::fillAccessMap( int _startx, int _starty, std::vector<int>& arrMap ){
+  std::vector<int> ret;
+  int length = getLength();
+  for(int i = 0; i < length; i++ ){
+    ret.push_back( -1 );
+  }
+  int p1d = to1d( _startx, _starty);
+  ret[ p1d ] = 1;
+  std::vector<int> searchList;
+  searchList.push_back( _startx );
+  searchList.push_back( _starty );
+  for( std::vector<int>::size_type n = 0;  searchList.size() > 0; n++ ){
+    searchList = fillAccessMapStep( ret, searchList, arrMap );
+  }
+  return ret;
+}
+
+std::vector<int> Map::fillAccessMapStep( std::vector<int>& ret, std::vector<int> searchList, std::vector<int>& arrMap ){
+  std::vector<int> newList;
+  for( std::vector<int>::size_type i = 0; i < searchList.size() / 2; i++ ){
+    int x  = searchList[ i * 2 ];
+    int y = searchList[ i * 2 + 1 ];
+    int pos = to1d( x, y );
+    int value = ret[ pos ];
+    if( x > 0 ){
+        newList =  testAccessTile( x, y, -1, 0, value, ret, newList, arrMap );
+    }
+    if( x < arrW - 1 ){
+        newList =  testAccessTile( x, y, 1, 0, value, ret, newList, arrMap );
+    }
+    if( y > 0 ){
+        newList =  testAccessTile( x, y, 0, -1, value, ret, newList, arrMap );
+    }
+    if( y < arrH - 1 ){
+      newList =  testAccessTile( x, y, 0, 1, value, ret, newList, arrMap );
+    }
+  }
+  return newList;
+}
+
+std::vector<int>  Map::testAccessTile( int srcX, int srcY, int offsetX, int offsetY, int value, std::vector<int>& ret, std::vector<int> _list, std::vector<int>& arrMap ){
+  int tX = srcX + offsetX;
+  int tY = srcY + offsetY;
+  int pos1d = to1d( tX, tY );
+  std::vector<int> newList;
+  newList = _list;
+  int retTarget = ret[ pos1d ];
+  if(retTarget != -1 ){
+    return newList;
+  }
+  int srcTarget = arrMap[ pos1d ];
+  if( srcTarget < -1 ){
+    ret[ pos1d ] = srcTarget;
+    return newList;
+  }else{
+    ret[ pos1d ] = 1;
+    bool isNew = true;
+    for( std::vector<int>::size_type i = 0; i < _list.size() / 2; i++ ){
+      int tx = _list[ i * 2 ];
+      int ty = _list[ i * 2 + 1 ];
+      if( tx == tX && ty == tY ){
+        isNew = false;
+        break;
+      }
+    }
+    if( isNew == true ){
+      newList.push_back( tX );
+      newList.push_back( tY );
+    }
+    return newList;
+  }
 }
