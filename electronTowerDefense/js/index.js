@@ -10,7 +10,7 @@ const defaults = {
   start:{x:0,y:3},
   end:{x:7,y:3}
 }
-const towerDef = new td.TowerDefense( defaults.mapW,defaults.mapH, defaults.start.x,defaults.start.y, defaults.end.x,defaults.end.y );
+const towerDef = new td.TowerDefense( defaults.mapW,defaults.mapH, [ defaults.start.x,defaults.start.y ], [ defaults.end.x,defaults.end.y ] );
 
 function drawMap( _map, _options = {} ){
   let options = Object.assign( defaults, _options ),//{ ...defaults, ...moptions },
@@ -44,6 +44,7 @@ function drawMap( _map, _options = {} ){
         ctx = cv.getContext( "2d" ),
         x = Math.floor( ( e.pageX - cv.offsetLeft ) / defaults.tileSize ),
         y = Math.floor( ( e.pageY - cv.offsetTop ) / defaults.tileSize );
+    console.log( "start add");    
     let add = towerDef.addStructure( "Wall", [ x, y ] );
     if(add == false)console.log(add)
     console.log( "add : " + add);

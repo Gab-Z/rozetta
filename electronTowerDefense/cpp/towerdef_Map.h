@@ -7,7 +7,7 @@ class Map{
 
   public:
 
-    void init( int w, int h, int depMin, int depMax, int _startX, int _startY, int _endX, int _endY );
+    void init( int w, int h, int depMin, int depMax, std::vector<int> _startPts, std::vector<int> _endPts );
 
     int getPathMapIndex( int x, int y );
 
@@ -38,11 +38,9 @@ class Map{
     bool addStructure( std::string _className, std::vector<int> positions );
 
     v8::Local<v8::Array> getStructures();
-    int getStartX();
-    int getStartY();
-    int getEndX();
-    int getEndY();
-
+    std::vector<int> getStartPts();
+    std::vector<int> getEndPts();
+    std::vector<int> getAccessMap( std::vector<int> positions );
 
     private:
 
@@ -52,10 +50,8 @@ class Map{
     int arrLength;
     int rangeMin;
     int rangeMax;
-    int startX;
-    int startY;
-    int endX;
-    int endY;
+    std::vector<int> startPts;
+    std::vector<int> endPts;
     std::vector<PathMap> paths;
     std::vector<std::unique_ptr<Structure>> structures;
 
