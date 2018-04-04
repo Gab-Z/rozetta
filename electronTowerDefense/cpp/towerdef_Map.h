@@ -41,6 +41,7 @@ class Map{
     std::vector<int> getStartPts();
     std::vector<int> getEndPts();
     std::vector<int> getAccessMap( std::vector<int> positions );
+    std::vector<int> getStructuresPos();
 
     private:
 
@@ -53,7 +54,7 @@ class Map{
     std::vector<int> startPts;
     std::vector<int> endPts;
     std::vector<PathMap> paths;
-    std::vector<std::unique_ptr<Structure>> structures;
+    std::vector<Structure*> structures;
 
     int to1d( int x, int y );
     std::vector<int> to2d( int p );

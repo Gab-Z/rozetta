@@ -1,6 +1,6 @@
-#include "towerdef_Structure.h"
+#include "towerdef_oneTileStruct.h"
 
-class Wall: public Structure {
+class Wall: public OneTileStructure {
 
   public:
     Wall( int x, int y );

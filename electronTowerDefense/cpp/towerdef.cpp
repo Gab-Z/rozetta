@@ -1,5 +1,3 @@
-
-
 #include "towerdef.h"
 
 Nan::Persistent<v8::FunctionTemplate> TowerDefense::constructor;
