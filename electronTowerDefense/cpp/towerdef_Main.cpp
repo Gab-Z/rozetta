@@ -1,5 +1,6 @@
 #include <nan.h>
 #include "towerdef.h"
+#include "GameMap.h"
 
 NAN_MODULE_INIT(InitModule) {
   TowerDefense::Init(target);
