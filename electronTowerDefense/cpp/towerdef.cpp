@@ -143,8 +143,6 @@ NAN_METHOD( TowerDefense::addStructure ){
     posVec.push_back(number);
   }
 
-
-
   Nan::Utf8String utf8_value(info[0]);
   //  std::string utf8_value = std::string(*Nan::Utf8String(info[2]));
   int len = utf8_value.length();
@@ -154,13 +152,14 @@ NAN_METHOD( TowerDefense::addStructure ){
   /// work with string data here....
   // e.g. convert to a std::string
 
-
-
   std::string propertyName(*utf8_value, len);
   //std::string propertyName = std::string( *Nan::Utf8String( utf8_value ) );
   bool addRez = self->store.addStructure( propertyName, posVec );
+
   if(addRez == true ){
+
     v8::Local<v8::Array> jsArr = self->store.getStructures();
+    //return Nan::ThrowTypeError("PASS");
     info.GetReturnValue().Set(jsArr);
 
   /*
@@ -175,6 +174,7 @@ NAN_METHOD( TowerDefense::addStructure ){
     */
 
   }else{
+  //  return Nan::ThrowTypeError("PASSNOT");
     info.GetReturnValue().Set(Nan::False());
   }
 

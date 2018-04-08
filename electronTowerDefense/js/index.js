@@ -44,16 +44,20 @@ function drawMap( _map, _options = {} ){
         ctx = cv.getContext( "2d" ),
         x = Math.floor( ( e.pageX - cv.offsetLeft ) / defaults.tileSize ),
         y = Math.floor( ( e.pageY - cv.offsetTop ) / defaults.tileSize );
-    console.log( "start add");    
+    console.log( "start add");
     let add = towerDef.addStructure( "Wall", [ x, y ] );
     if(add == false)console.log(add)
-    console.log( "add : " + add);
+    console.log( "add : " + JSON.stringify( add ) );
     document.body.appendChild( arrToTable(add) )
     if(add.forEach){
     //  ctx.clearRect(0,0,cv.width, cv.height)
       add.forEach( el => {
-        if(el.hasOwnProperty("x")){
-          ctx.fillRect(el.x * defaults.tileSize, el.y * defaults.tileSize, defaults.tileSize, defaults.tileSize )
+        if(el.hasOwnProperty("typeName")){
+          let p = el.typeName;
+          let pl = p.length / 2;
+          for( let i = 0; i < pl; i++ ){
+            ctx.fillRect(p[ i * 2 ] * defaults.tileSize, p[ i * 2 + 1 ] * defaults.tileSize, defaults.tileSize, defaults.tileSize );
+          }
         }
       })
     }

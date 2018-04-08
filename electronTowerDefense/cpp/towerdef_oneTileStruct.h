@@ -3,7 +3,9 @@
 class OneTileStructure: public Structure {
 
   public:
-    OneTileStructure( int x, int y );
+    OneTileStructure( int _x, int _y );
     virtual std::string getTypeName(){ return "OneTileStructure"; };
-    std::vector<int> getPositions( int x, int y );
+    std::vector<int> getPositions( int _x, int _y );
+    int getx();
+    int gety();
 };

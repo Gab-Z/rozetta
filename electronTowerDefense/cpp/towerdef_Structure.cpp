@@ -1,13 +1,8 @@
 #include "towerdef_Structure.h"
 
-Structure::Structure( int _x, int _y, int _gridWidth, int _gridHeight, std::vector<int> _grid ){
-  x = _x;
-  y = _y;
-  gridWidth = _gridWidth;
-  gridHeight = _gridHeight;
-  grid = _grid;
-  gridLength = _gridWidth * _gridHeight;
-  rotation = 0;
+Structure::Structure( int _x, int _y, int _gridWidth, int _gridHeight)
+  : x( _x ), y( _y ), gridWidth( _gridWidth ), gridHeight( _gridHeight ), gridLength( _gridWidth * _gridHeight ), rotation( 0 )
+{
 }
 int Structure::getx(){
   return x;
@@ -33,7 +28,7 @@ void Structure::setRotation( int rot ){
 int Structure::getRotation(){
   return rotation;
 }
-std::vector<int> Structure::getPositions( int x, int y ){
+std::vector<int> Structure::getPositions( int _x, int _y ){
   std::vector<int> ret;
   for( int i = 0; i < gridLength; i++ ){
     if( grid[ i ] != 1 ){ continue; }
@@ -41,25 +36,28 @@ std::vector<int> Structure::getPositions( int x, int y ){
     int dy;
     std::vector<int> basePos = to2d( i );
     if( rotation == 0 ){
-      dx = x + basePos[ 0 ];
-      dy = y + basePos[ 1 ];
+      dx = _x + basePos[ 0 ];
+      dy = _y + basePos[ 1 ];
     }else if(rotation == 1 ){
-      dx = x + gridHeight - basePos[ 1 ];
-      dy = y + basePos[ 0 ];
+      dx = _x + gridHeight - basePos[ 1 ];
+      dy = _y + basePos[ 0 ];
     }else if(rotation == 2 ){
-      dx = x + gridWidth - basePos[ 0 ];
-      dy = y + gridHeight - basePos[ 1 ];
+      dx = _x + gridWidth - basePos[ 0 ];
+      dy = _y + gridHeight - basePos[ 1 ];
     }else if(rotation == 3 ){
-      dx = x + basePos[ 1 ];
-      dy = y + gridWidth - basePos[ 0 ];
+      dx = _x + basePos[ 1 ];
+      dy = _y + gridWidth - basePos[ 0 ];
+    }else{
+      dx = _x + basePos[ 0 ];
+      dy = _y + basePos[ 1 ];
     }
     ret.push_back( dx );
     ret.push_back( dy );
   }
   return ret;
 }
-int Structure::to1d( int x, int y ){
-  int pos = y * gridWidth + x;
+int Structure::to1d( int _x, int _y ){
+  int pos = _y * gridWidth + _x;
   return pos;
 }
 
@@ -71,4 +69,22 @@ std::vector<int> Structure::to2d( int p ){
   pos.push_back(x);
   pos.push_back(y);
   return pos;
+}
+void Structure::setx( int _x ){
+  x = _x;
+}
+void Structure::sety( int _y ){
+  y = _y;
+}
+void setGridWidth( int _w ){
+  gridWidth = _w;
+}
+void setGridHeight( int _h ){
+  gridHeight = _h;
+}
+void setGrid( std::vector<int> _grid ){
+  grid = _grid;
+}
+void setGridLength(){
+  gridLength = gridWidth * gridHeight;
 }
