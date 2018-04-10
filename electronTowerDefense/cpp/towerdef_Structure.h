@@ -18,7 +18,7 @@ class Structure{
     int getRotation();
     void setx( int _x );
     void sety( int _y );
-    void setGridW( int _w );
+    void setGridWidth( int _w );
     void setGridHeight( int _h );
     void setGrid( std::vector<int> _grid );
     void setGridLength();

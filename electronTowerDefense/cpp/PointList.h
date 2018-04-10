@@ -1,3 +1,5 @@
+#include <vector>
+
 class PointList {
   std::vector<int> vec;
 

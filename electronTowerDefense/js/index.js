@@ -12,6 +12,8 @@ const defaults = {
 }
 const towerDef = new td.TowerDefense( defaults.mapW,defaults.mapH, [ defaults.start.x,defaults.start.y ], [ defaults.end.x,defaults.end.y ] );
 
+alert(towerDef.testClass())
+
 function drawMap( _map, _options = {} ){
   let options = Object.assign( defaults, _options ),//{ ...defaults, ...moptions },
       cv = document.createElement( "canvas" ),

@@ -246,8 +246,9 @@ bool Map::addStructure( std::string _className, std::vector<int> positions ){
     int _y = positions[ n * 2 + 1 ];
     Structure *struc;
     if( _className == "Wall" ){
-      Wall wall( _x, _y );
-      struc = &wall;
+      //Wall * wall( _x, _y );
+      //struc = &wall;
+      struc = new Wall( _x, _y );
     }
     std::vector<int> sPos = struc->getPositions( _x, _y );
     int sPl = sPos.size() / 2;

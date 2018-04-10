@@ -40,3 +40,6 @@ void Grid::set( int i, int val ){
 void Grid::set( int _x, int _y, int val ){
   vec[ to1d( _x, _y ) ] = val;
 }
+int Grid::size(){
+  return length;
+}

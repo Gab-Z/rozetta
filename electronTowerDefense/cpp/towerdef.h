@@ -1,5 +1,6 @@
 #include <nan.h>
 #include "towerdef_Map.h"
+#include "GameMap.h"
 
 class TowerDefense : public Nan::ObjectWrap {
 
@@ -16,6 +17,8 @@ class TowerDefense : public Nan::ObjectWrap {
     static NAN_SETTER(HandleSetters);
 
     static NAN_METHOD( addStructure );
+
+    static NAN_METHOD( testClass );
 
   private:
 

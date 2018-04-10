@@ -6,6 +6,4 @@ class OneTileStructure: public Structure {
     OneTileStructure( int _x, int _y );
     virtual std::string getTypeName(){ return "OneTileStructure"; };
     std::vector<int> getPositions( int _x, int _y );
-    int getx();
-    int gety();
 };

@@ -1,8 +1,12 @@
 #include "towerdef_Structure.h"
 
-Structure::Structure( int _x, int _y, int _gridWidth, int _gridHeight)
-  : x( _x ), y( _y ), gridWidth( _gridWidth ), gridHeight( _gridHeight ), gridLength( _gridWidth * _gridHeight ), rotation( 0 )
-{
+Structure::Structure( int _x, int _y, int _gridWidth, int _gridHeight){
+  x = _x;
+  y = _y;
+  gridWidth = _gridWidth;
+  gridHeight = _gridHeight;
+  gridLength = gridWidth * gridHeight;
+  rotation = 0;
 }
 int Structure::getx(){
   return x;
@@ -76,15 +80,15 @@ void Structure::setx( int _x ){
 void Structure::sety( int _y ){
   y = _y;
 }
-void setGridWidth( int _w ){
+void Structure::setGridWidth( int _w ){
   gridWidth = _w;
 }
-void setGridHeight( int _h ){
+void Structure::setGridHeight( int _h ){
   gridHeight = _h;
 }
-void setGrid( std::vector<int> _grid ){
+void Structure::setGrid( std::vector<int> _grid ){
   grid = _grid;
 }
-void setGridLength(){
+void Structure::setGridLength(){
   gridLength = gridWidth * gridHeight;
 }

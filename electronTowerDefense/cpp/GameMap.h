@@ -9,8 +9,9 @@ class GameMap : public Grid {
     GameMap( int _w, int _h );
     void setStartPts( std::vector<int> _v );
     std::vector<int> getStartPts();
-    void setEndPt( int i );
-    void setEndPt( int _x)
+    void setStartPt( int i, int val );
+    void setEndPt( int i, int val );
     void setEndPts( std::vector<int> _v );
     std::vector<int> getEndPts();
+    
 };

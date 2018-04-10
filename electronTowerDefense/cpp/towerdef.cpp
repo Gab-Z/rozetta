@@ -19,6 +19,7 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("height").ToLocalChecked(), TowerDefense::HandleGetters, TowerDefense::HandleSetters);
   Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("length").ToLocalChecked(), TowerDefense::HandleGetters, TowerDefense::HandleSetters);
   Nan::SetPrototypeMethod( ctor, "addStructure", addStructure );
+  Nan::SetPrototypeMethod( ctor, "testClass", testClass );
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
 }
@@ -210,4 +211,27 @@ NAN_METHOD( TowerDefense::addStructure ){
   //  }else{
   //    return Nan::ThrowError(Nan::New("unknown structure type").ToLocalChecked());
   //  }
+}
+
+NAN_METHOD( TowerDefense::testClass ){
+  std::vector<Structure*> vec;
+  for(int i = 0; i < 20; i++ ){
+    Wall * walli = new Wall( i , i*2 );
+    vec.push_back( walli );
+  }
+  std::vector<int> ret;
+  int l = vec.size();
+  for( std::vector<Structure*>::size_type j = 0; j < vec.size(); j++ ){
+    Structure* walli = vec[ j ];
+    ret.push_back( walli->getx() );
+    ret.push_back( walli->gety() );
+  }
+  int vl = ret.size();
+  v8::Local<v8::Array> posesArr = Nan::New<v8::Array>(vl);
+  for (int p = 0; p < vl; p++) {
+    int number = ret[ p ];
+    v8::Local<v8::Value> jsElement = Nan::New(number);
+    posesArr->Set(p, jsElement);
+  }
+    info.GetReturnValue().Set(posesArr);
 }

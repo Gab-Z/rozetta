@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cmath>
+#include <vector>
 
 class Grid {
 
@@ -18,5 +19,5 @@ class Grid {
     int get( int _x, int _y );
     void set( int i, int val );
     void set( int _x, int _y, int val );
-
+    int size();
 };
