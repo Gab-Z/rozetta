@@ -44,7 +44,6 @@ NAN_METHOD(TowerDefense::New) {
   TowerDefense* towerDef = new TowerDefense();
   towerDef->Wrap(info.Holder());
 
-  // initialize it's values
   towerDef->store = Map();
 
   v8::Local<v8::Array> startArr = v8::Local<v8::Array>::Cast(info[2]);
@@ -66,11 +65,6 @@ NAN_METHOD(TowerDefense::New) {
 
   towerDef->store.init( info[0]->IntegerValue(), info[1]->IntegerValue(), 1, 1, startVec, endVec );
 
-  //vec->x = info[0]->NumberValue();
-  //vec->y = info[1]->NumberValue();
-  //vec->z = info[2]->NumberValue();
-
-  // return the wrapped javascript instance
   info.GetReturnValue().Set(info.Holder());
 }
 
@@ -133,7 +127,6 @@ NAN_METHOD( TowerDefense::addStructure ){
   if( !info[1]->IsArray() ) {
     return Nan::ThrowError(Nan::New("TowerDefense::New - expected argument 2 to be an array").ToLocalChecked());
   }
-
   v8::Local<v8::Array> posArr = v8::Local<v8::Array>::Cast(info[1]);
   std::vector<int> posVec;
 
@@ -143,74 +136,22 @@ NAN_METHOD( TowerDefense::addStructure ){
     int number = jsElement->IntegerValue();
     posVec.push_back(number);
   }
-
   Nan::Utf8String utf8_value(info[0]);
-  //  std::string utf8_value = std::string(*Nan::Utf8String(info[2]));
   int len = utf8_value.length();
   if (len <= 0) {
      return Nan::ThrowTypeError("arg must be a non-empty string");
   }
-  /// work with string data here....
-  // e.g. convert to a std::string
-
   std::string propertyName(*utf8_value, len);
-  //std::string propertyName = std::string( *Nan::Utf8String( utf8_value ) );
   bool addRez = self->store.addStructure( propertyName, posVec );
 
   if(addRez == true ){
+   v8::Local<v8::Array> jsArr = self->store.getStructures();
+  //  v8::Local<v8::Array> jsArr = self->store.getFilledAccess();
 
-    v8::Local<v8::Array> jsArr = self->store.getStructures();
-    //return Nan::ThrowTypeError("PASS");
     info.GetReturnValue().Set(jsArr);
-
-  /*
-    v8::Local<v8::Array> jsArr= Nan::New<v8::Array>(posVec.size());
-    std::vector<int> arry = self->store.getArray();
-    std::vector<int> retMap = self->store.fillAccessMap( 0, 0, arry );
-    for( std::vector<int>::size_type in = 0; in < retMap.size(); in++ ){
-      //std::unique_ptr<Structure> structure = structures[i];
-      Nan::Set(jsArr, in, Nan::New(retMap[in]));
-    }
-    info.GetReturnValue().Set(jsArr);
-    */
-
   }else{
-  //  return Nan::ThrowTypeError("PASSNOT");
     info.GetReturnValue().Set(Nan::False());
   }
-
-
-
-/*
-
-  if( addRez == true ){
-    //v8::Local<v8::Array> jsArr = self->store.getStructures();
-
-    std::vector<int> fill = self->store.fillAccessMap( self->store.getStartX(), self->store.getStartY() );
-    v8::Local<v8::Array> jsArr;
-    for( std::vector<int>::size_type i = 0; i < fill.size(); i++ ){
-      //std::unique_ptr<Structure> structure = structures[i];
-      jsArr->Set(i, Nan::New(fill[i]));
-    }
-    info.GetReturnValue().Set(jsArr);
-  }else{
-
-    std::vector<int> fmap =  self->store.getFilledMap( self->store.getStartX(), self->store.getStartY() );
-
-    v8::Local<v8::Array> a = Nan::New<v8::Array>();
-  //Local<Array> a = New<v8::Array>(arrLength);
-    for ( std::vector<int>::size_type i = 0; i < fmap.size(); i++ ) {
-      //a[i] = arr[i];
-      Nan::Set(a, i, Nan::New(fmap[i]));
-    }
-    info.GetReturnValue().Set(a);
-  }
-*/
-  //  if( propertyName == "Wall" ){
-  //    self->store.addWall( info[0]->NumberValue(), info[1]->NumberValue(), propertyName )
-  //  }else{
-  //    return Nan::ThrowError(Nan::New("unknown structure type").ToLocalChecked());
-  //  }
 }
 
 NAN_METHOD( TowerDefense::testClass ){
@@ -220,7 +161,7 @@ NAN_METHOD( TowerDefense::testClass ){
     vec.push_back( walli );
   }
   std::vector<int> ret;
-  int l = vec.size();
+//  int l = vec.size();
   for( std::vector<Structure*>::size_type j = 0; j < vec.size(); j++ ){
     Structure* walli = vec[ j ];
     ret.push_back( walli->getx() );

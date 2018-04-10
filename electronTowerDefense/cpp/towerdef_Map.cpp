@@ -229,16 +229,10 @@ std::vector<int> Map::getAccessMap( std::vector<int> positions ){
 }
 
 bool Map::addStructure( std::string _className, std::vector<int> positions ){
-  std::vector<int> copyMap;
-  for( int p = 0; p < arrLength; p++ ){
-    copyMap.push_back( arr[ p ] );
-  }
-
+  std::vector<int> copyMap = arr;
   std::vector<int> newPositions;
   int pl = positions.size() / 2;
   int sl = startPts.size() / 2;
-
-  std::vector<int> tmpPos;
   std::vector<Structure*> filteredStructs;
 
   for( int n = 0; n < pl; n++ ){
@@ -246,21 +240,13 @@ bool Map::addStructure( std::string _className, std::vector<int> positions ){
     int _y = positions[ n * 2 + 1 ];
     Structure *struc;
     if( _className == "Wall" ){
-      //Wall * wall( _x, _y );
-      //struc = &wall;
       struc = new Wall( _x, _y );
     }
     std::vector<int> sPos = struc->getPositions( _x, _y );
     int sPl = sPos.size() / 2;
-    bool strucOnFreeSpace = true;
     for( int f = 0; f < sPl; f++ ){
       int sx = sPos[ f * 2 ];
       int sy = sPos[ f * 2 + 1 ];
-      for( std::vector<int>::size_type g = 0; g < tmpPos.size() / 2 ; g++ ){
-        if( sx == tmpPos[ g * 2 ] && sy == tmpPos[ g * 2 + 1 ] ){
-          return false;
-        }
-      }
       for( int m = 0; m < sl; m++ ){
         if( ( sx == startPts[ m * 2 ] && sx == startPts[ m * 2 + 1 ] ) || ( sx == endPts[ m * 2 ] && sy == endPts[ m * 2 + 1 ] ) ){
           return false;
@@ -272,18 +258,13 @@ bool Map::addStructure( std::string _className, std::vector<int> positions ){
         newPositions.push_back( sx );
         newPositions.push_back( sy );
       }else{
-        strucOnFreeSpace = false;
+        return false;
       }
     }
-    if( strucOnFreeSpace == true ){
-      filteredStructs.push_back( struc );
-    }else{
-      return false;
-    }
+    filteredStructs.push_back( struc );
   }
-
   for( int c = 0; c < arrLength; c++ ){
-    if( copyMap[ c ] != -2 ){
+    if( copyMap[ c ] > -2 ){
       copyMap[ c ] = 1;
     }
   }
@@ -308,95 +289,6 @@ bool Map::addStructure( std::string _className, std::vector<int> positions ){
   return true;
 }
 
-/*
-bool Map::addStructure2( std::string _className, std::vector<int> positions ){
-  std::vector<int> copyMap;
-
-  for( int p = 0; p < arrLength; p++ ){
-    copyMap.push_back( arr[ p ] );
-  }
-  std::vector<int> newPositions;
-  int pl = positions.size() / 2;
-  int sl = startPts.size() / 2;
-
-  std::vector<int> tmpPos;
-  std::vector<Structure*> tmpStructs;
-  for( int n = 0; n < pl; n++ ){
-    int _x = positions[ n * 2 ];
-    int _y = positions[ n * 2 + 1 ];
-    Structure *struc;
-    if( _className == "Wall" ){
-      Wall wall( _x, _y );
-      struc = &wall;
-    }
-    std::vector<int> sPos = struc->getPositions( _x, _y );
-    int sPl = sPos.size() / 2;
-    for( int f = 0; f < sPl; f++ ){
-      int sx = sPos[ f * 2 ];
-      int sy = sPos[ f * 2 + 1 ];
-      for( std::vector<int>::size_type g = 0; g < tmpPos.size() / 2 ; g++ ){
-        if( sx == tmpPos[ g * 2 ] && sy == tmpPos[ g * 2 + 1 ] ){
-          return false;
-        }
-      }
-      tmpPos.push_back( sx );
-      tmpPos.push_back( sy );
-    }
-    tmpStructs.push_back( struc );
-  }
-  int tpl = tmpPos.size() / 2;
-  std::vector<Structure*> filteredStructs;
-  for( int j = 0; j < tpl; j++ ){
-    int _x = tmpPos[ j * 2 ];
-    int _y = tmpPos[ j * 2 + 1 ];
-    for( int m = 0; m < sl; m++ ){
-      if( ( _x == startPts[ m * 2 ] && _y == startPts[ m * 2 + 1 ] ) || ( _x == endPts[ m * 2 ] && _y == endPts[ m * 2 + 1 ] ) ){
-        return false;
-      }
-    }
-    int t1d = to1d( _x, _y );
-    if(  copyMap[ t1d ] > -2 ){
-      copyMap[ t1d ] = -2;
-      newPositions.push_back( _x );
-      newPositions.push_back( _y );
-      //ICI a sortir de la boucle
-      filteredStructs.push_back( tmpStructs[ j ] );
-      //ICI
-    }else{
-      return false;
-    }
-  }
-
-
-  int tmpSl = tmpStructs.size();
-  for( int j = 0; j < tmpSl; j++ ){
-
-  }
-
-
-  for( int c = 0; c < arrLength; c++ ){
-    if( copyMap[ c ] != -2 ){
-      copyMap[ c ] = 1;
-    }
-  }
-  std::vector<int> filled = fillAccessMap( endPts[ 0 ], endPts[ 1 ], copyMap );
-  for( int i = 0; i < arrLength; i++ ){
-    if( filled[ i ] == -1 ){
-      return false;
-    }
-  }
-  int npl = newPositions.size() / 2;
-  for( int z = 0; z < npl; z++ ){
-    int px = newPositions[ z * 2 ];
-    int py = newPositions[ z * 2 + 1 ];
-    int p1d = to1d( px, py );
-    structures.push_back( filteredStructs[ z ] );
-    arr[ p1d ] = -2;
-  }
-  return true;
-}
-*/
-
 std::vector<int> Map::getStructuresPos(){
   int sl = structures.size();
   std::vector<int> ret;
@@ -414,28 +306,23 @@ v8::Local<v8::Array> Map::getStructures(){
   int sl = structures.size();
   v8::Local<v8::Array> jsArr = Nan::New<v8::Array>( sl );
 
-
   for( int i = 0; i < sl; i++ ){
     Structure *struc = structures[ i ];
 
     std::vector<int> poses = struc->getPositions( struc->getx(), struc->gety() );
 
-  //  int posesL = poses.size();
     v8::Local<v8::Object> jsonObject = Nan::New<v8::Object>();
 
     v8::Local<v8::String> xProp = Nan::New("x").ToLocalChecked();
     v8::Local<v8::String> yProp = Nan::New("y").ToLocalChecked();
     v8::Local<v8::String> tProp = Nan::New("typeName").ToLocalChecked();
-//return jsArr;
-    //v8::Local<v8::String> aProp = Nan::New("pos").ToLocalChecked();
+
+    v8::Local<v8::String> aProp = Nan::New("structures").ToLocalChecked();
 
     v8::Local<v8::Value> xValue = Nan::New(struc->getx());
     v8::Local<v8::Value> yValue = Nan::New(struc->gety());
 
-  //  v8::Local<v8::Value> tValue = Nan::New(struc->getTypeName()).ToLocalChecked();
-
-
-
+    v8::Local<v8::Value> tValue = Nan::New(struc->getTypeName()).ToLocalChecked();
 
     v8::Local<v8::Array> posesArr = Nan::New<v8::Array>(poses.size());
     int pal = posesArr->Length();
@@ -445,45 +332,22 @@ v8::Local<v8::Array> Map::getStructures(){
       posesArr->Set(p, jsElement);
     }
 
+    Nan::Set( jsonObject, xProp, xValue );
+    Nan::Set( jsonObject, yProp, yValue );
+    Nan::Set( jsonObject, tProp, tValue );
+    Nan::Set( jsonObject, aProp, posesArr );
 
-
-
-
-/*
-
-
-    v8::Local<v8::Array> posesArr = Nan::New<v8::Array>( posesL );
-
-    for( int p = 0; p < posesL; p++ ){
-      //Nan::Set(posesArr, p, Nan::New( poses[ p ] ) );
-      v8::Local<v8::Value> cValue = Nan::New( poses[ p ] );
-      posesArr->Set( p, cValue );
-    }
-
-    */
-    //std::unique_ptr<Structure> structure = structures[i];
-    //v8::Local<v8::Value> arrValue = Nan::New( posesArr );
-    Nan::Set(jsonObject, xProp, xValue);
-    Nan::Set(jsonObject, yProp, yValue);
-    Nan::Set(jsonObject, tProp, posesArr);
-    //Nan::Set(jsonObject, aProp, posesArr);
-
-
-  //  Nan::Set(jsArr, i, jsonObject);
-    jsArr->Set(i, jsonObject);
+    jsArr->Set( i, jsonObject );
   }
-  //info.GetReturnValue().Set(jsArr);
-
   return jsArr;
 }
 
 std::vector<int> Map::fillAccessMap( int _startx, int _starty, std::vector<int>& arrMap ){
-  std::vector<int> ret;
+
   int length = getLength();
-  for(int i = 0; i < length; i++ ){
-    ret.push_back( -1 );
-  }
-  int p1d = to1d( _startx, _starty);
+  std::vector<int> ret( length, -1);
+
+  int p1d = to1d( _startx, _starty );
   ret[ p1d ] = 1;
   std::vector<int> searchList;
   searchList.push_back( _startx );
@@ -534,20 +398,26 @@ std::vector<int>  Map::testAccessTile( int srcX, int srcY, int offsetX, int offs
     return newList;
   }else{
     ret[ pos1d ] = 1;
-    bool isNew = true;
     int listl = _list.size() / 2;
     for( int i = 0; i < listl; i++ ){
-      int tx = _list[ i * 2 ];
-      int ty = _list[ i * 2 + 1 ];
-      if( tx == tX && ty == tY ){
-        isNew = false;
-        break;
+      if( _list[ i * 2 ] == tX && _list[ i * 2 + 1 ] == tY ){
+        return newList;
       }
     }
-    if( isNew == true ){
-      newList.push_back( tX );
-      newList.push_back( tY );
-    }
+    newList.push_back( tX );
+    newList.push_back( tY );
     return newList;
   }
+}
+v8::Local<v8::Array> Map::getFilledAccess(){
+  std::vector<int> copyArr = arr;
+  std::vector<int> filled = fillAccessMap( endPts[ 0 ], endPts[ 1 ], copyArr );
+  int sl = copyArr.size();
+  v8::Local<v8::Array> jsArr = Nan::New<v8::Array>( sl );
+  for( int i = 0; i < sl; i++ ){
+    int number = filled.at( i );
+    v8::Local<v8::Value> jsElement = Nan::New(number);
+    jsArr->Set(i, jsElement);
+  }
+  return jsArr;
 }
