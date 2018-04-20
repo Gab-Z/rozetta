@@ -10,7 +10,9 @@
                     "./cpp/classes/TowerDefense/TowerDefense.cpp",
                     "./cpp/classes/PointList/PointList.cpp",
                     "./cpp/classes/Structure/abstract/StructureCommons.cpp",
-                    "./cpp/classes/Structure/abstract/OneTileStructure.cpp"
+                    "./cpp/classes/Structure/abstract/OneTileStructure.cpp",
+                    "./cpp/classes/Structure/index.cpp",
+                    "./cpp/classes/Structure/Wall.cpp"
                     ],
       "include_dirs" : [
           "<!(node -e \"require('nan')\")"

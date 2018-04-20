@@ -9,6 +9,13 @@ GridIndicesList::GridIndicesList( std::vector<int> _v ):GridDimensions(){
 GridIndicesList::GridIndicesList( std::vector<int> _v, int _w, int _h ):GridDimensions( _w, _h ){
   vec = _v;
 }
+void GridIndicesList::setVec( std::vector<int> _v ){
+  vec = _v;
+}
+void GridIndicesList::setVec( std::vector<int> _v, int _w, int _h ){
+  vec = _v;
+  setDimensions( _w, _h );
+}
 void GridIndicesList::convertTwoPointsList( std::vector<int> _v ){
   int l = _v.size() / 2;
   vec = std::vector<int>( l );

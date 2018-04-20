@@ -13,7 +13,7 @@ const towerDef = new td.TowerDefense(defaults.mapW,defaults.mapH);
 
 setCanvas();
 drawGrid( document.getElementById( "canvas0" ) );
-
+document.getElementById( "canvas0" ).addEventListener( "click", cvClick );
 let start = Date.now();
 var t = towerDef.testClass();
 /*
@@ -27,7 +27,15 @@ var t=0;
 */
 
 console.log( "t : " + t.length + ", " + (Date.now() - start) );
-
+function cvClick( e ){
+  let pos = getMouseTile( e );
+  console.log( pos.x + ", " + pos.y );
+}
+function getMouseTile( e ){
+  let cv = e.currentTarget;
+  return { x: Math.floor( ( e.pageX - cv.offsetLeft ) / defaults.tileSize ),
+           y: Math.floor( ( e.pageY - cv.offsetTop ) / defaults.tileSize ) };
+}
 function setCanvas(){
   let mainCont = document.getElementById( "mainCont" );
   mainCont.innerHTML = "";

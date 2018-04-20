@@ -3,11 +3,12 @@
 
 #include <nan.h>
 #include "../Grid/GridIntVec.h"
-#include "../Grid/GridIntFK.h"
+#include "../Structure/index.h"
 
 class TowerDefense  : public Nan::ObjectWrap {
 
-  GridIntVec* grd_terrain;
+  GridIntVec grd_terrain;
+  std::vector<StructureCommons*> structures;
 
   public:
 
@@ -24,6 +25,8 @@ class TowerDefense  : public Nan::ObjectWrap {
     //static NAN_METHOD( addStructure );
 
     static NAN_METHOD( testClass );
+
+    static NAN_METHOD( addStructures );
 
 
 };

@@ -18,6 +18,7 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "addStructure", addStructure );
   */
   Nan::SetPrototypeMethod( ctor, "testClass", testClass );
+  Nan::SetPrototypeMethod( ctor, "addStructures", addStructures );
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
 }
@@ -40,8 +41,9 @@ NAN_METHOD(TowerDefense::New) {
   // create a new instance and wrap our javascript instance
   TowerDefense* towerDef = new TowerDefense();
   towerDef->Wrap(info.Holder());
-  towerDef->grd_terrain = new GridIntVec( info[0]->IntegerValue(), info[1]->IntegerValue(), 1 );
-
+  //towerDef->grd_terrain = new GridIntVec( info[0]->IntegerValue(), info[1]->IntegerValue(), 1 );
+  towerDef->grd_terrain.setDimensions( info[0]->IntegerValue(), info[1]->IntegerValue() );
+  towerDef->grd_terrain.set( std::vector<int> ( info[0]->IntegerValue() * info[1]->IntegerValue(), 1 ) );
 
   /*
   //towerDef->store = Map();
@@ -88,9 +90,7 @@ NAN_SETTER(TowerDefense::HandleSetters) {
 NAN_METHOD( TowerDefense::testClass ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
 
-
-
-  info.GetReturnValue().Set( self->grd_terrain->getJsArray() );
+  info.GetReturnValue().Set( self->grd_terrain.getJsArray() );
   /*
   GridIntFK grd( self->grid->getWidth(), self->grid->getHeight() );
   int l = grd.size();
@@ -127,6 +127,28 @@ NAN_METHOD( TowerDefense::testClass ){
   */
 
 
+
+
+}
+NAN_METHOD( TowerDefense::addStructures ){
+
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
+
+  if(info.Length() != 2) {
+    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected 2 arguments : string:typeName, array:structurePositions").ToLocalChecked());
+  }
+
+  Nan::Utf8String utf8_value(info[0]);
+  int len = utf8_value.length();
+  if (len <= 0) {
+     return Nan::ThrowTypeError("TowerDefense::addStructures - expected argument 0 to be a non empty string");
+  }
+  std::string propertyName(*utf8_value, len);
+
+  // expect arguments to be numbers
+  if(!info[1]->IsArray() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected argument 2 to be an array").ToLocalChecked());
+  }
 
 
 }

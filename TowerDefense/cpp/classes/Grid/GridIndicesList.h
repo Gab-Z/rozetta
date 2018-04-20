@@ -15,6 +15,8 @@ class GridIndicesList : public GridDimensions {
     void convertTwoPointsList( std::vector<int> _v );
     int getIndice( int i );
     std::vector<int> getPos( int i );
+    void setVec( std::vector<int> _v );
+    void setVec( std::vector<int> _v, int _w, int _h );
 
 };
 
