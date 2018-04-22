@@ -6,10 +6,10 @@
 class OneTileStructure : public StructureCommons {
 
   public:
-
+    OneTileStructure();
     OneTileStructure( int _x, int _y );
     virtual std::string getTypeName(){ return "OneTileStructure"; };
-    
+
 };
 
 #endif

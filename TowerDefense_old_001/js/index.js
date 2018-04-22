@@ -9,18 +9,34 @@ const td = bindings("towerdef");
 const defaults = {
   tileSize:30,
   mapW:8,
-  mapH:8
+  mapH:8,
+  start:{x:1,y:3},
+  end:{x:7,y:3}
 };
-const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
+const towerDef = new td.TowerDefense(defaults.mapW,defaults.mapH);
 
 setCanvas();
 drawGrid( document.getElementById( "canvas0" ) );
 document.getElementById( "canvas0" ).addEventListener( "click", cvClick );
+let start = Date.now();
+var t = towerDef.testClass();
+/*
+for( let j = 0; j < 4000; j++ ){
+  var arrb = new Array(250000);
+  for(let u=0;u <250000;u++){
+    arrb[u]=arr[u]
+  }
+}
+var t=0;
+*/
 
+console.log( "t : " + t.length + ", " + (Date.now() - start) );
 function cvClick( e ){
   let pos = getMouseTile( e );
   console.log( pos.x + ", " + pos.y );
-
+  let a  = towerDef.addStructures( "Wall", [ pos.x, pos.y ] );
+  console.log( "map : (" + a.length + ")" + a );
+  drawMap( a )
 }
 function getMouseTile( e ){
   let cv = e.currentTarget;

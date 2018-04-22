@@ -6,6 +6,9 @@ PointList::PointList(){
 PointList::PointList( std::vector<int> v ){
   vec = v;
 }
+PointList::PointList( v8::Local<v8::Array> _arr ){
+  vec = Converter::jsArrayToVectorInt( _arr );
+}
 void PointList::set( std::vector<int> v ){
   vec = v;
 }

@@ -2,14 +2,16 @@
 #define DEF_PointList
 
 #include <vector>
+#include "../Converter/Converter.h"
 
 class PointList {
-  
+
   std::vector<int> vec;
 
   public:
     PointList();
     PointList( std::vector<int> v );
+    PointList( v8::Local<v8::Array> _arr );
     void set( std::vector<int> v );
     void set( int i, int val );
     std::vector<int> get();

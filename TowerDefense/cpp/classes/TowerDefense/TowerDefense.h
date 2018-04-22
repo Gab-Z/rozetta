@@ -2,15 +2,18 @@
 #define DEF_TowerDefense
 
 #include <nan.h>
-#include "../Grid/GridIntVec.h"
-#include "../Structure/index.h"
+#include "../Converter/Converter.h"
 
 class TowerDefense  : public Nan::ObjectWrap {
 
-  GridIntVec grd_terrain;
-  std::vector<StructureCommons*> structures;
+  int mapWidth;
+  int mapHeight;
+  std::vector<int> startPoints;
+  std::vector<int> endPoints;
 
   public:
+
+    TowerDefense( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts );
 
     static NAN_MODULE_INIT(Init);
 
@@ -22,13 +25,11 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     static NAN_SETTER(HandleSetters);
 
-    //static NAN_METHOD( addStructure );
+    int width();
 
-    static NAN_METHOD( testClass );
-
-    static NAN_METHOD( addStructures );
-
+    int height();
 
 };
+
 
 #endif

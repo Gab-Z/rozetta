@@ -22,7 +22,10 @@ class StructureCommons{
     void setGridPositions( GridIndicesList _points );
     void setGridPositions( std::vector<int> v );
     void setPosition( int _x, int _y );
-
+    std::vector<int> getTilePos( int i );
+    std::vector<int> getPosition();
+    int size();
+    std::vector<int> getGridPositions();
 };
 
 #endif
