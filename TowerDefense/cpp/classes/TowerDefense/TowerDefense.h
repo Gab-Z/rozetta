@@ -3,6 +3,8 @@
 
 #include <nan.h>
 #include "../Converter/Converter.h"
+#include "../Structure/index.h"
+#include "../Floor/Floor.h"
 
 class TowerDefense  : public Nan::ObjectWrap {
 
@@ -10,6 +12,7 @@ class TowerDefense  : public Nan::ObjectWrap {
   int mapHeight;
   std::vector<int> startPoints;
   std::vector<int> endPoints;
+  std::vector<Structure*> structures;
 
   public:
 
