@@ -13,6 +13,7 @@ class TowerDefense  : public Nan::ObjectWrap {
   std::vector<int> startPoints;
   std::vector<int> endPoints;
   std::vector<Structure*> structures;
+  std::vector<Floor> floors;
 
   public:
 
