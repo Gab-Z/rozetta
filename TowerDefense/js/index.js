@@ -49,7 +49,7 @@ function loadProgressHandler( loader, resource ){
 function setupFloorSprites(){
   let _floors = this;
   let nbTiles = defaults.mapW * defaults.mapH;
-  if( nbTiles <= 0 ){
+  if( nbTiles <= 1500 ){
     store.floorContainer = new PIXI.particles.ParticleContainer();
   }else{
     store.floorContainer = new PIXI.Container();
@@ -64,13 +64,9 @@ function setupFloorSprites(){
       sprite.position.set( floorPositions[ f * 2 ] * defaults.tileSize, floorPositions[ f * 2 + 1 ] * defaults.tileSize );
       sprite.width = defaults.tileSize;
       sprite.height = defaults.tileSize;
-      //sprite.interactive = true;
-      //sprite.buttonMode = true;
-      //sprite.on( "pointerdown", onclick );
       store.floorContainer.addChild( sprite );
     }
   }
-  //store.floorContainer.interactive = true;
   app.stage.addChild( store.floorContainer );
   app.stage.interactive = true;
   app.stage.on( "pointerdown", onclick2 );
