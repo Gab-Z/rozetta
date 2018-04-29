@@ -6,13 +6,82 @@ HTMLCanvasElement.prototype.clear = function(){
 const ipc = require('electron').ipcRenderer;
 const bindings = require("bindings");
 const td = bindings("towerdef");
+const PIXI = require("pixi.js");
 const defaults = {
   tileSize:30,
-  mapW:8,
-  mapH:8
+  mapW:20,
+  mapH:20
 };
 const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
+const app = new PIXI.Application( { width: defaults.tileSize * defaults.mapW, height: defaults.tileSize * defaults.mapH } );
+//var floors = towerDef.floors;
+const store = {};
+//const floorSprites = {};
 
+setPIXIRenderer();
+loadFloorsImgs();
+
+//console.log( JSON.stringify( towerDef.getTiles() ) );
+
+function setPIXIRenderer(){
+  //Add the canvas that Pixi automatically created for you to the HTML document
+  document.body.appendChild(app.view);
+}
+function loadFloorsImgs(){
+  let _floors = towerDef.getFloors();
+//  console.log( JSON.stringify( _floors ) );
+  let arr = [];
+  for( let k in _floors ){
+    arr.push( _floors[ k ].imgUrl );
+    arr.push({
+      name: k,
+      url: _floors[ k ].imgUrl
+    })
+  }
+  PIXI.loader.add( arr )
+  .on("progress", loadProgressHandler)
+  .load( setupFloorSprites.bind( _floors ) )
+}
+function loadProgressHandler( loader, resource ){
+  console.log("loading: " + resource.url);
+  console.log("progress: " + loader.progress + "%");
+}
+function setupFloorSprites(){
+  let _floors = this;
+  let nbTiles = defaults.mapW * defaults.mapH;
+  if( nbTiles <= 0 ){
+    store.floorContainer = new PIXI.particles.ParticleContainer();
+  }else{
+    store.floorContainer = new PIXI.Container();
+  }
+  for( let k in _floors ){
+    let floorObj = _floors[ k ],
+        floorName = k,
+        floorPositions = floorObj.positions,
+        fpl = floorPositions.length / 2;
+    for( let f = 0; f < fpl; f++ ){
+      let sprite = new PIXI.Sprite( PIXI.loader.resources[ k ].texture );
+      sprite.position.set( floorPositions[ f * 2 ] * defaults.tileSize, floorPositions[ f * 2 + 1 ] * defaults.tileSize );
+      sprite.width = defaults.tileSize;
+      sprite.height = defaults.tileSize;
+      //sprite.interactive = true;
+      //sprite.buttonMode = true;
+      //sprite.on( "pointerdown", onclick );
+      store.floorContainer.addChild( sprite );
+    }
+  }
+  //store.floorContainer.interactive = true;
+  app.stage.addChild( store.floorContainer );
+  app.stage.interactive = true;
+  app.stage.on( "pointerdown", onclick2 );
+}
+function onclick2( e ){
+  let x = Math.floor( e.data.global.x / defaults.tileSize );
+  let y = Math.floor( e.data.global.y / defaults.tileSize );
+  console.log( x + ", " + y );
+}
+
+/*
 setCanvas();
 drawGrid( document.getElementById( "canvas0" ) );
 document.getElementById( "canvas0" ).addEventListener( "click", cvClick );
@@ -85,3 +154,4 @@ function to2d( _i ){
   return {  x : _i - ( y * d.mapW ),
             y : y }
 }
+*/

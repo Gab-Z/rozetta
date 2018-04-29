@@ -3,7 +3,6 @@
 
 #include <string>
 
-const int Floor_id_counter = 0;
 
 class Floor{
 
@@ -16,6 +15,7 @@ class Floor{
 
     Floor();
     Floor( std::string _typeName, std::string _img_url, double _speed );
+    Floor( int _id, std::string _typeName, std::string _img_url, double _speed );
     int getId();
     double getSpeed();
     std::string getImg_url();

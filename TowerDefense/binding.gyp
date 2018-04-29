@@ -10,7 +10,7 @@
                     "./cpp/classes/Structure/Wall.cpp",
                     "./cpp/classes/Structure/Cross.cpp",
                     "./cpp/classes/Structure/index.cpp",
-                    "./cpp/classes/Floor/Floor.h"
+                    "./cpp/classes/Floor/Floor.cpp"
         ],
       "include_dirs" : [
           "<!(node -e \"require('nan')\")"

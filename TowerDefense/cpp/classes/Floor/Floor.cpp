@@ -1,15 +1,19 @@
 #include "Floor.h"
 
 Floor::Floor(){
-  Floor_id_counter++;
-  id = Floor_id_counter;
+
 }
 Floor::Floor( std::string _typeName, std::string _img_url, double _speed ){
   typeName = _typeName;
   img_url = _img_url;
   speed = _speed;
-  Floor_id_counter++;
-  id = Floor_id_counter;
+
+}
+Floor::Floor( int _id, std::string _typeName, std::string _img_url, double _speed ){
+  typeName = _typeName;
+  img_url = _img_url;
+  speed = _speed;
+  id = _id;
 }
 int Floor::getId(){
   return id;
