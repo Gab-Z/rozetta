@@ -28,7 +28,11 @@ function setPIXIRenderer(){
   app.view.id = "pixiCanvas";
   document.body.appendChild(app.view);
   app.view.addEventListener( "mousedown", e => {
-    console.log( JSON.stringify( app.renderer.plugins.interaction.mouse.global ) );
+    //console.log( JSON.stringify( app.renderer.plugins.interaction.mouse.global ) );
+    let m = app.renderer.plugins.interaction.mouse.global,
+        x = Math.floor( m.x / defaults.tileSize ),
+        y = Math.floor( m.y / defaults.tileSize );
+    console.log( x + ", " + y );
   }, false )
 }
 function loadFloorsImgs(){
@@ -82,9 +86,7 @@ function setupFloorSprites(){
 
   store.floorContainer.addChild( store.floorSprite );
   app.stage.addChild( store.floorContainer );
-  //app.stage.interactive = true;
-  //app.stage.on( "pointerdown", onclick2 );
-  //store.floorContainer.cacheAsBitmap = true;
+  store.floorContainer.cacheAsBitmap = true;
   spriteList.forEach( _sprite => { _sprite.destroy(); } );
   tmpContainer.destroy();
 }
