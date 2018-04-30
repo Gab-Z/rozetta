@@ -25,11 +25,15 @@ loadFloorsImgs();
 
 function setPIXIRenderer(){
   //Add the canvas that Pixi automatically created for you to the HTML document
+  app.view.id = "pixiCanvas";
   document.body.appendChild(app.view);
+  app.view.addEventListener( "mousedown", e => {
+    console.log( JSON.stringify( app.renderer.plugins.interaction.mouse.global ) );
+  }, false )
 }
 function loadFloorsImgs(){
   let _floors = towerDef.getFloors();
-//  console.log( JSON.stringify( _floors ) );
+  //console.log( JSON.stringify( _floors ) );
   let arr = [];
   for( let k in _floors ){
     arr.push( _floors[ k ].imgUrl );
@@ -49,11 +53,13 @@ function loadProgressHandler( loader, resource ){
 function setupFloorSprites(){
   let _floors = this;
   let nbTiles = defaults.mapW * defaults.mapH;
+  let tmpContainer;
   if( nbTiles <= 1500 ){
-    store.floorContainer = new PIXI.particles.ParticleContainer();
+    tmpContainer = new PIXI.particles.ParticleContainer();
   }else{
-    store.floorContainer = new PIXI.Container();
+    tmpContainer = new PIXI.Container();
   }
+  let spriteList = [];
   for( let k in _floors ){
     let floorObj = _floors[ k ],
         floorName = k,
@@ -64,12 +70,23 @@ function setupFloorSprites(){
       sprite.position.set( floorPositions[ f * 2 ] * defaults.tileSize, floorPositions[ f * 2 + 1 ] * defaults.tileSize );
       sprite.width = defaults.tileSize;
       sprite.height = defaults.tileSize;
-      store.floorContainer.addChild( sprite );
+      tmpContainer.addChild( sprite );
+      spriteList.push( sprite );
+      //sprite.destroy();
     }
   }
+  store.renderTex = PIXI.RenderTexture.create( defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
+  store.floorContainer = new PIXI.particles.ParticleContainer();
+  app.renderer.render( tmpContainer, store.renderTex );
+  store.floorSprite = new PIXI.Sprite( store.renderTex );
+
+  store.floorContainer.addChild( store.floorSprite );
   app.stage.addChild( store.floorContainer );
-  app.stage.interactive = true;
-  app.stage.on( "pointerdown", onclick2 );
+  //app.stage.interactive = true;
+  //app.stage.on( "pointerdown", onclick2 );
+  //store.floorContainer.cacheAsBitmap = true;
+  spriteList.forEach( _sprite => { _sprite.destroy(); } );
+  tmpContainer.destroy();
 }
 function onclick2( e ){
   let x = Math.floor( e.data.global.x / defaults.tileSize );
