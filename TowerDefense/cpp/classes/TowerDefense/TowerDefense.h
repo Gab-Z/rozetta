@@ -27,30 +27,35 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     TowerDefense( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts );
 
-    static NAN_MODULE_INIT(Init);
+    static NAN_MODULE_INIT( Init );
 
-    static NAN_METHOD(New);
+    static NAN_METHOD( New );
 
     static Nan::Persistent<v8::FunctionTemplate> constructor;
 
-    static NAN_GETTER(HandleGetters);
+    static NAN_GETTER( HandleGetters );
 
-    static NAN_SETTER(HandleSetters);
+    static NAN_SETTER( HandleSetters );
 
     static NAN_METHOD( getFloors );
 
     v8::Local<v8::Array> getTilesArray();
+
     static NAN_METHOD( getTiles );
+
+    v8::Local<v8::Array> structuresDefs();
+
+    static NAN_METHOD( getStructuresDefs );
 
     int width();
 
     int height();
 
-    //v8::Local<v8::Object> getFloors();
-
     int to1d( int _x, int _y );
 
     std::vector<int> to2d( int _idx );
+
+
 
 };
 

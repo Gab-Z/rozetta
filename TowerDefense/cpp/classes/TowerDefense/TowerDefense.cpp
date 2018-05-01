@@ -178,3 +178,14 @@ std::vector<Floor*> TowerDefense::floors = {
   new Floor( 1, "bareGround", "bareGround.jpg", 1.0 ),
   new Floor( 2, "water", "water.jpg", 2.0 )
 };
+
+v8::Local<v8::Array> TowerDefense::structuresDefs(){
+  v8::Local<v8::Array> ret = v8::Local<v8::Array>();
+  return ret;
+}
+
+NAN_METHOD( TowerDefense::getStructuresDefs ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
+  v8::Local<v8::Array> ret = self->structuresDefs();
+  info.GetReturnValue().Set( ret );
+}

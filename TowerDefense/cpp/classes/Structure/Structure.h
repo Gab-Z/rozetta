@@ -3,29 +3,29 @@
 
 #include <vector>
 #include <string>
+#include "../Converter/Converter.h"
 
 class Structure {
 
   int id;
-  int gridWidth;
-  int gridHeight;
   int x;
   int y;
 
   public:
 
     Structure();
-    Structure( int _gridWidth, int _gridHeight );
-    Structure( int _x, int _y, int _gridWidth, int _gridHeight );
-    std::vector<int> getDimensions();
-    void setDimensions( int _gridWidth, int _gridHeight );
-    void setGridWidth( int _gridWidth );
-    void setGridHeight( int _gridHeight );
+    Structure( int _x, int _y );
     std::vector<int> getPosition();
     void setPosition( int _x, int _y );
     void setX( int _x );
     void setY( int _y );
-    virtual std::string typeName(){ return "Structure"; };
+    virtual std::string getTypeName(){ return "Structure"; };
+    virtual std::vector<int> getGrid(){ return std::vector<int> ( 0 ); };
+    virtual std::string getImgUrl(){ return "null"; };
+    virtual int getCost(){ return 0; };
+    virtual int gridWidth(){ return 0; };
+    virtual int gridHeight(){ return 0; };
+    v8::Local<v8::Object> getDefinitionObj();
 
 };
 
