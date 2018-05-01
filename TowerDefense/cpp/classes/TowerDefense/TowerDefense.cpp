@@ -19,6 +19,8 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   */
   Nan::SetPrototypeMethod( ctor, "getFloors", getFloors );
   Nan::SetPrototypeMethod( ctor, "getTiles", getTiles );
+  Nan::SetPrototypeMethod( ctor, "getStructuresDefs", getStructuresDefs );
+
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
 
 //  instantiateFloors();
@@ -185,7 +187,8 @@ v8::Local<v8::Array> TowerDefense::structuresDefs(){
 }
 
 NAN_METHOD( TowerDefense::getStructuresDefs ){
-  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
-  v8::Local<v8::Array> ret = self->structuresDefs();
+  //TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
+  //v8::Local<v8::Array> ret = self->structuresDefs();
+  v8::Local<v8::Object> ret = Wall::getDefinitionObj();
   info.GetReturnValue().Set( ret );
 }
