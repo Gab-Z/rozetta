@@ -5,6 +5,22 @@
 #include <string>
 #include "../Converter/Converter.h"
 
+struct dataStructure{
+
+  const std::string typeName = "Structure";
+
+  const std::string img_url = "null";
+
+  const std::vector<int> grid();
+
+  const int cost = 0;
+
+  const int gridWidth = 0;
+
+  const int gridHeight = 0;
+
+};
+
 class Structure {
 
   int id;
@@ -26,6 +42,7 @@ class Structure {
     virtual int gridWidth(){ return 0; };
     virtual int gridHeight(){ return 0; };
     v8::Local<v8::Object> getDefinitionObj();
+    virtual data = dataStructure;
 
 };
 

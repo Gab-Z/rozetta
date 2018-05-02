@@ -3,9 +3,22 @@
 
 #include "Structure.h"
 
-const std::string wall_img_url = "wall.jpg";
+struct dataWall{
 
-const std::vector<int> wall_grid = { 1 };
+  const std::string typeName = "Wall";
+
+  const std::string img_url = "wall.jpg";
+
+  const std::vector<int> grid = { 1 };
+
+  const int cost = 10;
+
+  const int gridWidth = 1;
+
+  const int gridHeight = 1;
+
+}
+const StructureData wallData( "Wall", "Wall.jpg", std::vector<int> { 1 }, 10, 1, 1 );
 
 class Wall : public Structure {
 

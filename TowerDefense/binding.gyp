@@ -7,6 +7,7 @@
                     "./cpp/classes/TowerDefense/TowerDefense.cpp",
                     "./cpp/classes/Tile/Tile.cpp",
                     "./cpp/classes/Structure/Structure.cpp",
+                    "./cpp/classes/Structure/StructureData.cpp",
                     "./cpp/classes/Structure/Wall.cpp",
                     "./cpp/classes/Structure/Cross.cpp",
                     "./cpp/classes/Structure/index.cpp",
