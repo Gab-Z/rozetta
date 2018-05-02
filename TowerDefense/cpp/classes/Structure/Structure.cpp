@@ -23,7 +23,7 @@ v8::Local<v8::Object> Structure::getDefinitionObj(){
   v8::Local<v8::String> typeProp = Nan::New( "typeName" ).ToLocalChecked();
   v8::Local<v8::Value> typeValue = Nan::New( getTypeName() ).ToLocalChecked();
   ret->Set( typeProp, typeValue );
-
+/*
   v8::Local<v8::String> widthProp = Nan::New( "gridWidth" ).ToLocalChecked();
   v8::Local<v8::Value> widthValue = Nan::New( gridWidth() );
   ret->Set( widthProp, widthValue );
@@ -43,7 +43,7 @@ v8::Local<v8::Object> Structure::getDefinitionObj(){
   v8::Local<v8::String> gridProp = Nan::New( "grid" ).ToLocalChecked();
   v8::Local<v8::Array> gridValue = Converter::vectorIntToJsArray( getGrid() );
   ret->Set( gridProp, gridValue );
-
+*/
   return ret;
 }
 
