@@ -17,11 +17,15 @@ void Structure::setX( int _x ){
 void Structure::setY( int _y ){
   y = _y;
 }
+//StructureDef* Structure::structureDef =  new StructureDef( "Structure", std::vector<int>(), "null", 0, 0, 0 );
+
 v8::Local<v8::Object> Structure::getDefinitionObj(){
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
 
+  const StructureDef* def = structureDef();
+
   v8::Local<v8::String> typeProp = Nan::New( "typeName" ).ToLocalChecked();
-  v8::Local<v8::Value> typeValue = Nan::New( getTypeName() ).ToLocalChecked();
+  v8::Local<v8::Value> typeValue = Nan::New( def->typeName ).ToLocalChecked();
   ret->Set( typeProp, typeValue );
 /*
   v8::Local<v8::String> widthProp = Nan::New( "gridWidth" ).ToLocalChecked();
@@ -46,10 +50,11 @@ v8::Local<v8::Object> Structure::getDefinitionObj(){
 */
   return ret;
 }
-
-
-//std::vector<int> getDimensions();
-//virtual std::string getTypeName(){ return "Structure"; };
-//virtual std::vector<int> getGrid(){ return std::vector<int> ( 0 ); };
-//virtual std::string getImgUrl(){ return "null"; };
-//virtual int getCost(){ return 0; };
+/*
+std::string Structure::typeName = "Structure";
+std::vector<int> Structure::grid = std::vector<int>();
+std::string Structure::imgUrl = "null";
+int Structure::cost = 0;
+int Structure::gridWidth = 0;
+int Structure::gridHeight = 0;
+*/

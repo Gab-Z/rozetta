@@ -2,13 +2,13 @@
 #define DEF_Converter
 
 #include <nan.h>
+#include "../Structure/Structure.h"
 
-class Converter {
+namespace Converter {
 
-  public:
-
-    static std::vector<int> jsArrayToVectorInt( v8::Local<v8::Array> _arr );
-    static v8::Local<v8::Array> vectorIntToJsArray( std::vector<int> _v );
+    std::vector<int> jsArrayToVectorInt( v8::Local<v8::Array> _arr );
+    v8::Local<v8::Array> vectorIntToJsArray( std::vector<int> _v );
+    v8::Local<v8::Object> getDefinitionObj( Structure* struc );
 
 };
 

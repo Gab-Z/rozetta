@@ -21,7 +21,7 @@ const store = {};
 setPIXIRenderer();
 loadFloorsImgs();
 
-//console.log( JSON.stringify( towerDef.getTiles() ) );
+console.log( JSON.stringify( towerDef.getStructuresDefs() ) );
 
 function setPIXIRenderer(){
   //Add the canvas that Pixi automatically created for you to the HTML document
