@@ -1,11 +1,10 @@
 #ifndef DEF_Structure
 #define DEF_Structure
 
-#include <nan.h>
+
 #include <vector>
 #include <string>
 #include "./StructureDef.h"
-
 
 class Structure {
 
@@ -24,6 +23,5 @@ class Structure {
     void setY( int _y );
 
 };
-
 
 #endif

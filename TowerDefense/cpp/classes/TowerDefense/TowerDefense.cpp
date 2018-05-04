@@ -19,7 +19,7 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   */
   Nan::SetPrototypeMethod( ctor, "getFloors", getFloors );
   Nan::SetPrototypeMethod( ctor, "getTiles", getTiles );
-  //Nan::SetPrototypeMethod( ctor, "getStructuresDefs", getStructuresDefs );
+  Nan::SetPrototypeMethod( ctor, "getStructuresDefs", getStructuresDefs );
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
 
@@ -192,16 +192,21 @@ std::vector<StructureDef*> TowerDefense::structureTypes = {
   }, "cross.png", 60, 3, 3 )
 
 };
-/*
+
 v8::Local<v8::Array> TowerDefense::structuresDefs(){
-  v8::Local<v8::Array> ret = v8::Local<v8::Array>();
+  int l =  TowerDefense::structureTypes.size();
+  v8::Local<v8::Array> ret = Nan::New<v8::Array>( l );
+  for( int i = 0; i < l; i++ ){
+    StructureDef* strucDef = TowerDefense::structureTypes[ i ];
+    v8::Local<v8::Object> strucDefObj = strucDef->toObj();
+    ret->Set( i, strucDefObj );
+  }
   return ret;
 }
 
 NAN_METHOD( TowerDefense::getStructuresDefs ){
   //TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
   //v8::Local<v8::Array> ret = self->structuresDefs();
-  v8::Local<v8::Object> ret = Wall::getDefinitionObj();
+  v8::Local<v8::Array> ret = TowerDefense::structuresDefs();
   info.GetReturnValue().Set( ret );
 }
-*/

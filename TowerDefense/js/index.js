@@ -8,12 +8,13 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize:30,
-  mapW:20,
-  mapH:20
+  tileSize: 30,
+  mapW: 20,
+  mapH: 20,
+  menuHeight: 45
 };
 const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
-const app = new PIXI.Application( { width: defaults.tileSize * defaults.mapW, height: defaults.tileSize * defaults.mapH } );
+const app = new PIXI.Application( { width: defaults.tileSize * defaults.mapW, height: defaults.tileSize * defaults.mapH + defaults.menuHeight } );
 //var floors = towerDef.floors;
 const store = {};
 //const floorSprites = {};
@@ -21,7 +22,7 @@ const store = {};
 setPIXIRenderer();
 loadFloorsImgs();
 
-//console.log( JSON.stringify( towerDef.getStructuresDefs() ) );
+console.log("test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
 
 function setPIXIRenderer(){
   //Add the canvas that Pixi automatically created for you to the HTML document
@@ -89,12 +90,52 @@ function setupFloorSprites(){
   store.floorContainer.cacheAsBitmap = true;
   spriteList.forEach( _sprite => { _sprite.destroy(); } );
   tmpContainer.destroy();
+
+  loadStructuresImgs();
 }
 function onclick2( e ){
   let x = Math.floor( e.data.global.x / defaults.tileSize );
   let y = Math.floor( e.data.global.y / defaults.tileSize );
   console.log( x + ", " + y );
 }
+
+function loadStructuresImgs(){
+  let _structures = towerDef.getStructuresDefs(),
+      arr = [];
+  _structures.forEach( struc => {
+    arr.push( {
+      name: struc.typeName,
+      url: struc.imgUrl
+    } )
+  })
+  PIXI.loader.add( arr )
+  .on("progress", loadProgressHandler)
+  .load( setupStructurePicker.bind( _structures ) )
+}
+
+function setupStructurePicker(){
+  let _structures = this,
+      nbStrucs = _structures.length;
+  if( nbStrucs <= 1500 ){
+    store.spriteListContainer = new PIXI.particles.ParticleContainer();
+  }else{
+    store.spriteListContainer = new PIXI.Container();
+  }
+  let spriteSize = Math.floor( defaults.menuHeight * 0.8 ),
+      spriteTop = defaults.tileSize * defaults.mapH + ( defaults.menuHeight - spriteSize ) * 0.5,
+      spriteMargin = spriteSize * 0.20;
+
+  _structures.forEach( ( struc, i ) => {
+    let strucSprite = new PIXI.Sprite( PIXI.loader.resources[ struc.typeName ].texture );
+    strucSprite.width = spriteSize;
+    strucSprite.height = spriteSize;
+    strucSprite.position.set( i * ( spriteSize + spriteMargin ), spriteTop );
+    store.spriteListContainer.addChild( strucSprite );
+    //spriteList.push( sprite );
+    app.stage.addChild( store.spriteListContainer );
+  } )
+}
+
 
 /*
 setCanvas();
