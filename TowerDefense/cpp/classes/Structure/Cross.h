@@ -3,19 +3,12 @@
 
 #include "Structure.h"
 
-const std::vector<int> cross_grid = {
-  0,  1,  0,
-  1,  1,  1,
-  0,  1,  0
- };
-
-const std::string cross_img_url = "cross.png";
-
 class Cross : public Structure {
 
   public:
 
     Cross();
+    /*
     Cross( int _x, int _y );
 
     virtual std::string getTypeName(){ return "Cross"; };
@@ -24,6 +17,7 @@ class Cross : public Structure {
     virtual int getCost(){ return 60; };
     virtual int gridWidth(){ return 3; };
     virtual int gridHeight(){ return 3; };
+    */
 };
 
 #endif

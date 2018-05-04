@@ -19,6 +19,7 @@ class TowerDefense  : public Nan::ObjectWrap {
   std::vector<Structure*> structures;
   std::vector<int> floorIds;
   static std::vector<Floor*> floors;
+  static std::vector<StructureDef*> structureTypes;
   std::vector<Tile*> tiles;
 
   public:
@@ -43,9 +44,9 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     static NAN_METHOD( getTiles );
 
-    v8::Local<v8::Array> structuresDefs();
+    //v8::Local<v8::Array> structuresDefs();
 
-    static NAN_METHOD( getStructuresDefs );
+    //static NAN_METHOD( getStructuresDefs );
 
     int width();
 
