@@ -103,6 +103,7 @@ function loadStructuresImgs(){
   let _structures = towerDef.getStructuresDefs(),
       arr = [];
   _structures.forEach( struc => {
+    console.log( "add : " + struc.typeName + " / " + struc.imgUrl )
     arr.push( {
       name: struc.typeName,
       url: struc.imgUrl
@@ -116,26 +117,30 @@ function loadStructuresImgs(){
 function setupStructurePicker(){
   let _structures = this,
       nbStrucs = _structures.length;
-  if( nbStrucs <= 1500 ){
-    store.spriteListContainer = new PIXI.particles.ParticleContainer();
-  }else{
-    store.spriteListContainer = new PIXI.Container();
-  }
+  store.spriteListContainer = new PIXI.Container();
+
   let spriteSize = Math.floor( defaults.menuHeight * 0.8 ),
       spriteTop = defaults.tileSize * defaults.mapH + ( defaults.menuHeight - spriteSize ) * 0.5,
       spriteMargin = spriteSize * 0.20;
 
   _structures.forEach( ( struc, i ) => {
+    console.log( "draw : " + struc.typeName )
     let strucSprite = new PIXI.Sprite( PIXI.loader.resources[ struc.typeName ].texture );
+    strucSprite.name = "structurePicker_" + struc.typeName;
     strucSprite.width = spriteSize;
     strucSprite.height = spriteSize;
     strucSprite.position.set( i * ( spriteSize + spriteMargin ), spriteTop );
     store.spriteListContainer.addChild( strucSprite );
-    //spriteList.push( sprite );
-    app.stage.addChild( store.spriteListContainer );
-  } )
-}
+    strucSprite.interactive = true;
+    strucSprite.buttonMode = true;
+    strucSprite.on( "pointerdown", clickSpriteList )
 
+  } )
+  app.stage.addChild( store.spriteListContainer );
+}
+function clickSpriteList( e ){
+  console.log( e.currentTarget.name )
+}
 
 /*
 setCanvas();
