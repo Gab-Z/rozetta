@@ -17,10 +17,11 @@ class TowerDefense  : public Nan::ObjectWrap {
   std::vector<int> startPoints;
   std::vector<int> endPoints;
   std::vector<Structure*> structures;
-  std::vector<int> floorIds;
+  //std::vector<int> floorIds;
   static std::vector<Floor*> floors;
   static std::vector<StructureDef*> structureTypes;
   std::vector<Tile*> tiles;
+  std::vector<int> moveMap;
 
   public:
 
@@ -56,6 +57,9 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     std::vector<int> to2d( int _idx );
 
+    void fillMoveMap();
+
+    static Floor* getFloorById( int _id );
 
 
 };

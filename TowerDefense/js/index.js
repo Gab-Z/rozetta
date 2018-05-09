@@ -234,7 +234,7 @@ function startStructurePosPreview( _typeName ){
   store.draggedElement.sprite.position.set( x * defaults.tileSize, y * defaults.tileSize );
 
   store.structSpriteContainer.on( "mousemove", dragStructPosPreview );
-  store.structSpriteContainer.on( "pointerdown", startStructPositioning );
+  store.structSpriteContainer.on( "mousedown", startStructPositioning );
   //app.view.addEventListener( "mouseup", onDragEnd, false );
   console.log( "dragg start" );
 }
@@ -285,7 +285,7 @@ function startStructPositioning( e ){
   store.draggedElement.sprite.tileScale.y = ( store.draggedElement.gridHeight * defaults.tileSize ) / store.draggedElement.sprite.texture.height;
 
   store.structSpriteContainer.off( "mousemove", dragStructPosPreview );
-  store.structSpriteContainer.off( "pointerdown", startStructPositioning );
+  //store.structSpriteContainer.off( "mousedown", startStructPositioning );
   let m = e.data.getLocalPosition( this ),
       x = Math.floor( m.x / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
       y = Math.floor( m.y / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
@@ -300,8 +300,11 @@ function startStructPositioning( e ){
   store.structSpriteContainer.addChild( store.dragGraph );
   store.dragGraph.lineStyle(0);
 
+  //store.structSpriteContainer.on( "rightdown", cancelStructPositioning );
+  window.addEventListener( "mousedown", cancelStructPositioning, false );
   store.structSpriteContainer.on( "mousemove", onMoveStructPositionning );
-  store.structSpriteContainer.on( "pointerdown", onEndStructPositioning );
+
+  store.structSpriteContainer.on( "mouseup", onEndStructPositioning );
 
   onMoveStructPositionning( e, m );
 }
@@ -329,15 +332,27 @@ function onMoveStructPositionning( e, _localPt ){
   let ts = defaults.tileSize,
       dragWidth = Math.abs( ( end.x - drawStart.x ) * ts ),
       dragHeight = Math.abs( ( end.y - drawStart.y ) * ts ),
-
       nbTileX = Math.floor( dragWidth / ( dragEl.gridWidth * ts ) ),
-      nbTileY = Math.floor( dragHeight / ( dragEl.gridHeight * ts ) );
-  console.log( nbTileX + "/" + nbTileY );
+      nbTileY = Math.floor( dragHeight / ( dragEl.gridHeight * ts ) ),
+      spritePreviewBoundsWidth = nbTileX * dragEl.gridWidth * ts * ( axis == "x" && direction == -1 ? -1 : 1),
+      spritePreviewBoundsHeight = nbTileY * dragEl.gridWidth * ts * ( axis == "y" && direction == -1 ? -1 : 1);
+
+  let structPositions = [];
+  for( let tx = 0; tx < nbTileX; tx++ ){
+    let posx = drawStart.x + tx * dragEl.gridWidth;
+    for( let ty = 0; ty < nbTileY; ty++ ){
+      structPositions.push( posx, drawStart.y + ty * dragEl.gridHeight );
+    }
+  }
+  //console.log( structPositions.toString() );
+
+
+  //console.log( nbTileX + "/" + nbTileY );
   store.draggedElement.sprite.position.set( drawStart.x * ts, drawStart.y * ts );
   //store.draggedElement.sprite.width = ( end.x - drawStart.x ) * ts;
   //store.draggedElement.sprite.height = ( end.y - drawStart.y ) * ts;
-  store.draggedElement.sprite.width = nbTileX * dragEl.gridWidth * ts * ( axis == "x" && direction == -1 ? -1 : 1);
-  store.draggedElement.sprite.height = nbTileY * dragEl.gridWidth * ts * ( axis == "y" && direction == -1 ? -1 : 1);
+  store.draggedElement.sprite.width = spritePreviewBoundsWidth;
+  store.draggedElement.sprite.height = spritePreviewBoundsHeight;
 
   store.dragGraph.clear();
   store.dragGraph.beginFill( 0xd3d5b4, 0.4 );
@@ -347,17 +362,20 @@ function onMoveStructPositionning( e, _localPt ){
   store.dragGraph.lineTo( drawStart.x * ts, end.y * ts );
 }
 
+function cancelStructPositioning( e ){
+  if( e.button == 0 ) return false;
+  console.log("cancel");
+  let typeName = store.draggedElement.structureType;
+  store.dragGraph.destroy();
+  store.dragGraph = false;
+  store.draggedElement.sprite.destroy();
+  window.removeEventListener( "mousedown", cancelStructPositioning, false );
+  store.structSpriteContainer.removeAllListeners();
+  store.draggedElement = false;
+  startStructurePosPreview( typeName );
+}
 function onEndStructPositioning( e ){
-  if( e.data.originalEvent.button > 0 ){
-    let typeName = store.draggedElement.structureType;
-    store.dragGraph.destroy();
-    store.dragGraph = false;
-    store.draggedElement.sprite.destroy();
-    store.structSpriteContainer.removeAllListeners();
-    store.draggedElement = false;
-    startStructurePosPreview( typeName );
-
-  }
+  console.log( "end drag pos" )
 }
 
 /*

@@ -32,7 +32,7 @@ TowerDefense::TowerDefense( int _width, int _height, std::vector<int> _startPts,
   startPoints = _startPts;
   endPoints = _endPts;
   size = mapWidth * mapHeight;
-  floorIds = std::vector<int> ( size, 1 );
+  //floorIds = std::vector<int> ( size, 1 );
   tiles = std::vector<Tile*> ( size );
   for( int i = 0; i < size; i++ ){
     std::vector<int> tilePos = to2d( i );
@@ -76,6 +76,7 @@ NAN_GETTER(TowerDefense::HandleGetters) {
     info.GetReturnValue().Set(Nan::Undefined());
   }
 }
+
 NAN_SETTER( TowerDefense::HandleSetters ) {
   std::string propertyName = std::string(*Nan::Utf8String(property));
   if( propertyName == "width" ){
@@ -87,20 +88,22 @@ NAN_SETTER( TowerDefense::HandleSetters ) {
   }
 }
 
-
 int TowerDefense::to1d( int _x, int _y ){
   int pos = _y * mapWidth + _x;
   return pos;
 }
+
 std::vector<int> TowerDefense::to2d( int _idx ){
   int _y = std::floor( _idx / mapWidth );
   int _x = _idx - (_y * mapWidth );
   std::vector<int> pos { _x, _y };
   return pos;
 }
+
 int TowerDefense::width(){
   return mapWidth;
 }
+
 int TowerDefense::height(){
   return mapHeight;
 }
@@ -126,7 +129,7 @@ NAN_METHOD( TowerDefense::getFloors ){
   int nbFloors = floors.size();
   int s = self->size;
   for( int i = 0; i < s; i++ ){
-    int floorId = self->floorIds[ i ];
+    int floorId = self->tiles[ i ]->getFloorId();
     Floor* testedFloor;
     bool floorFound = false;
     for( int j = 0; j < nbFloors; j++ ){
@@ -209,4 +212,24 @@ NAN_METHOD( TowerDefense::getStructuresDefs ){
   //v8::Local<v8::Array> ret = self->structuresDefs();
   v8::Local<v8::Array> ret = TowerDefense::structuresDefs();
   info.GetReturnValue().Set( ret );
+}
+
+void TowerDefense::fillMoveMap(){
+  for( int i = 0; i < size; i++ ){
+    Tile* _tile = tiles[ i ];
+    if( _tile -> getStructureId() != 0 ){
+      moveMap[ i ] = -2;
+    }else{
+      moveMap[ i ] = TowerDefense::getFloorById( _tile->getFloorId() )->getId();
+    }
+  }
+}
+
+Floor* TowerDefense::getFloorById( int _id ){
+  int l = TowerDefense::floors.size();
+  for( int i = 0; i < l; i ++ ){
+    if( TowerDefense::floors[ i ]->getId() == _id ){
+      return TowerDefense::floors[ i ];
+    }
+  }
 }
