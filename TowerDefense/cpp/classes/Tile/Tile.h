@@ -20,7 +20,7 @@ class Tile {
     int getx();
     int gety();
     int getStructureId();
-    int getFloorId();
+    int getFloorTypeId();
     void setPosition( int _x, int _y );
     void setStructureId( int _id );
     void setFloorTypeId( int _id );

@@ -18,7 +18,7 @@ std::vector<int> Tile::getPosition(){
 int Tile::getStructureId(){
   return structureId;
 }
-int Tile::getFloorId(){
+int Tile::getFloorTypeId(){
   return floorTypeId;
 }
 void Tile::setPosition( int _x, int _y ){
@@ -53,7 +53,7 @@ v8::Local<v8::Object> Tile::toObj(){
   ret->Set( strucProp, strucValue );
 
   v8::Local<v8::String> floorProp = Nan::New( "floorTypeId" ).ToLocalChecked();
-  v8::Local<v8::Value> floorValue = Nan::New( getFloorId() );
+  v8::Local<v8::Value> floorValue = Nan::New( getFloorTypeId() );
   ret->Set( floorProp, floorValue );
 
   return ret;

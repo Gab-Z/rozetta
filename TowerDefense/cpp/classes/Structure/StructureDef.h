@@ -3,6 +3,7 @@
 
 #include <nan.h>
 #include <vector>
+#include <cmath>
 #include <string>
 #include "../Converter/Converter.h"
 
@@ -23,6 +24,13 @@ class StructureDef {
 
   v8::Local<v8::Object> toObj();
 
+  std::string getTypeName();
+
+  std::vector<int> getGrid();
+
+  int to1d( int _x, int _y );
+
+  std::vector<int> to2d( int _idx );
 
 };
 

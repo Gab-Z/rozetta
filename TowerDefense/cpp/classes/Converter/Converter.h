@@ -7,6 +7,7 @@ namespace Converter {
 
     std::vector<int> jsArrayToVectorInt( v8::Local<v8::Array> _arr );
     v8::Local<v8::Array> vectorIntToJsArray( std::vector<int> _v );
+    v8::Local<v8::Array> vectorBoolToJsArray( std::vector<bool> _v );
 };
 
 #endif

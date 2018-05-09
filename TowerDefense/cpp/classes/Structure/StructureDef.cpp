@@ -40,3 +40,23 @@ v8::Local<v8::Object> StructureDef::toObj(){
 
   return ret;
 }
+
+std::string StructureDef::getTypeName(){
+  return typeName;
+}
+
+std::vector<int> StructureDef::getGrid(){
+  return grid;
+}
+
+int StructureDef::to1d( int _x, int _y ){
+  int pos = _y * gridWidth + _x;
+  return pos;
+}
+
+std::vector<int> StructureDef::to2d( int _idx ){
+  int _y = std::floor( _idx / gridWidth );
+  int _x = _idx - (_y * gridWidth );
+  std::vector<int> pos { _x, _y };
+  return pos;
+}

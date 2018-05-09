@@ -18,10 +18,10 @@ class TowerDefense  : public Nan::ObjectWrap {
   std::vector<int> endPoints;
   std::vector<Structure*> structures;
   //std::vector<int> floorIds;
-  static std::vector<Floor*> floors;
+  static std::vector<Floor*> floorTypes;
   static std::vector<StructureDef*> structureTypes;
   std::vector<Tile*> tiles;
-  std::vector<int> moveMap;
+  std::vector<double> moveMap;
 
   public:
 
@@ -49,6 +49,8 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     static NAN_METHOD( getStructuresDefs );
 
+    static NAN_METHOD( testStructuresPos );
+
     int width();
 
     int height();
@@ -59,8 +61,16 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     void fillMoveMap();
 
-    static Floor* getFloorById( int _id );
+    static Floor* getFloorTypeById( int _id );
 
+    bool testStructurePos( int _x, int _y, std::string _typeName );
+
+    std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName );
+
+    static StructureDef* getStructureTypeByName( std::string _typeName );
+
+    static NAN_METHOD( getMoveMap );
+    std::vector<double> getMoveMap();
 
 };
 
