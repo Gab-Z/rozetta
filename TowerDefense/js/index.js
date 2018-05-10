@@ -62,15 +62,37 @@ function loadProgressHandler( loader, resource ){
   console.log("progress: " + loader.progress + "%");
 }
 function setupFloorSprites(){
-  let _floors = this;
-  let nbTiles = defaults.mapW * defaults.mapH;
-  let tmpContainer;
+  let _floors = this,
+      nbTiles = defaults.mapW * defaults.mapH,
+      stageWidth = defaults.tileSize * defaults.mapW,
+      stageHeight = defaults.tileSize * defaults.mapH,
+      tmpContainer;
+
+  let stageCont = new PIXI.Container();
+  stageCont.name = "stageCont";
+  stageCont.width = stageWidth;
+  stageCont.height = stageHeight;
+  stageCont.position.set( 0, 0 );
+  stageCont.interactive = true;
+  stageCont.zIndex = 30;
+  let mask = new PIXI.Graphics();
+  //mask.isMask = true;
+  mask.position.set( 0, 0 );
+  mask.lineStyle(0);
+  mask.beginFill(0x8bc5ff, 0.4);
+  mask.moveTo( 0, 0 );
+  mask.lineTo( defaults.tileSize * defaults.mapW, 0 );
+  mask.lineTo( defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
+  mask.lineTo( 0, defaults.tileSize * defaults.mapH );
+  stageCont.mask = mask;
+  stageCont.hitArea = new PIXI.Rectangle( 0, 0, stageWidth, stageHeight );;
+
   if( nbTiles <= 1500 ){
     tmpContainer = new PIXI.particles.ParticleContainer();
   }else{
     tmpContainer = new PIXI.Container();
   }
-  let spriteList = [];
+
   for( let k in _floors ){
     let floorObj = _floors[ k ],
         floorName = k,
@@ -82,54 +104,34 @@ function setupFloorSprites(){
       sprite.width = defaults.tileSize;
       sprite.height = defaults.tileSize;
       tmpContainer.addChild( sprite );
-      spriteList.push( sprite );
-      //sprite.destroy();
     }
   }
-  store.renderTex = PIXI.RenderTexture.create( defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
-  store.floorContainer = new PIXI.particles.ParticleContainer();
-  store.floorContainer.width = defaults.tileSize * defaults.mapW;
-  store.floorContainer.height = defaults.tileSize * defaults.mapH;
-  store.floorContainer.position.set( 0, 0 );
-  store.floorContainer.zOrder = 10;
+  let renderTex = PIXI.RenderTexture.create( stageWidth, stageHeight ),
+      floorContainer = new PIXI.particles.ParticleContainer();
+  floorContainer.name = "floorCont";
+  floorContainer.width = stageWidth;
+  floorContainer.height = stageHeight;
+  floorContainer.position.set( 0, 0 );
+  //floorContainer.zIndex = 10;
 
-  app.renderer.render( tmpContainer, store.renderTex );
-  store.floorSprite = new PIXI.Sprite( store.renderTex );
+  app.renderer.render( tmpContainer, renderTex );
+  let floorSprite = new PIXI.Sprite( renderTex );
+  floorContainer.addChild( floorSprite );
 
-  store.floorContainer.addChild( store.floorSprite );
-  app.stage.addChild( store.floorContainer );
-  store.floorContainer.cacheAsBitmap = true;
+  floorContainer.cacheAsBitmap = true;
 
-  spriteList.forEach( _sprite => { _sprite.destroy(); } );
-  tmpContainer.destroy();
+  tmpContainer.destroy( true );
 
-  store.structSpriteContainer = new PIXI.Container();
-  store.structSpriteContainer.width = defaults.tileSize * defaults.mapW;
-  store.structSpriteContainer.height = defaults.tileSize * defaults.mapH;
-  store.structSpriteContainer.position.set( 0, 0 );
-  store.structSpriteContainer.zOrder = 30;
+  let structuresCont = new PIXI.Container();
+  structuresCont.width = stageWidth;
+  structuresCont.height = stageHeight;
+  structuresCont.position.set( 0, 0 );
+  structuresCont.zIndex = 30;
+  stageCont.addChild( structuresCont );
 
-
-  store.structSpriteContainer.interactive = true;
-  app.stage.addChild( store.structSpriteContainer );
-
-  let mask = new PIXI.Graphics();
-  //mask.isMask = true;
-  mask.position.set( 0, 0 );
-  //mask.tint = 0x808080;
-  //mask.width = defaults.tileSize * defaults.mapW;
-  //mask.height =  defaults.tileSize * defaults.mapH;
+  app.stage.addChild( floorContainer );
+  app.stage.addChild( stageCont );
   app.stage.addChild( mask );
-  mask.lineStyle(0);
-  mask.clear();
-  mask.beginFill(0x8bc5ff, 0.4);
-  mask.moveTo( 0, 0 );
-  mask.lineTo( defaults.tileSize * defaults.mapW, 0 );
-  mask.lineTo( defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
-  mask.lineTo( 0, defaults.tileSize * defaults.mapH );
-
-  store.structSpriteContainer.mask = mask;
-  store.structSpriteContainer.hitArea = new PIXI.Rectangle( 0, 0, defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
 
   loadStructuresImgs();
 }
@@ -151,24 +153,24 @@ function loadStructuresImgs(){
   })
   PIXI.loader.add( arr )
   .on("progress", loadProgressHandler)
-  .load( setupStructurePicker.bind( _structures ) )
+  .load( setupStructPicker.bind( _structures ) )
 
   store.structureDefs = _structures;
 
 }
-function setupStructurePicker(){
+function setupStructPicker(){
   let _structures = this,
       nbStrucs = _structures.length,
       spriteSize = Math.floor( defaults.menuHeight * 0.8 ),
       spriteTop = defaults.tileSize * defaults.mapH + ( defaults.menuHeight - spriteSize ) * 0.5,
       spriteMargin = spriteSize * 0.20;
 
-  store.spriteListContainer = new PIXI.Container();
-  store.spriteListContainer.position.set( 0, defaults.tileSize * defaults.mapH + spriteMargin );
-  store.spriteListContainer.interactive = true;
+  let spritePickerCont = new PIXI.Container();
+  spritePickerCont.name = "structPickerCont";
+  spritePickerCont.position.set( 0, defaults.tileSize * defaults.mapH + spriteMargin );
+  spritePickerCont.interactive = true;
 
   _structures.forEach( ( struc, i ) => {
-    console.log( "draw : " + struc.typeName );
     let strucCont = new PIXI.Container();
     strucCont.position.set( spriteMargin + i * ( spriteSize + spriteMargin ), 0 );
     strucCont.name = struc.typeName;
@@ -186,77 +188,107 @@ function setupStructurePicker(){
     text.position.set( spriteSize * 0.5, spriteSize + spriteSize * 0.05 );
     strucCont.addChild( strucSprite );
     strucCont.addChild( text );
-    store.spriteListContainer.addChild( strucCont );
+    spritePickerCont.addChild( strucCont );
 
-    //strucCont.on( "pointerdown", clickSpriteList );
+    //strucCont.on( "pointerdown", clickStructPicker );
 
   } )
-  app.stage.addChild( store.spriteListContainer );
-  store.spriteListContainer.on( "click", clickSpriteList );
+  app.stage.addChild( spritePickerCont );
+  spritePickerCont.on( "click", clickStructPicker );
 }
-function clickSpriteList( e ){
-  console.log( e.target.name );
-  let cont = e.target;
-  resetSpriteList();
-  clearDraggedEl();
-  let sprite = cont.getChildByName( "sprite_" + cont.name );
+function clickStructPicker( e, _name ){
+  let cont,
+      name,
+      spritePickerCont = app.stage.getChildByName( "structPickerCont" );
+  if( _name ){
+    cont = spritePickerCont.getChildByName( _name );
+    name = _name;
+  }else{
+    name = e.target.name;
+    cont = spritePickerCont.getChildByName( name );
+  }
+  resetStructPicker();
+  clearStructPreview();
+  let sprite = cont.getChildByName( "sprite_" + name );
   sprite.tint = 0xcade6a;
-  startStructurePosPreview( cont.name );
+  startStructPreview( name );
 }
-function resetSpriteList(){
-  store.spriteListContainer.children.forEach( spriteCont => {
+function resetStructPicker(){
+  app.stage.getChildByName( "structPickerCont" ).children.forEach( spriteCont => {
     spriteCont.getChildByName( "sprite_" + spriteCont.name ).tint = 0xFFFFFF;
   })
 }
-function clearDraggedEl(){
-  if( ! store.draggedElement ) return false;
-  if( store.draggedElement.sprite.destroy ) store.draggedElement.sprite.destroy();
-  store.structSpriteContainer.removeAllListeners();
-  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
-  store.draggedElement = false;
+function clearStructPreview(){
+  let previewCont = app.stage.getChildByName( "stageCont" ).getChildByName( "structPreviewCont" );
+  if( previewCont ) previewCont.destroy( {  children: true,
+                                            texture: false,
+                                            baseTexture: false } );
 }
+function startStructPreview( _typeName ){
+  console.log("start");
+  clearStructPreview();
+  let previewCont = new PIXI.Container();
+  previewCont.name = "structPreviewCont";
+  previewCont.position.set( 0, 0 );
+  previewCont.zIndex = 50;
+  let stageCont = app.stage.getChildByName( "stageCont" );
+  stageCont.addChild( previewCont );
+  previewCont.tint = 0x5727d9;
 
-function startStructurePosPreview( _typeName ){
-  onDragEnd();
   let strucSprite = new PIXI.Sprite( PIXI.loader.resources[ _typeName ].texture ),
-      def = getStructureDef( _typeName );
-  strucSprite.width = def.gridWidth * defaults.tileSize;
-  strucSprite.height = def.gridHeight * defaults.tileSize;
+      def = getStructureDef( _typeName ),
+      ts = defaults.tileSize;
+  strucSprite.name = "previewSprite";
+  strucSprite.width = def.gridWidth * ts;
+  strucSprite.height = def.gridHeight * ts;
   strucSprite.alpha = 0.4;
-  store.structSpriteContainer.addChild( strucSprite );
-  store.draggedElement = {  sprite: strucSprite,
-                            structureType: _typeName,
-                            gridWidth: def.gridWidth,
-                            gridHeight: def.gridHeight };
+  strucSprite.zIndex = 80;
+  strucSprite.structureData = {
+    name: _typeName,
+    gridWidth: def.gridWidth,
+    gridHeight: def.gridHeight
+  };
+  previewCont.addChild( strucSprite );
 
   let m = app.renderer.plugins.interaction.mouse.global,
-      x = Math.floor( ( m.x - store.structSpriteContainer.x ) / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
-      y = Math.floor( ( m.y - store.structSpriteContainer.y ) / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
-  store.draggedElement.sprite.position.set( x * defaults.tileSize, y * defaults.tileSize );
+      x = Math.floor( m.x / ts ) - Math.floor( def.gridWidth / 2 ),
+      y = Math.floor( m.y / ts ) - Math.floor( def.gridHeight / 2 );
+  strucSprite.position.set( x * ts, y * ts );
 
-  store.structSpriteContainer.on( "mousemove", dragStructPosPreview );
+  stageCont.on( "mousemove", dragStructPosPreview );
   window.addEventListener( "mousedown", cancelStructPosPreview );
-  store.structSpriteContainer.on( "mousedown", startStructPositioning );
-  console.log( "dragg start" );
+  stageCont.on( "mousedown", startStructPositioning );
+}
+function cancelStructPosPreview( e ){
+  if( e.button == 0 ) return false;
+  window.removeEventListener( "mousedown", cancelStructPosPreview );
+  onDragEnd();
+  resetStructPicker();
+  return false;
 }
 function dragStructPosPreview( e ){
   let m = e.data.getLocalPosition( this ),
-      x = Math.floor( m.x / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
-      y = Math.floor( m.y / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
-  store.draggedElement.sprite.position.set( x * defaults.tileSize, y * defaults.tileSize );
+      previewSprit = app.stage  .getChildByName( "stageCont" )
+                                .getChildByName( "structPreviewCont" )
+                                .getChildByName( "previewSprite" ),
+      ts = defaults.tileSize,
+      structureData = previewSprit.structureData,
+      x = Math.floor( m.x / ts ) - Math.floor( structureData.gridWidth / 2 ),
+      y = Math.floor( m.y / ts ) - Math.floor( structureData.gridHeight / 2 );
+  previewSprit.position.set( x * ts, y * ts );
 }
 function endStructPosPreview(){
-  if( store.draggedElement ){
-    store.draggedElement.sprite.destroy();
-    store.draggedElement = false;
-  }
+  let structPreviewCont = app.stage .getChildByName( "stageCont" )
+                                    .getChildByName( "structPreviewCont" );
+  if( ! structPreviewCont ) return false;
+  structPreviewCont.destroy( {  children: true,
+                                texture: false,
+                                baseTexture: false } );
 }
-
 function onDragEnd( e ){
   endStructPosPreview();
-  store.structSpriteContainer.removeAllListeners();
+  app.stage.getChildByName( "stageCont" ).removeAllListeners();
 }
-
 function getStructureDef( _name ){
   let d = store.structureDefs,
       l = d.length;
@@ -265,160 +297,63 @@ function getStructureDef( _name ){
   }
   return false;
 }
-function cancelStructPosPreview( e ){
-  if( e.button == 0 ) return false;
-  window.removeEventListener( "mousedown", cancelStructPosPreview );
-  onDragEnd();
-  resetSpriteList();
-  return false;
-}
-function startStructPositioning2( e ){
-  let tilingSprite = new PIXI.extras.TilingSprite( store.draggedElement.sprite.texture, 100, 100 );
-  store.draggedElement.sprite.destroy();
-  store.draggedElement.sprite = tilingSprite;
-  //store.draggedElement.tileContainer = new PIXI.Container();
-  //store.draggedElement.tileContainer.addChild( store.draggedElement.sprite );
-  store.structSpriteContainer.addChild( store.draggedElement.sprite );
-  store.draggedElement.sprite.zOrder = 40;
-  store.draggedElement.sprite.tileScale.x = ( store.draggedElement.gridWidth * defaults.tileSize ) / store.draggedElement.sprite.texture.width;
-  store.draggedElement.sprite.tileScale.y = ( store.draggedElement.gridHeight * defaults.tileSize ) / store.draggedElement.sprite.texture.height;
-
-  let dragFilter = new PIXI.filters.ColorMatrixFilter(),
-      matrix = dragFilter.matrix;
-  /*
-  matrix[ 0 ] = 1; //red
-  matrix[ 6 ] = 0.05; //green
-  matrix[ 12 ] = 0.05;//blue
-  matrix[ 18 ] = 1;//alpha
-  */
-
-  dragFilter.matrix = [
-    1,  0,  0,  0,  0,
-    0.15,  0,  0,  0,  0,
-    0,  0,  0,  0,  0,
-    0,  0,  0,  1,  0,
-  ]
-  dragFilter.contrast(0.5, false)
-
-  /*
-  store.draggedElement.dragFilter = dragFilter;
-  store.draggedElement.sprite.filters = [ dragFilter ];
-  */
-
-  store.structSpriteContainer.off( "mousemove", dragStructPosPreview );
-  //store.structSpriteContainer.off( "mousedown", startStructPositioning );
-  let m = e.data.getLocalPosition( this ),
-      x = Math.floor( m.x / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
-      y = Math.floor( m.y / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
-  store.draggedZone = {
-    start:  { x: x, y: y },
-    end:    { x: x + store.draggedElement.gridWidth,
-              y: y + store.draggedElement.gridHeight }
-  }
-  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
-  store.draggedElement.dragGraph = new PIXI.Graphics();
-  store.draggedElement.dragGraph.position.set( 0, 0 );
-  store.structSpriteContainer.addChild( store.draggedElement.dragGraph );
-  store.draggedElement.dragGraph.lineStyle(0);
-
-  //store.structSpriteContainer.on( "rightdown", cancelStructPositioning );
-  window.removeEventListener( "mousedown", cancelStructPosPreview );
-  window.addEventListener( "mousedown", cancelStructPositioning, false );
-  store.structSpriteContainer.on( "mousemove", onMoveStructPositionning );
-
-  store.structSpriteContainer.on( "mouseup", onEndStructPositioning );
-
-  onMoveStructPositionning( e, m );
-
-  console.log( towerDef.getMoveMap() )
-}
 function startStructPositioning( e ){
   //let tilingSprite = new PIXI.extras.TilingSprite( store.draggedElement.sprite.texture, 100, 100 );
-  store.draggedElement.srcTex = store.draggedElement.sprite.texture;
-  store.draggedElement.sprite.destroy();
+  let stageCont = app.stage.getChildByName( "stageCont" ),
+      previewCont = stageCont.getChildByName( "structPreviewCont" ),
+      previewSprite = previewCont.getChildByName( "previewSprite" ),
+      structPosCont = new PIXI.Container();
+  structPosCont.name = "structPosCont";
+  structPosCont.srcTex = previewSprite.texture,
+  structPosCont.structureData = previewSprite.structureData;
+  previewCont.destroy( {  children: true,
+                          texture: false,
+                          baseTexture: false } );
+  structPosCont.position.set( 0, 0 );
+  stageCont.addChild( structPosCont );
 
-  store.draggedElement.sprites = [];
-
-  //store.draggedElement.sprite = tilingSprite;
-  //store.draggedElement.tileContainer = new PIXI.Container();
-  //store.draggedElement.tileContainer.addChild( store.draggedElement.sprite );
-  /*
-  store.structSpriteContainer.addChild( store.draggedElement.sprite );
-  store.draggedElement.sprite.zOrder = 40;
-  store.draggedElement.sprite.tileScale.x = ( store.draggedElement.gridWidth * defaults.tileSize ) / store.draggedElement.sprite.texture.width;
-  store.draggedElement.sprite.tileScale.y = ( store.draggedElement.gridHeight * defaults.tileSize ) / store.draggedElement.sprite.texture.height;
-  */
-
-  let dragFilter = new PIXI.filters.ColorMatrixFilter(),
-      matrix = dragFilter.matrix;
-  /*
-  matrix[ 0 ] = 1; //red
-  matrix[ 6 ] = 0.05; //green
-  matrix[ 12 ] = 0.05;//blue
-  matrix[ 18 ] = 1;//alpha
-*/
-
-  dragFilter.matrix = [
+  structPosCont.invalidFilter = new PIXI.filters.ColorMatrixFilter();
+  structPosCont.invalidFilter.matrix = [
     1,  0,  0,  0,  0,
     0.15,  0,  0,  0,  0,
     0,  0,  0,  0,  0,
     0,  0,  0,  1,  0,
   ]
-  dragFilter.contrast(0.5, false)
-  store.draggedElement.filter = dragFilter;
-  /*
-  store.draggedElement.dragFilter = dragFilter;
-  store.draggedElement.sprite.filters = [ dragFilter ];
-  */
 
-  store.structSpriteContainer.off( "mousemove", dragStructPosPreview );
-  //store.structSpriteContainer.off( "mousedown", startStructPositioning );
+  stageCont.off( "mousemove", dragStructPosPreview );
   let m = e.data.getLocalPosition( this ),
-      x = Math.floor( m.x / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
-      y = Math.floor( m.y / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
-  store.draggedZone = {
+      ts = defaults.tileSize,
+      structData = structPosCont.structureData,
+      x = Math.floor( m.x / ts ) - Math.floor( structData.gridWidth / 2 ),
+      y = Math.floor( m.y / ts ) - Math.floor( structData.gridHeight / 2 );
+  structPosCont.draggedZone = {
     start:  { x: x, y: y },
-    end:    { x: x + store.draggedElement.gridWidth,
-              y: y + store.draggedElement.gridHeight }
+    end:    { x: x + structData.gridWidth,
+              y: y + structData.gridHeight }
   }
-  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
-  store.draggedElement.dragGraph = new PIXI.Graphics();
-  store.draggedElement.dragGraph.position.set( 0, 0 );
-  store.structSpriteContainer.addChild( store.draggedElement.dragGraph );
-  store.draggedElement.dragGraph.lineStyle(0);
+  //if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
+  let dragAreaGraph = new PIXI.Graphics();
+  dragAreaGraph.name = "dragAreaGraph";
+  dragAreaGraph.position.set( 0, 0 );
+  structPosCont.addChild( dragAreaGraph );
+  dragAreaGraph.lineStyle(0);
 
   //store.structSpriteContainer.on( "rightdown", cancelStructPositioning );
   window.removeEventListener( "mousedown", cancelStructPosPreview );
   window.addEventListener( "mousedown", cancelStructPositioning, false );
-  store.structSpriteContainer.on( "mousemove", onMoveStructPositionning );
+  stageCont.on( "mousemove", onMoveStructPositionning );
 
-  store.structSpriteContainer.on( "mouseup", onEndStructPositioning );
+  stageCont.on( "mouseup", onEndStructPositioning );
 
   onMoveStructPositionning( e, m );
 
-  console.log( towerDef.getMoveMap() )
+  //console.log( towerDef.getMoveMap() )
 }
-/*
-function onMoveStructPositionning2( e, _localPt ){
-  let m = _localPt || e.data.getLocalPosition( this ),
-      posData = getStructPosDragData( m ),
-      ts = defaults.tileSize;
-
-  store.draggedElement.sprite.position.set( posData.drawStart.x * ts, posData.drawStart.y * ts );
-  store.draggedElement.sprite.width = posData.spritePreviewBoundsWidth;
-  store.draggedElement.sprite.height = posData.spritePreviewBoundsHeight;
-
-  store.draggedElement.dragGraph.clear();
-  store.draggedElement.dragGraph.beginFill( 0xd3d5b4, 0.4 );
-  store.draggedElement.dragGraph.moveTo( posData.drawStart.x * ts, posData.drawStart.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawStart.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
-}
-*/
 function onMoveStructPositionning( e, _localPt ){
   let m = _localPt || e.data.getLocalPosition( this ),
-      posData = getStructPosDragData( m ),
+      stageCont = app.stage.getChildByName( "stageCont" ),
+      structPosCont = stageCont.getChildByName( "structPosCont" ),
+      posData = getStructPosDragData( m, structPosCont.draggedZone, structPosCont.structureData  ),
       ts = defaults.tileSize;
   /*
   store.draggedElement.sprite.position.set( posData.drawStart.x * ts, posData.drawStart.y * ts );
@@ -435,35 +370,38 @@ function onMoveStructPositionning( e, _localPt ){
   }
   */
   let nbSprites = posData.structPositions.length / 2,
-      tex = store.draggedElement.srcTex,
-      spw = store.draggedElement.gridWidth * ts,
-      sph = store.draggedElement.gridHeight * ts;
+      tex = structPosCont.srcTex,
+      spw = structPosCont.structureData.gridWidth * ts,
+      sph = structPosCont.structureData.gridHeight * ts;
 
-  store.draggedElement.sprites.forEach( sprt => { sprt.destroy() } );
-  store.draggedElement.sprites = [];
+  structPosCont.children.forEach( child => {
+    if( child instanceof PIXI.Sprite ) child.destroy();
+  } );
+  //store.draggedElement.sprites = [];
   for( let i = 0; i < nbSprites; i++ ){
     let sp = new PIXI.Sprite( tex );
     sp.width = spw;
     sp.height = sph;
     sp.position.set( posData.structPositions[ i * 2 ] * ts, posData.structPositions[ i * 2 + 1 ] * ts );
-    store.draggedElement.sprites.push( sp );
-    store.structSpriteContainer.addChild( sp );
+    //store.draggedElement.sprites.push( sp );
+    structPosCont.addChild( sp );
   }
 
-
-  store.draggedElement.dragGraph.clear();
-  store.draggedElement.dragGraph.beginFill( 0xd3d5b4, 0.4 );
-  store.draggedElement.dragGraph.moveTo( posData.drawStart.x * ts, posData.drawStart.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawStart.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
-  store.draggedElement.dragGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
+  let dragAreaGraph = structPosCont.getChildByName( "dragAreaGraph" );
+  dragAreaGraph.clear();
+  dragAreaGraph.beginFill( 0xd3d5b4, 0.4 );
+  dragAreaGraph.moveTo( posData.drawStart.x * ts, posData.drawStart.y * ts );
+  dragAreaGraph.lineTo( posData.drawEnd.x * ts, posData.drawStart.y * ts );
+  dragAreaGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
+  dragAreaGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
 }
 
-function getStructPosDragData( mouse ){
-  let mx = Math.floor( mouse.x / defaults.tileSize ),
-      my = Math.floor( mouse.y / defaults.tileSize ),
-      draggedZone = store.draggedZone,
-      dragEl = store.draggedElement,
+function getStructPosDragData( mouse, draggedZone, structureData ){
+  let ts = defaults.tileSize,
+      mx = Math.floor( mouse.x / ts ),
+      my = Math.floor( mouse.y / ts ),
+      //draggedZone = store.draggedZone,
+      //dragEl = store.draggedElement,
       start = draggedZone.start,
       end = draggedZone.end,
       diff = {  x: mx - start.x,
@@ -472,29 +410,28 @@ function getStructPosDragData( mouse ){
                 y:Math.abs( diff.y )},
       axis = delta.x >= delta.y ? "x" : "y",
       direction = diff[ axis ] >= 0 ? 1 : -1,
-      drawStart = { x: axis == "x" && direction == -1 ? start.x + dragEl.gridWidth : start.x,
-                    y: axis == "y" && direction == -1 ? start.y + dragEl.gridHeight : start.y },
-      first_end_x = axis == "x" ? mx + ( direction == 1 ? 1 : 0 ) : start.x + dragEl.gridWidth,
-      first_end_y = axis == "y" ? my + ( direction == 1 ? 1 : 0 ) : start.y + dragEl.gridHeight;
-  end.x = axis == "x" && direction == 1 ? Math.max( first_end_x, start.x + dragEl.gridWidth ) : first_end_x ;
-  end.y = axis == "y" && direction == 1 ? Math.max( first_end_y, start.y + dragEl.gridHeight ) : first_end_y ;
+      drawStart = { x: axis == "x" && direction == -1 ? start.x + structureData.gridWidth : start.x,
+                    y: axis == "y" && direction == -1 ? start.y + structureData.gridHeight : start.y },
+      first_end_x = axis == "x" ? mx + ( direction == 1 ? 1 : 0 ) : start.x + structureData.gridWidth,
+      first_end_y = axis == "y" ? my + ( direction == 1 ? 1 : 0 ) : start.y + structureData.gridHeight;
+  end.x = axis == "x" && direction == 1 ? Math.max( first_end_x, start.x + structureData.gridWidth ) : first_end_x ;
+  end.y = axis == "y" && direction == 1 ? Math.max( first_end_y, start.y + structureData.gridHeight ) : first_end_y ;
 
-  let ts = defaults.tileSize,
-      dragWidth = Math.abs( ( end.x - drawStart.x ) * ts ),
+  let dragWidth = Math.abs( ( end.x - drawStart.x ) * ts ),
       dragHeight = Math.abs( ( end.y - drawStart.y ) * ts ),
-      nbTileX = Math.floor( dragWidth / ( dragEl.gridWidth * ts ) ),
-      nbTileY = Math.floor( dragHeight / ( dragEl.gridHeight * ts ) ),
-      spritePreviewBoundsWidth = nbTileX * dragEl.gridWidth * ts * ( axis == "x" && direction == -1 ? -1 : 1),
-      spritePreviewBoundsHeight = nbTileY * dragEl.gridWidth * ts * ( axis == "y" && direction == -1 ? -1 : 1);
+      nbTileX = Math.floor( dragWidth / ( structureData.gridWidth * ts ) ),
+      nbTileY = Math.floor( dragHeight / ( structureData.gridHeight * ts ) ),
+      spritePreviewBoundsWidth = nbTileX * structureData.gridWidth * ts * ( axis == "x" && direction == -1 ? -1 : 1),
+      spritePreviewBoundsHeight = nbTileY * structureData.gridWidth * ts * ( axis == "y" && direction == -1 ? -1 : 1);
 
   let minX = Math.min( drawStart.x, end.x ),
       minY = Math.min( drawStart.y, end.y );
 
   let structPositions = [];
   for( let tx = 0; tx < nbTileX; tx++ ){
-    let posx = minX + tx * dragEl.gridWidth;
+    let posx = minX + tx * structureData.gridWidth;
     for( let ty = 0; ty < nbTileY; ty++ ){
-      structPositions.push( posx, minY + ty * dragEl.gridHeight );
+      structPositions.push( posx, minY + ty * structureData.gridHeight );
     }
   }
   return {
@@ -507,15 +444,17 @@ function getStructPosDragData( mouse ){
 }
 function cancelStructPositioning( e ){
   if( e.button == 0 ) return false;
-  console.log("cancel");
-  let typeName = store.draggedElement.structureType;
-  store.draggedElement.dragGraph.destroy();
-  store.draggedElement.dragGraph = false;
-  store.draggedElement.sprite.destroy();
-  window.removeEventListener( "mousedown", cancelStructPositioning, false );
-  store.structSpriteContainer.removeAllListeners();
-  store.draggedElement = false;
-  startStructurePosPreview( typeName );
+  let stageCont = app.stage.getChildByName( "stageCont" ),
+      structPosCont = stageCont.getChildByName( "structPosCont" ),
+      typeName = structPosCont.structureData.name;
+  structPosCont.destroy( {  children: true,
+                            texture: false,
+                            baseTexture: false });
+  window.removeEventListener( "mousedown", cancelStructPositioning );
+  stageCont.off( "mousemove", onMoveStructPositionning );
+  stageCont.off( "mouseup", onEndStructPositioning );
+  //startStructPreview( typeName );
+  clickStructPicker( false, typeName );
 }
 function onEndStructPositioning( e ){
   console.log( "end drag pos" )
