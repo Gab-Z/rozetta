@@ -212,7 +212,7 @@ function clearDraggedEl(){
   if( ! store.draggedElement ) return false;
   if( store.draggedElement.sprite.destroy ) store.draggedElement.sprite.destroy();
   store.structSpriteContainer.removeAllListeners();
-  if( store.dragGraph && store.dragGraph.destroy ) store.dragGraph.destroy();
+  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
   store.draggedElement = false;
 }
 
@@ -237,7 +237,6 @@ function startStructurePosPreview( _typeName ){
   store.structSpriteContainer.on( "mousemove", dragStructPosPreview );
   window.addEventListener( "mousedown", cancelStructPosPreview );
   store.structSpriteContainer.on( "mousedown", startStructPositioning );
-  //app.view.addEventListener( "mouseup", onDragEnd, false );
   console.log( "dragg start" );
 }
 function dragStructPosPreview( e ){
@@ -256,7 +255,6 @@ function endStructPosPreview(){
 function onDragEnd( e ){
   endStructPosPreview();
   store.structSpriteContainer.removeAllListeners();
-  //app.view.removeEventListener( "mouseup", onDragEnd );
 }
 
 function getStructureDef( _name ){
@@ -274,7 +272,7 @@ function cancelStructPosPreview( e ){
   resetSpriteList();
   return false;
 }
-function startStructPositioning( e ){
+function startStructPositioning2( e ){
   let tilingSprite = new PIXI.extras.TilingSprite( store.draggedElement.sprite.texture, 100, 100 );
   store.draggedElement.sprite.destroy();
   store.draggedElement.sprite = tilingSprite;
@@ -284,6 +282,28 @@ function startStructPositioning( e ){
   store.draggedElement.sprite.zOrder = 40;
   store.draggedElement.sprite.tileScale.x = ( store.draggedElement.gridWidth * defaults.tileSize ) / store.draggedElement.sprite.texture.width;
   store.draggedElement.sprite.tileScale.y = ( store.draggedElement.gridHeight * defaults.tileSize ) / store.draggedElement.sprite.texture.height;
+
+  let dragFilter = new PIXI.filters.ColorMatrixFilter(),
+      matrix = dragFilter.matrix;
+  /*
+  matrix[ 0 ] = 1; //red
+  matrix[ 6 ] = 0.05; //green
+  matrix[ 12 ] = 0.05;//blue
+  matrix[ 18 ] = 1;//alpha
+  */
+
+  dragFilter.matrix = [
+    1,  0,  0,  0,  0,
+    0.15,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,
+    0,  0,  0,  1,  0,
+  ]
+  dragFilter.contrast(0.5, false)
+
+  /*
+  store.draggedElement.dragFilter = dragFilter;
+  store.draggedElement.sprite.filters = [ dragFilter ];
+  */
 
   store.structSpriteContainer.off( "mousemove", dragStructPosPreview );
   //store.structSpriteContainer.off( "mousedown", startStructPositioning );
@@ -295,11 +315,11 @@ function startStructPositioning( e ){
     end:    { x: x + store.draggedElement.gridWidth,
               y: y + store.draggedElement.gridHeight }
   }
-  if( store.dragGraph && store.dragGraph.destroy ) store.dragGraph.destroy();
-  store.dragGraph = new PIXI.Graphics();
-  store.dragGraph.position.set( 0, 0 );
-  store.structSpriteContainer.addChild( store.dragGraph );
-  store.dragGraph.lineStyle(0);
+  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
+  store.draggedElement.dragGraph = new PIXI.Graphics();
+  store.draggedElement.dragGraph.position.set( 0, 0 );
+  store.structSpriteContainer.addChild( store.draggedElement.dragGraph );
+  store.draggedElement.dragGraph.lineStyle(0);
 
   //store.structSpriteContainer.on( "rightdown", cancelStructPositioning );
   window.removeEventListener( "mousedown", cancelStructPosPreview );
@@ -312,10 +332,136 @@ function startStructPositioning( e ){
 
   console.log( towerDef.getMoveMap() )
 }
+function startStructPositioning( e ){
+  //let tilingSprite = new PIXI.extras.TilingSprite( store.draggedElement.sprite.texture, 100, 100 );
+  store.draggedElement.srcTex = store.draggedElement.sprite.texture;
+  store.draggedElement.sprite.destroy();
+
+  store.draggedElement.sprites = [];
+
+  //store.draggedElement.sprite = tilingSprite;
+  //store.draggedElement.tileContainer = new PIXI.Container();
+  //store.draggedElement.tileContainer.addChild( store.draggedElement.sprite );
+  /*
+  store.structSpriteContainer.addChild( store.draggedElement.sprite );
+  store.draggedElement.sprite.zOrder = 40;
+  store.draggedElement.sprite.tileScale.x = ( store.draggedElement.gridWidth * defaults.tileSize ) / store.draggedElement.sprite.texture.width;
+  store.draggedElement.sprite.tileScale.y = ( store.draggedElement.gridHeight * defaults.tileSize ) / store.draggedElement.sprite.texture.height;
+  */
+
+  let dragFilter = new PIXI.filters.ColorMatrixFilter(),
+      matrix = dragFilter.matrix;
+  /*
+  matrix[ 0 ] = 1; //red
+  matrix[ 6 ] = 0.05; //green
+  matrix[ 12 ] = 0.05;//blue
+  matrix[ 18 ] = 1;//alpha
+*/
+
+  dragFilter.matrix = [
+    1,  0,  0,  0,  0,
+    0.15,  0,  0,  0,  0,
+    0,  0,  0,  0,  0,
+    0,  0,  0,  1,  0,
+  ]
+  dragFilter.contrast(0.5, false)
+  store.draggedElement.filter = dragFilter;
+  /*
+  store.draggedElement.dragFilter = dragFilter;
+  store.draggedElement.sprite.filters = [ dragFilter ];
+  */
+
+  store.structSpriteContainer.off( "mousemove", dragStructPosPreview );
+  //store.structSpriteContainer.off( "mousedown", startStructPositioning );
+  let m = e.data.getLocalPosition( this ),
+      x = Math.floor( m.x / defaults.tileSize ) - Math.floor( store.draggedElement.gridWidth / 2 ),
+      y = Math.floor( m.y / defaults.tileSize ) - Math.floor( store.draggedElement.gridHeight / 2 );
+  store.draggedZone = {
+    start:  { x: x, y: y },
+    end:    { x: x + store.draggedElement.gridWidth,
+              y: y + store.draggedElement.gridHeight }
+  }
+  if( store.draggedElement.dragGraph && store.draggedElement.dragGraph.destroy ) store.draggedElement.dragGraph.destroy();
+  store.draggedElement.dragGraph = new PIXI.Graphics();
+  store.draggedElement.dragGraph.position.set( 0, 0 );
+  store.structSpriteContainer.addChild( store.draggedElement.dragGraph );
+  store.draggedElement.dragGraph.lineStyle(0);
+
+  //store.structSpriteContainer.on( "rightdown", cancelStructPositioning );
+  window.removeEventListener( "mousedown", cancelStructPosPreview );
+  window.addEventListener( "mousedown", cancelStructPositioning, false );
+  store.structSpriteContainer.on( "mousemove", onMoveStructPositionning );
+
+  store.structSpriteContainer.on( "mouseup", onEndStructPositioning );
+
+  onMoveStructPositionning( e, m );
+
+  console.log( towerDef.getMoveMap() )
+}
+/*
+function onMoveStructPositionning2( e, _localPt ){
+  let m = _localPt || e.data.getLocalPosition( this ),
+      posData = getStructPosDragData( m ),
+      ts = defaults.tileSize;
+
+  store.draggedElement.sprite.position.set( posData.drawStart.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.sprite.width = posData.spritePreviewBoundsWidth;
+  store.draggedElement.sprite.height = posData.spritePreviewBoundsHeight;
+
+  store.draggedElement.dragGraph.clear();
+  store.draggedElement.dragGraph.beginFill( 0xd3d5b4, 0.4 );
+  store.draggedElement.dragGraph.moveTo( posData.drawStart.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
+}
+*/
 function onMoveStructPositionning( e, _localPt ){
   let m = _localPt || e.data.getLocalPosition( this ),
-      mx = Math.floor( m.x / defaults.tileSize ),
-      my = Math.floor( m.y / defaults.tileSize ),
+      posData = getStructPosDragData( m ),
+      ts = defaults.tileSize;
+  /*
+  store.draggedElement.sprite.position.set( posData.drawStart.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.sprite.width = posData.spritePreviewBoundsWidth;
+  store.draggedElement.sprite.height = posData.spritePreviewBoundsHeight;
+  */
+  /*
+  PosData{
+    drawStart: drawStart,
+    drawEnd: end,
+    spritePreviewBoundsWidth: spritePreviewBoundsWidth,
+    spritePreviewBoundsHeight: spritePreviewBoundsHeight,
+    structPositions: structPositions
+  }
+  */
+  let nbSprites = posData.structPositions.length / 2,
+      tex = store.draggedElement.srcTex,
+      spw = store.draggedElement.gridWidth * ts,
+      sph = store.draggedElement.gridHeight * ts;
+
+  store.draggedElement.sprites.forEach( sprt => { sprt.destroy() } );
+  store.draggedElement.sprites = [];
+  for( let i = 0; i < nbSprites; i++ ){
+    let sp = new PIXI.Sprite( tex );
+    sp.width = spw;
+    sp.height = sph;
+    sp.position.set( posData.structPositions[ i * 2 ] * ts, posData.structPositions[ i * 2 + 1 ] * ts );
+    store.draggedElement.sprites.push( sp );
+    store.structSpriteContainer.addChild( sp );
+  }
+
+
+  store.draggedElement.dragGraph.clear();
+  store.draggedElement.dragGraph.beginFill( 0xd3d5b4, 0.4 );
+  store.draggedElement.dragGraph.moveTo( posData.drawStart.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawStart.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
+  store.draggedElement.dragGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
+}
+
+function getStructPosDragData( mouse ){
+  let mx = Math.floor( mouse.x / defaults.tileSize ),
+      my = Math.floor( mouse.y / defaults.tileSize ),
       draggedZone = store.draggedZone,
       dragEl = store.draggedElement,
       start = draggedZone.start,
@@ -351,31 +497,20 @@ function onMoveStructPositionning( e, _localPt ){
       structPositions.push( posx, minY + ty * dragEl.gridHeight );
     }
   }
-  console.log("structPositions : " + structPositions   );
-  console.log( towerDef.testStructuresPos( structPositions, dragEl.structureType ) );
-
-
-  //console.log( nbTileX + "/" + nbTileY );
-  store.draggedElement.sprite.position.set( drawStart.x * ts, drawStart.y * ts );
-  //store.draggedElement.sprite.width = ( end.x - drawStart.x ) * ts;
-  //store.draggedElement.sprite.height = ( end.y - drawStart.y ) * ts;
-  store.draggedElement.sprite.width = spritePreviewBoundsWidth;
-  store.draggedElement.sprite.height = spritePreviewBoundsHeight;
-
-  store.dragGraph.clear();
-  store.dragGraph.beginFill( 0xd3d5b4, 0.4 );
-  store.dragGraph.moveTo( drawStart.x * ts, drawStart.y * ts );
-  store.dragGraph.lineTo( end.x * ts, drawStart.y * ts );
-  store.dragGraph.lineTo( end.x * ts, end.y * ts );
-  store.dragGraph.lineTo( drawStart.x * ts, end.y * ts );
+  return {
+    drawStart: drawStart,
+    drawEnd: end,
+    spritePreviewBoundsWidth: spritePreviewBoundsWidth,
+    spritePreviewBoundsHeight: spritePreviewBoundsHeight,
+    structPositions: structPositions
+  }
 }
-
 function cancelStructPositioning( e ){
   if( e.button == 0 ) return false;
   console.log("cancel");
   let typeName = store.draggedElement.structureType;
-  store.dragGraph.destroy();
-  store.dragGraph = false;
+  store.draggedElement.dragGraph.destroy();
+  store.draggedElement.dragGraph = false;
   store.draggedElement.sprite.destroy();
   window.removeEventListener( "mousedown", cancelStructPositioning, false );
   store.structSpriteContainer.removeAllListeners();
@@ -384,6 +519,8 @@ function cancelStructPositioning( e ){
 }
 function onEndStructPositioning( e ){
   console.log( "end drag pos" )
+  let m = e.data.getLocalPosition( this ),
+      posData = getStructPosDragData( m );
 }
 
   /*
