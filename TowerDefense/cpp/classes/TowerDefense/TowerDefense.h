@@ -72,6 +72,11 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( getMoveMap );
     std::vector<double> getMoveMap();
 
+    static NAN_METHOD( addStructures );
+    void addStructures( std::vector<int> _positions, std::string _typeName );
+
+    static NAN_METHOD( getStructures );
+    v8::Local<v8::Array> getStructures();
 };
 
 

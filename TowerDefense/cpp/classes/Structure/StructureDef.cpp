@@ -60,3 +60,14 @@ std::vector<int> StructureDef::to2d( int _idx ){
   std::vector<int> pos { _x, _y };
   return pos;
 }
+
+std::string StructureDef::getImgUrl(){
+  return imgUrl;
+}
+
+int StructureDef::getGridWidth(){
+  return gridWidth;
+}
+int StructureDef::getGridHeight(){
+  return gridHeight;
+}

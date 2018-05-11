@@ -32,6 +32,11 @@ class StructureDef {
 
   std::vector<int> to2d( int _idx );
 
+  std::string getImgUrl();
+
+  int getGridWidth();
+  int getGridHeight();
+
 };
 
 #endif
