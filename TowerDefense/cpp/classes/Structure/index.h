@@ -1,8 +1,6 @@
-#ifndef DEF_Structureincdex
-#define DEF_Structureincdex
+#ifndef DEF_StructureIndex
+#define DEF_StructureIndex
 
 #include "Structure.h"
-#include "Wall.h"
-#include "Cross.h"
 
 #endif

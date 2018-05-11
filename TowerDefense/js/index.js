@@ -259,7 +259,6 @@ function startStructPreview( _typeName ){
 
   stageCont.getChildByName( "structuresCont" ).children.forEach( structSprite => { structSprite.interactive = false; } );
 }
-var a = 0;
 function cancelStructPosPreview( e ){
   if( e && e.button == 0 ) return false;
   window.removeEventListener( "mousedown", cancelStructPosPreview );
