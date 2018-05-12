@@ -154,16 +154,17 @@ NAN_METHOD( TowerDefense::getStructuresDefs ){
 }
 
 NAN_METHOD( TowerDefense::testStructuresPos ){
-  if( info.Length() != 2 ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::testStructurePos - expected 2 arguments [ positions...], typeName").ToLocalChecked());
+  if( info.Length() != 3 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::testStructurePos - expected 3 arguments [ positions...], typeName, rotation").ToLocalChecked());
   }
-  if( !info[0]->IsArray() || !info[1]->IsString() ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::testStructurePos - expected argument 0 to be an array, argument 1 to be a string").ToLocalChecked());
+  if( ! info[ 0 ]->IsArray() || ! info[ 1 ]->IsString() || ! info[ 2 ]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::testStructurePos - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number").ToLocalChecked());
   }
   std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
+  int rotation = info[ 2 ]->IntegerValue();
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  std::vector<bool> ret = self->level->testMultipleStructurePos( positions, typeName );
+  std::vector<bool> ret = self->level->testMultipleStructurePos( positions, typeName, rotation );
   info.GetReturnValue().Set( Converter::vectorBoolToJsArray( ret ) );
 }
 
@@ -181,15 +182,16 @@ NAN_METHOD( TowerDefense::getMoveMap ){
 
 NAN_METHOD( TowerDefense::addStructures ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  if( info.Length() != 2 ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected 2 arguments [ positions...], typeName").ToLocalChecked());
+  if( info.Length() != 3 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected 3 arguments [ positions...], typeName, rotation").ToLocalChecked());
   }
-  if( !info[0]->IsArray() || !info[1]->IsString() ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected argument 0 to be an array, argument 1 to be a string").ToLocalChecked());
+  if( !info[0]->IsArray() || !info[1]->IsString() || !info[2]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number").ToLocalChecked());
   }
   std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
-  self->level->addStructures( positions, typeName );
+  int rotation = info[ 2 ]->IntegerValue();
+  self->level->addStructures( positions, typeName, rotation );
 }
 
 NAN_METHOD( TowerDefense::getStructures ){

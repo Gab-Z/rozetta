@@ -15,27 +15,26 @@ class StructureDef {
   int cost;
   int gridWidth;
   int gridHeight;
+  bool rotates;
 
   public:
 
   StructureDef();
-
   StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight );
-
+  StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight, bool _rotates );
   v8::Local<v8::Object> toObj();
-
   std::string getTypeName();
-
   std::vector<int> getGrid();
-
+  std::vector<int> getGrid( int _rotation );
+  std::vector<int> rotPoint( int _x, int _y, int _rotation );
   int to1d( int _x, int _y );
-
   std::vector<int> to2d( int _idx );
-
+  //int to1d( int _x, int _y, int _rotation );
+  std::vector<int> to2d( int _idx, int _rotation );
   std::string getImgUrl();
-
   int getGridWidth();
   int getGridHeight();
+  bool isRotating();
 
 };
 

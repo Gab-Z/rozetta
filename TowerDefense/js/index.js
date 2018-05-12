@@ -4,9 +4,9 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 30,
-  mapW: 20,
-  mapH: 20,
+  tileSize: 80,
+  mapW: 8,
+  mapH: 8,
   menuHeight: 50,
   screenW: window.screen.width,
   screenH: window.screen.height
@@ -68,6 +68,7 @@ function setupFloorSprites(){
   stageCont.height = stageHeight;
   stageCont.position.set( 0, 0 );
   stageCont.interactive = true;
+  //stageCont.buttonMode = true;
   stageCont.zIndex = 30;
   let mask = new PIXI.Graphics();
   //mask.isMask = true;
@@ -135,7 +136,6 @@ function onclick2( e ){
   let y = Math.floor( e.data.global.y / defaults.tileSize );
   console.log( x + ", " + y );
 }
-
 function loadStructuresImgs(){
   let _structures = towerDef.getStructuresDefs(),
       arr = [];
@@ -170,7 +170,7 @@ function setupStructPicker(){
     strucCont.position.set( spriteMargin + i * ( spriteSize + spriteMargin ), 0 );
     strucCont.name = struc.typeName;
     strucCont.interactive = true;
-    strucCont.buttonMode = true;
+    //strucCont.buttonMode = true;
 
     let strucSprite = new PIXI.Sprite( PIXI.loader.resources[ struc.typeName ].texture );
     strucSprite.name = "sprite_" + struc.typeName;
@@ -241,11 +241,15 @@ function startStructPreview( _typeName ){
   strucSprite.height = def.gridHeight * ts;
   strucSprite.alpha = 0.8;
   strucSprite.zIndex = 80;
+  strucSprite.anchor.set( 0.0, 0.0 );
   strucSprite.structureData = {
     name: _typeName,
     gridWidth: def.gridWidth,
-    gridHeight: def.gridHeight
+    gridHeight: def.gridHeight,
+    rotation: 0,
+    anchor: [ 0, 0 ]
   };
+
   previewCont.addChild( strucSprite );
 
   let m = app.renderer.plugins.interaction.mouse.global,
@@ -253,29 +257,40 @@ function startStructPreview( _typeName ){
       y = Math.floor( m.y / ts ) - Math.floor( def.gridHeight / 2 );
   strucSprite.position.set( x * ts, y * ts );
 
-  stageCont.on( "mousemove", dragStructPosPreview );
+  stageCont.on( "mousemove", moveStructPosPreview );
   window.addEventListener( "mousedown", cancelStructPosPreview );
+
   stageCont.on( "mousedown", startStructPositioning );
 
+  if( def.rotates ){
+    window.addEventListener( "mousewheel", rotateStructPreview, false );
+  }
+
   stageCont.getChildByName( "structuresCont" ).children.forEach( structSprite => { structSprite.interactive = false; } );
+
+  //stageCont.cursor="none";
+
 }
 function cancelStructPosPreview( e ){
   if( e && e.button == 0 ) return false;
   window.removeEventListener( "mousedown", cancelStructPosPreview );
+  window.removeEventListener( "mousewheel", rotateStructPreview );
   onDragEnd();
   resetStructPicker();
   app.stage .getChildByName( "stageCont" )
             .getChildByName( "structuresCont" ).children.forEach( structSprite => { structSprite.interactive = true; } );
 }
-function dragStructPosPreview( e ){
+function moveStructPosPreview( e ){
   let m = e.data.getLocalPosition( this ),
       previewSprit = app.stage  .getChildByName( "stageCont" )
                                 .getChildByName( "structPreviewCont" )
                                 .getChildByName( "previewSprite" ),
       ts = defaults.tileSize,
       structureData = previewSprit.structureData,
-      gridWidth = structureData.gridWidth,
-      gridHeight = structureData.gridHeight,
+      spriteRot = structureData.rotation,
+      invertOrientation = spriteRot == 0 || spriteRot == Math.PI ? false : true,
+      gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
+      gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
       x = Math.floor( m.x / ts ) - Math.floor( gridWidth / 2 ),
       y = Math.floor( m.y / ts ) - Math.floor( gridHeight / 2 ),
       posData = getStructPosDragData(
@@ -284,21 +299,39 @@ function dragStructPosPreview( e ){
           end:    { x: x + gridWidth,
                     y: y + gridHeight } },
         structureData  ),
-        posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name );
+        posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name,  structureData.rotation );
   previewSprit.position.set( x * ts, y * ts );
   previewSprit.tint = posTest[ 0 ] == true ? 0xffffff : 0xff0000;
 }
 function endStructPosPreview(){
-  let structPreviewCont = app.stage .getChildByName( "stageCont" )
-                                    .getChildByName( "structPreviewCont" );
+  let stageCont = app.stage.getChildByName( "stageCont" ),
+      structPreviewCont = stageCont.getChildByName( "structPreviewCont" );
   if( ! structPreviewCont ) return false;
   structPreviewCont.destroy( {  children: true,
                                 texture: false,
                                 baseTexture: false } );
+  stageCont.cursor = "default";
 }
 function onDragEnd( e ){
   endStructPosPreview();
   app.stage.getChildByName( "stageCont" ).removeAllListeners();
+}
+function rotateStructPreview( e ){
+  var delta = Math.max( -1, Math.min( 1, e.wheelDelta ) ),
+      previewSprit = app.stage  .getChildByName( "stageCont" )
+                                .getChildByName( "structPreviewCont" )
+                                .getChildByName( "previewSprite" ),
+      sRot = previewSprit.structureData.rotation + delta;
+  if( sRot >= 4 ){
+    sRot = 0;
+  }else if( sRot < 0 ){
+    sRot = 3;
+  }
+  previewSprit.structureData.rotation = sRot;
+  previewSprit.structureData.anchor = anchorFromRot( sRot );
+  let anchor = previewSprit.structureData.anchor;
+  previewSprit.anchor.set( anchor[ 0 ], anchor[ 1 ] );
+  previewSprit.rotation = ( sRot * 0.5 ) * Math.PI;
 }
 function getStructureDef( _name ){
   let d = store.structureDefs,
@@ -335,13 +368,13 @@ function startStructPositioning( e ){
 
   let m = e.data.getLocalPosition( this ),
       ts = defaults.tileSize,
-      structData = structPosCont.structureData,
-      x = Math.floor( m.x / ts ) - Math.floor( structData.gridWidth / 2 ),
-      y = Math.floor( m.y / ts ) - Math.floor( structData.gridHeight / 2 );
+      structureData = structPosCont.structureData,
+      x = Math.floor( m.x / ts ) - Math.floor( structureData.gridWidth / 2 ),
+      y = Math.floor( m.y / ts ) - Math.floor( structureData.gridHeight / 2 );
   structPosCont.draggedZone = {
     start:  { x: x, y: y },
-    end:    { x: x + structData.gridWidth,
-              y: y + structData.gridHeight }
+    end:    { x: x + structureData.gridWidth,
+              y: y + structureData.gridHeight }
   };
   let dragAreaGraph = new PIXI.Graphics();
   dragAreaGraph.name = "dragAreaGraph";
@@ -350,26 +383,34 @@ function startStructPositioning( e ){
   dragAreaGraph.lineStyle(0);
 
   stageCont.off( "mousedown", startStructPositioning );
-  stageCont.off( "mousemove", dragStructPosPreview );
+  stageCont.off( "mousemove", moveStructPosPreview );
   window.removeEventListener( "mousedown", cancelStructPosPreview );
   window.addEventListener( "mousedown", cancelStructPositioning, false );
-  stageCont.on( "mousemove", onMoveStructPositionning );
+  stageCont.on( "mousemove", dragStructPositionning );
   stageCont.on( "mouseup", onEndStructPositioning );
 
-  onMoveStructPositionning( e, m );
+  dragStructPositionning( e, m );
 }
-function onMoveStructPositionning( e, _localPt ){
+function dragStructPositionning( e, _localPt ){
   let m = _localPt || e.data.getLocalPosition( this ),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structPosCont = stageCont.getChildByName( "structPosCont" ),
       structureData = structPosCont.structureData,
+
+      sRot = structureData.rotation,
+      invertOrientation = sRot == 0 || sRot == 2 ? false : true,
+      gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
+      gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
+
       posData = getStructPosDragData( m, structPosCont.draggedZone, structureData  ),
-      posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name ),
+      posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name, structureData.rotation ),
       ts = defaults.tileSize,
       nbSprites = posData.structPositions.length / 2,
       tex = structPosCont.srcTex,
-      spw = structPosCont.structureData.gridWidth * ts,
-      sph = structPosCont.structureData.gridHeight * ts;
+      spw = structureData.gridWidth * ts,
+      sph = structureData.gridHeight * ts,
+      rot = ( sRot * 0.5 ) * Math.PI,
+      anchor = structureData.anchor;
 
   structPosCont.children.forEach( child => {
     if( child instanceof PIXI.Sprite ) child.destroy();
@@ -379,7 +420,9 @@ function onMoveStructPositionning( e, _localPt ){
         isValid = posTest[ i ];
     sp.width = spw;
     sp.height = sph;
-    sp.position.set( posData.structPositions[ i * 2 ] * ts, posData.structPositions[ i * 2 + 1 ] * ts );
+    sp.rotation = rot;
+    sp.anchor.set( anchor[ 0 ], anchor[ 1 ] );
+    sp.position.set( ( posData.structPositions[ i * 2 ] ) * ts, ( posData.structPositions[ i * 2 + 1 ]  ) * ts );
     if( ! isValid ){
       sp.tint = 0xff0000;
       sp.filters = [ structPosCont.invalidFilter ];
@@ -394,15 +437,20 @@ function onMoveStructPositionning( e, _localPt ){
   dragAreaGraph.lineTo( posData.drawEnd.x * ts, posData.drawEnd.y * ts );
   dragAreaGraph.lineTo( posData.drawStart.x * ts, posData.drawEnd.y * ts );
 }
-
 function getStructPosDragData( mouse, draggedZone, structureData ){
   let ts = defaults.tileSize,
       mx = Math.floor( mouse.x / ts ),
       my = Math.floor( mouse.y / ts ),
       start = draggedZone.start,
       end = draggedZone.end,
-      gridWidth = structureData.gridWidth,
-      gridHeight = structureData.gridHeight,
+      rotationIndice = structureData.rotation,
+      invertSides = rotationIndice == 1 || rotationIndice == 3 ? true : false,
+      //gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
+      //gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
+
+
+      gridWidth = invertSides ? structureData.gridHeight : structureData.gridWidth,
+      gridHeight = invertSides ? structureData.gridWidth : structureData.gridHeight,
       diff = {  x: mx - start.x,
                 y: my - start.y},
       delta = { x: Math.abs( diff.x ),
@@ -451,20 +499,19 @@ function cancelStructPositioning( e ){
                             texture: false,
                             baseTexture: false } );
   window.removeEventListener( "mousedown", cancelStructPositioning );
-  stageCont.off( "mousemove", onMoveStructPositionning );
+  stageCont.off( "mousemove", dragStructPositionning );
   stageCont.off( "mouseup", onEndStructPositioning );
   //startStructPreview( typeName );
   clickStructPicker( false, typeName );
 }
 function onEndStructPositioning( e ){
   console.log( "end drag pos" )
-
   let m = e.data.getLocalPosition( this ),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structPosCont = stageCont.getChildByName( "structPosCont" ),
       structureData = structPosCont.structureData,
       posData = getStructPosDragData( m, structPosCont.draggedZone, structureData  );
-  towerDef.addStructures( posData.structPositions, structureData.name );
+  towerDef.addStructures( posData.structPositions, structureData.name, structureData.rotation );
   cancelStructPositioning();
   updateStructures();
   console.log( JSON.stringify( towerDef.getStructures() ) )
@@ -479,23 +526,41 @@ function updateStructures(){
         positions = strucType.positions,
         width = strucType.gridWidth * ts,
         height = strucType.gridHeight * ts,
-        pl = positions.length / 3;
+        pl = positions.length / 4;
     for( let i = 0; i < pl; i++ ){
-      let idx = i * 3,
+      let idx = i * 4,
           sId = positions[ idx ],
-          sx = positions[ idx + 1 ]  * ts,
-          sy = positions[ idx + 2 ] * ts,
+          sRot = positions[ idx + 1 ],
+          sx = positions[ idx + 2 ]  * ts,
+          sy = positions[ idx + 3 ] * ts,
+          anchor = anchorFromRot( sRot ),
           sp = new PIXI.Sprite( tex );
       sp.width = width;
       sp.height = height;
       sp.position.set( sx, sy );
       sp.name = sId;
+      sp.anchor.set( anchor[ 0 ], anchor[ 1 ] );
+      sp.rotation = sRot * 0.5 * Math.PI;
       structuresCont.addChild( sp );
       //sp.interactive = true;
       sp.on( "mouseover", structSpriteOver );
       sp.on( "mouseout", strucSpriteOut );
     }
   })
+  console.log( towerDef.getMoveMap() )
+}
+function anchorFromRot( _rot ){
+  let anchor = [ 0, 0 ];
+  if( _rot == 1 ){
+    anchor = [ 0, 1 ];
+  }else if( _rot == 2 ){
+    anchor = [ 1, 1 ];
+  }else if( _rot == 3 ){
+    anchor = [ 1, 0 ];
+  }else{
+    anchor = [ 0, 0 ];
+  }
+  return anchor;
 }
 function structSpriteOver( e ){
   e.currentTarget.tint = 0xfae846;

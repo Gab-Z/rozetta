@@ -14,12 +14,14 @@ class Structure {
   unsigned int id;
   int x;
   int y;
+  int rotation = 0;
   StructureDef* structureDef;
 
   public:
 
     Structure();
     Structure( int _x, int _y,  StructureDef* _structureDef );
+    Structure( int _x, int _y,  StructureDef* _structureDef, int _rotation );
     //std::vector<int> getPosition();
     void setPosition( int _x, int _y );
     void setX( int _x );
@@ -27,6 +29,7 @@ class Structure {
     int getId();
     int getX();
     int getY();
+    int getRotation();
     //std::vector<int> getGridPositions();
     std::string getTypeName();
     std::string getImgUrl();

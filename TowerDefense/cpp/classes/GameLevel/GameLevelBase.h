@@ -27,18 +27,16 @@ class GameLevelBase {
     int height();
     int to1d( int _x, int _y );
     std::vector<int> to2d( int _idx );
-    //static v8::Local<v8::Array> structuresDefs();
-    virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     int getSize();
     void pushStructure( Structure* _structure );
     int structuresSize();
     Structure* getStructure( int _i );
 
-
+    virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     virtual Tile* getTile( int _i ){ return new Tile(); };
-    virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName ){ return std::vector<bool>(); };
+    virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){ return std::vector<bool>(); };
     virtual std::vector<double> getMoveMap(){ return std::vector<double>(); };
-    virtual void addStructures( std::vector<int> _positions, std::string _typeName ){};
+    virtual void addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
 };
 

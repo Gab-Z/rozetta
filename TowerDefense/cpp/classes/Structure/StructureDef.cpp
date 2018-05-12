@@ -9,7 +9,19 @@ StructureDef::StructureDef( std::string _typeName, std::vector<int> _grid, std::
   cost = _cost;
   gridWidth = _gridWidth;
   gridHeight = _gridHeight;
+  rotates = true;
 }
+
+StructureDef::StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight, bool _rotates ){
+  typeName = _typeName;
+  grid = _grid;
+  imgUrl = _imgUrl;
+  cost = _cost;
+  gridWidth = _gridWidth;
+  gridHeight = _gridHeight;
+  rotates = _rotates;
+}
+
 v8::Local<v8::Object> StructureDef::toObj(){
 
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
@@ -34,6 +46,10 @@ v8::Local<v8::Object> StructureDef::toObj(){
   v8::Local<v8::Value> costValue = Nan::New( cost );
   ret->Set( costProp, costValue );
 
+  v8::Local<v8::String> rotProp = Nan::New( "rotates" ).ToLocalChecked();
+  v8::Local<v8::Value> rotValue = Nan::New( rotates );
+  ret->Set( rotProp, rotValue );
+
   v8::Local<v8::String> gridProp = Nan::New( "grid" ).ToLocalChecked();
   v8::Local<v8::Array> gridValue = Converter::vectorIntToJsArray( grid );
   ret->Set( gridProp, gridValue );
@@ -49,6 +65,31 @@ std::vector<int> StructureDef::getGrid(){
   return grid;
 }
 
+std::vector<int> StructureDef::getGrid( int _rotation ){
+  int l = grid.size();
+  std::vector<int> ret( l );
+  for( int i = 0; i < l; i++ ){
+    int baseInt = grid[ i ];
+    std::vector<int> basePos = to2d( i );
+    std::vector<int> rotPos( 2 );
+    if( _rotation == 1 ){
+      rotPos[ 0 ] = gridHeight - 1 - basePos[ 1 ];
+      rotPos[ 1 ] = basePos[ 0 ];
+    }else if( _rotation == 2 ){
+      rotPos[ 0 ] = gridWidth - 1 - basePos[ 0 ];
+      rotPos[ 1 ] = gridHeight - 1 - basePos[ 1 ];
+    }else if( _rotation == 3 ){
+      rotPos[ 0 ] = basePos[ 1 ];
+      rotPos[ 1 ] = gridHeight - 1 - basePos[ 0 ];
+    }else{
+      rotPos = basePos;
+    }
+    int rotPos1d = to1d( rotPos[ 0 ], rotPos[ 1 ] );
+    ret[ rotPos1d ] = baseInt;
+  }
+  return ret;
+}
+
 int StructureDef::to1d( int _x, int _y ){
   int pos = _y * gridWidth + _x;
   return pos;
@@ -61,6 +102,37 @@ std::vector<int> StructureDef::to2d( int _idx ){
   return pos;
 }
 
+std::vector<int> StructureDef::rotPoint( int _x, int _y, int _rotation ){
+  std::vector<int> rotPos( 2 );
+  if( _rotation == 1 ){
+    rotPos[ 0 ] = gridHeight - 1 - _y;
+    rotPos[ 1 ] = _x;
+  }else if( _rotation == 2 ){
+    rotPos[ 0 ] = gridWidth - 1 - _x;
+    rotPos[ 1 ] = gridHeight - 1 - _y;
+  }else if( _rotation == 3 ){
+    rotPos[ 0 ] = _y;
+    rotPos[ 1 ] = gridHeight - 1 - _x;
+  }else{
+    rotPos[ 0 ] = _x;
+    rotPos[ 1 ] = _y;
+  }
+  return rotPos;
+}
+
+std::vector<int> StructureDef::to2d( int _idx, int _rotation ){
+
+  int _gridWidth = gridWidth;
+  if( _rotation == 1 || _rotation == 3 ){
+    _gridWidth = gridHeight;
+  }
+  int _y = std::floor( _idx / _gridWidth );
+  int _x = _idx - (_y * _gridWidth );
+  std::vector<int> pos { _x, _y };
+  return pos;
+
+}
+
 std::string StructureDef::getImgUrl(){
   return imgUrl;
 }
@@ -70,4 +142,7 @@ int StructureDef::getGridWidth(){
 }
 int StructureDef::getGridHeight(){
   return gridHeight;
+}
+bool StructureDef::isRotating(){
+  return rotates;
 }

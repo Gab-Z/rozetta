@@ -13,6 +13,16 @@ Structure::Structure( int _x, int _y,  StructureDef* _structureDef ){
   Structure::idCounter++;
   id = Structure::idCounter;
 }
+Structure::Structure( int _x, int _y,  StructureDef* _structureDef, int _rotation ){
+  x = _x;
+  y = _y;
+  structureDef = _structureDef;
+  Structure::idCounter++;
+  id = Structure::idCounter;
+  if( structureDef->isRotating() == true ){
+    rotation = _rotation;
+  }
+}
 void Structure::setPosition( int _x, int _y ){
   x = _x;
   y = _y;
@@ -32,6 +42,9 @@ int Structure::getX(){
 }
 int Structure::getY(){
   return y;
+}
+int Structure::getRotation(){
+  return rotation;
 }
 std::string Structure::getTypeName(){
   return structureDef->getTypeName();
