@@ -547,7 +547,8 @@ function updateStructures(){
       sp.on( "mouseout", strucSpriteOut );
     }
   })
-  console.log( towerDef.getMoveMap() )
+  //console.log( towerDef.getMoveMap() )
+  drawMoveMap();
 }
 function anchorFromRot( _rot ){
   let anchor = [ 0, 0 ];
@@ -568,7 +569,33 @@ function structSpriteOver( e ){
 function strucSpriteOut( e ){
   e.currentTarget.tint = 0xffffff;
 }
+function drawMoveMap(){
+  let moveMap = towerDef.getMoveMap(),
+      stageCont = app.stage.getChildByName( "stageCont" ),
+      tmpCont = stageCont.getChildByName( "tmpCont" );
+  if( tmpCont ) tmpCont.destroy();
+  tmpCont = new PIXI.Container();
+  tmpCont.position.set( 0, 0 );
+  stageCont.addChild( tmpCont );
+  let l = moveMap.length / 3;
+  for( let i = 0; i < l; i++ ){
+    let val = moveMap[ i * 3 ],
+        px = moveMap[ i * 3 + 1 ],
+        py = moveMap[ i * 3 + 2 ],
+        graph = new PIXI.Graphics(),
+        ts = defaults.tileSize;
+    if( val > -2 ) continue;
+    graph.position.set( 0, 0 );
+    tmpCont.addChild( graph );
+    graph.lineStyle(0);
 
+    graph.beginFill( 0x99ff33, 1 );
+    graph.moveTo( px * ts, py * ts );
+    graph.lineTo( px * ts + ts, py * ts );
+    graph.lineTo( px * ts + ts, py * ts + ts );
+    graph.lineTo( px * ts, py * ts + ts );
+  }
+}
   /*
   setCanvas();
   drawGrid( document.getElementById( "canvas0" ) );

@@ -86,7 +86,16 @@ std::vector<bool> GameLevel::testMultipleStructurePos( std::vector<int> _positio
 }
 
 std::vector<double> GameLevel::getMoveMap(){
-  return moveMap;
+  //return moveMap;
+  int l = moveMap.size();
+  std::vector<double> ret( l * 3 );
+  for( int i = 0; i < l; i++ ){
+    std::vector<int> pos = to2d( i );
+    ret[ i * 3 ] = moveMap[ i ];
+    ret[ i * 3 + 1 ] = (double) pos[ 0 ];
+    ret[ i * 3 + 2 ] = (double) pos[ 1 ];
+  }
+  return ret;
 }
 
 void GameLevel::addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){
