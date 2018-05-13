@@ -59,7 +59,6 @@ NAN_METHOD(TowerDefense::New) {
   if( info.Length() == 4 ){
     towerDef->level = new GameLevel( info[0]->IntegerValue(), info[1]->IntegerValue(), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
   }
-
   info.GetReturnValue().Set( info.Holder() );
 }
 
