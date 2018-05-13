@@ -28,6 +28,8 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getMoveMap", getMoveMap );
   Nan::SetPrototypeMethod( ctor, "addStructures", addStructures );
   Nan::SetPrototypeMethod( ctor, "getStructures", getStructures );
+  Nan::SetPrototypeMethod( ctor, "getStructureGrid", getStructureGrid );
+
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
 
@@ -183,10 +185,10 @@ NAN_METHOD( TowerDefense::getMoveMap ){
 NAN_METHOD( TowerDefense::addStructures ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   if( info.Length() != 3 ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected 3 arguments [ positions...], typeName, rotation").ToLocalChecked());
+    return Nan::ThrowError( Nan::New( "TowerDefense::addStructures - expected 3 arguments [ positions...], typeName, rotation" ).ToLocalChecked() );
   }
   if( !info[0]->IsArray() || !info[1]->IsString() || !info[2]->IsNumber() ) {
-    return Nan::ThrowError(Nan::New("TowerDefense::addStructures - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number").ToLocalChecked());
+    return Nan::ThrowError( Nan::New( "TowerDefense::addStructures - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number" ).ToLocalChecked() );
   }
   std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
@@ -197,4 +199,18 @@ NAN_METHOD( TowerDefense::addStructures ){
 NAN_METHOD( TowerDefense::getStructures ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   info.GetReturnValue().Set( self->level->getStructures() );
+}
+
+NAN_METHOD( TowerDefense::getStructureGrid ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  if( info.Length() != 2 ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::getStructureGrid - expected 2 arguments: typeName, rotation").ToLocalChecked());
+  }
+  if( !info[0]->IsString() || !info[1]->IsNumber() ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::getStructureGrid - expected argument 0 to be a string, argument 1 to be a number" ).ToLocalChecked() );
+  }
+  std::string typeName = std::string( *Nan::Utf8String( info[ 0 ] ) );
+  int rotation = info[ 1 ]->IntegerValue();
+
+  info.GetReturnValue().Set( self->level->getStructureGrid( typeName, rotation ) );
 }

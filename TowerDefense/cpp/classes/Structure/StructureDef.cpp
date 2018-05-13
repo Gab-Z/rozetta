@@ -64,7 +64,7 @@ std::string StructureDef::getTypeName(){
 std::vector<int> StructureDef::getGrid(){
   return grid;
 }
-
+/*
 std::vector<int> StructureDef::getGrid( int _rotation ){
   int l = grid.size();
   std::vector<int> ret( l );
@@ -84,12 +84,37 @@ std::vector<int> StructureDef::getGrid( int _rotation ){
     }else{
       rotPos = basePos;
     }
-    int rotPos1d = to1d( rotPos[ 0 ], rotPos[ 1 ] );
+    int rotPos1d = to1d( rotPos[ 0 ], rotPos[ 1 ], _rotation );
     ret[ rotPos1d ] = baseInt;
   }
   return ret;
 }
+*/
+std::vector<int> StructureDef::getGrid( int _rotation ){
+  int l = grid.size();
+  std::vector<int> ret( l );
+  for( int i = 0; i < l; i++ ){
+    int baseInt = grid[ i ];
+    std::vector<int> basePos = to2d( i );
+    std::vector<int> rotPos( 2 );
+    if( _rotation == 1 ){
+      rotPos[ 0 ] = gridHeight - 1 - basePos[ 1 ];
+      rotPos[ 1 ] = basePos[ 0 ];
+    }else if( _rotation == 2 ){
+      rotPos[ 0 ] = gridWidth - 1 - basePos[ 0 ];
+      rotPos[ 1 ] = gridHeight - 1 - basePos[ 1 ];
+    }else if( _rotation == 3 ){
+      rotPos[ 0 ] = basePos[ 1 ];
+      rotPos[ 1 ] = gridWidth - 1 - basePos[ 0 ];
+    }else{
+      rotPos = basePos;
+    }
+    int rotPos1d = to1d( rotPos[ 0 ], rotPos[ 1 ], _rotation );
+    ret[ rotPos1d ] = baseInt;
 
+  }
+  return ret;
+}
 int StructureDef::to1d( int _x, int _y ){
   int pos = _y * gridWidth + _x;
   return pos;
@@ -122,15 +147,28 @@ std::vector<int> StructureDef::rotPoint( int _x, int _y, int _rotation ){
 
 std::vector<int> StructureDef::to2d( int _idx, int _rotation ){
 
-  int _gridWidth = gridWidth;
+  int _gridWidth;
   if( _rotation == 1 || _rotation == 3 ){
     _gridWidth = gridHeight;
+  }else{
+    _gridWidth = gridWidth;
   }
   int _y = std::floor( _idx / _gridWidth );
-  int _x = _idx - (_y * _gridWidth );
+  int _x = _idx - ( _y * _gridWidth );
   std::vector<int> pos { _x, _y };
   return pos;
 
+}
+
+int StructureDef::to1d( int _x, int _y, int _rotation ){
+  int _gridWidth;
+  if( _rotation == 1 || _rotation == 3 ){
+    _gridWidth = gridHeight;
+  }else{
+    _gridWidth = gridWidth;
+  }
+  int pos = _y * _gridWidth + _x;
+  return pos;
 }
 
 std::string StructureDef::getImgUrl(){

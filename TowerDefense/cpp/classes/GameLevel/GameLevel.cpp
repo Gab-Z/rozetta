@@ -203,3 +203,11 @@ v8::Local<v8::Array> GameLevel::getStructures(){
 Tile* GameLevel::getTile( int _i ){
   return tiles[ _i ];
 }
+
+v8::Local<v8::Array> GameLevel::getStructureGrid( std::string _typeName, int _rotation ){
+  StructureDef* structDef = StructuresDefList::getStructureTypeByName( _typeName );
+  std::vector<int> grid = structDef->getGrid( _rotation );
+  int l = grid.size();
+  v8::Local<v8::Array> ret = Converter::vectorIntToJsArray( grid );
+  return ret;
+}

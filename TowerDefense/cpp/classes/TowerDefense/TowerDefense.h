@@ -37,6 +37,8 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     static NAN_METHOD( getStructures );
 
+    static NAN_METHOD( getStructureGrid );
+
 };
 
 #endif

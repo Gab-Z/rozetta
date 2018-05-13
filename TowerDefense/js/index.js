@@ -1,12 +1,12 @@
-"use strict"
+//"use strict"
 const ipc = require('electron').ipcRenderer;
 const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 80,
-  mapW: 8,
-  mapH: 8,
+  tileSize: 30,
+  mapW: 20,
+  mapH: 20,
   menuHeight: 50,
   screenW: window.screen.width,
   screenH: window.screen.height
@@ -14,13 +14,15 @@ const defaults = {
 const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH } );
+//console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
+console.log( towerDef.getStructureGrid( "shapeL", 3  ).toString() )
 
 const store = {};
 
 setPIXIRenderer();
 loadFloorsImgs();
 
-console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
+//console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
 
 function setPIXIRenderer(){
   //Add the canvas that Pixi automatically created for you to the HTML document
@@ -131,16 +133,11 @@ function setupFloorSprites(){
 
   loadStructuresImgs();
 }
-function onclick2( e ){
-  let x = Math.floor( e.data.global.x / defaults.tileSize );
-  let y = Math.floor( e.data.global.y / defaults.tileSize );
-  console.log( x + ", " + y );
-}
 function loadStructuresImgs(){
   let _structures = towerDef.getStructuresDefs(),
       arr = [];
   _structures.forEach( struc => {
-    console.log( "add : " + struc.typeName + " / " + struc.imgUrl )
+  //  console.log( "add : " + struc.typeName + " / " + struc.imgUrl )
     arr.push( {
       name: struc.typeName,
       url: struc.imgUrl
@@ -223,7 +220,7 @@ function clearStructPreview(){
                                             baseTexture: false } );
 }
 function startStructPreview( _typeName ){
-  console.log("start");
+  //console.log("start");
   clearStructPreview();
   let previewCont = new PIXI.Container();
   previewCont.name = "structPreviewCont";
@@ -299,7 +296,10 @@ function moveStructPosPreview( e ){
           end:    { x: x + gridWidth,
                     y: y + gridHeight } },
         structureData  ),
-        posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name,  structureData.rotation );
+      posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name,  structureData.rotation );
+      //console.log( "move positions : " + posData.structPositions );
+    //  console.log( "move name : " + structureData.name )
+      //console.log( "move rot : " + structureData.rotation )
   previewSprit.position.set( x * ts, y * ts );
   previewSprit.tint = posTest[ 0 ] == true ? 0xffffff : 0xff0000;
 }
@@ -411,7 +411,6 @@ function dragStructPositionning( e, _localPt ){
       sph = structureData.gridHeight * ts,
       rot = ( sRot * 0.5 ) * Math.PI,
       anchor = structureData.anchor;
-
   structPosCont.children.forEach( child => {
     if( child instanceof PIXI.Sprite ) child.destroy();
   } );
@@ -445,10 +444,6 @@ function getStructPosDragData( mouse, draggedZone, structureData ){
       end = draggedZone.end,
       rotationIndice = structureData.rotation,
       invertSides = rotationIndice == 1 || rotationIndice == 3 ? true : false,
-      //gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
-      //gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
-
-
       gridWidth = invertSides ? structureData.gridHeight : structureData.gridWidth,
       gridHeight = invertSides ? structureData.gridWidth : structureData.gridHeight,
       diff = {  x: mx - start.x,
@@ -505,7 +500,7 @@ function cancelStructPositioning( e ){
   clickStructPicker( false, typeName );
 }
 function onEndStructPositioning( e ){
-  console.log( "end drag pos" )
+  //console.log( "end drag pos" )
   let m = e.data.getLocalPosition( this ),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structPosCont = stageCont.getChildByName( "structPosCont" ),
@@ -514,7 +509,7 @@ function onEndStructPositioning( e ){
   towerDef.addStructures( posData.structPositions, structureData.name, structureData.rotation );
   cancelStructPositioning();
   updateStructures();
-  console.log( JSON.stringify( towerDef.getStructures() ) )
+  //console.log( JSON.stringify( towerDef.getStructures() ) )
 }
 function updateStructures(){
   let structuresList = towerDef.getStructures(),
@@ -548,7 +543,7 @@ function updateStructures(){
     }
   })
   //console.log( towerDef.getMoveMap() )
-  drawMoveMap();
+  //drawMoveMap();
 }
 function anchorFromRot( _rot ){
   let anchor = [ 0, 0 ];
@@ -596,105 +591,3 @@ function drawMoveMap(){
     graph.lineTo( px * ts, py * ts + ts );
   }
 }
-  /*
-  setCanvas();
-  drawGrid( document.getElementById( "canvas0" ) );
-  document.getElementById( "canvas0" ).addEventListener( "click", cvClick );
-
-  function cvClick( e ){
-    let pos = getMouseTile( e );
-    console.log( pos.x + ", " + pos.y );
-
-  }
-  function getMouseTile( e ){
-    let cv = e.currentTarget;
-    return { x: Math.floor( ( e.pageX - cv.offsetLeft ) / defaults.tileSize ),
-             y: Math.floor( ( e.pageY - cv.offsetTop ) / defaults.tileSize ) };
-  }
-  function setCanvas(){
-    let mainCont = document.getElementById( "mainCont" );
-    mainCont.innerHTML = "";
-    let cv = document.createElement( "canvas" ),
-        width = defaults.mapW * defaults.tileSize,
-        height = defaults.mapH * defaults.tileSize;
-    cv.id = "canvas0";
-    cv.width = width;
-    cv.height = height;
-    cv.style.width = width + "px";
-    cv.style.height = height + "px";
-    cv.style.backgroundColor = "#ffffff";
-    mainCont.appendChild( cv );
-  }
-  function drawGrid( cv ){
-    let lineWidth = 2,
-        ctx = cv.getContext( "2d" ),
-        d = defaults;
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "rgba(181, 50, 50, 1)";
-    //ctx.fillRect( 0, 0, cv.width, cv.height );
-
-    ctx.fillStyle = "rgba(0, 96, 185, 1)";
-    //ctx.lineWidth = .5;
-    //ctx.beginPath();
-    for( let row = 1; row < d.mapH; row++ ){
-      //ctx.moveTo( 0, row * d.tileSize );
-      //ctx.lineTo( d.mapW * d.tileSize, row * d.tileSize );
-      ctx.fillRect( 0, row * d.tileSize - ( lineWidth * .5 ), d.mapW * d.tileSize, lineWidth  )
-    }
-    for( let col = 1; col < d.mapW; col++ ){
-      //ctx.moveTo( col * d.tileSize, 0 );
-      //ctx.lineTo( col * d.tileSize, d.mapH * d.tileSize );
-      ctx.fillRect( col * d.tileSize - ( lineWidth * .5 ), 0, lineWidth, d.mapH * d.tileSize )
-    }
-    //ctx.stroke();
-  }
-  function drawMap( arr ){
-    let cv = document.getElementById( "canvas0" ),
-        ctx = cv.getContext( "2d" ),
-        d = defaults;
-    cv.clear();
-    //ctx.clearRect( 0, 0, cv.width, cv.height );
-    drawGrid( cv );
-    arr.forEach( ( cell, i ) => {
-      if( cell < -1 ){
-        let pos = to2d( i );
-        console.log( "draw : " + pos.x+"/"+pos.y)
-        ctx.fillRect( pos.x * d.tileSize, pos.y * d.tileSize, d.tileSize, d.tileSize );
-      }
-    })
-  }
-  function to2d( _i ){
-    let d = defaults,
-        y = Math.floor( _i / d.mapW );
-    return {  x : _i - ( y * d.mapW ),
-              y : y }
-  }
-
-  function startDOMPicker(){
-    let _structures = towerDef.getStructuresDefs();
-    let cont = document.createElement( "div" );
-    cont.id = "pickercont";
-    cont.classList.add( "frnscc" );
-    _structures.forEach( struc => {
-      let pic = new Image();
-      let callBackObj = {
-        cont: cont
-      }
-      let cbkFunc = domLoaderCallback.bind( callBackObj );
-      callBackObj.func = cbkFunc;
-      pic.addEventListener( "load", cbkFunc );
-      pic.src = struc.imgUrl;
-    })
-    return cont;
-  }
-  function domLoaderCallback( e ){
-    let cbkObj = this,
-        pic = e.currentTarget,
-        cont = cbkObj.cont;
-    pic.removeEventListener( "load", cbkObj.func );
-    let picCont = cont.appendChild( document.createElement( "div" ) );
-    picCont.appendChild( pic );
-  }
-
-
-*/

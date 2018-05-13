@@ -8,7 +8,7 @@ StructureDef* StructuresDefList::getStructureTypeByName( std::string _typeName )
       return strucDef;
     }
   }
-  return StructuresDefList::structureTypes[ 0 ];
+  return StructuresDefList::structureTypes[ 1 ];
 }
 
 v8::Local<v8::Array> StructuresDefList::structuresDefs(){

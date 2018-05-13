@@ -38,6 +38,8 @@ class GameLevelBase {
     virtual std::vector<double> getMoveMap(){ return std::vector<double>(); };
     virtual void addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
+
+    virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 };
 
 #endif

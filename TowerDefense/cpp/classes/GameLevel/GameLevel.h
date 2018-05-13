@@ -21,6 +21,8 @@ class GameLevel : public GameLevelBase {
     void addStructures( std::vector<int> _positions, std::string _typeName, int _rotation );
     v8::Local<v8::Array> getStructures();
     Tile* getTile( int _i );
+
+    v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation );
 };
 
 #endif
