@@ -31,13 +31,15 @@ class GameLevelBase {
     void pushStructure( Structure* _structure );
     int structuresSize();
     Structure* getStructure( int _i );
+    std::vector<int> getStartByIndex( int _i );
 
     virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     virtual Tile* getTile( int _i ){ return new Tile(); };
     virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){ return std::vector<bool>(); };
     virtual std::vector<double> getMoveMap(){ return std::vector<double>(); };
-    virtual void addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){};
+    virtual bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){ return false;};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
+    bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
 
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 };

@@ -8,6 +8,7 @@ class GameLevel : public GameLevelBase {
 
   std::vector<Tile*> tiles;
   std::vector<double> moveMap;
+  std::vector<int> intMap;
 
   public:
 
@@ -18,11 +19,13 @@ class GameLevel : public GameLevelBase {
     bool testStructurePos( int _x, int _y, std::string _typeName );
     std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation );
     std::vector<double> getMoveMap();
-    void addStructures( std::vector<int> _positions, std::string _typeName, int _rotation );
+    bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation );
     v8::Local<v8::Array> getStructures();
     Tile* getTile( int _i );
-
     v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation );
+    bool testMapOpening();
+    bool newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions );
+
 };
 
 #endif

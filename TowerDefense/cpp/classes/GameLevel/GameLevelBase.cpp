@@ -44,3 +44,12 @@ int GameLevelBase::structuresSize(){
 Structure* GameLevelBase::getStructure( int _i ){
   return structures[ _i ];
 }
+
+std::vector<int> GameLevelBase::getStartByIndex( int _i ){
+  int l = startPoints.size() / 2;
+  if( _i < 0 || _i >= l ){
+    return std::vector<int> { startPoints[ 0 ], startPoints[ 1 ] };
+  }else{
+    return std::vector<int> { startPoints[ _i * 2 ], startPoints[ _i * 2 + 1 ] };
+  }
+}

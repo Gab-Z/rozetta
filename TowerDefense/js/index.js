@@ -15,7 +15,7 @@ const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ 
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH } );
 //console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
-console.log( towerDef.getStructureGrid( "shapeL", 3  ).toString() )
+//console.log( towerDef.getStructureGrid( "shapeL", 3  ).toString() )
 
 const store = {};
 

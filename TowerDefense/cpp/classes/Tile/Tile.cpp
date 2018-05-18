@@ -56,5 +56,27 @@ v8::Local<v8::Object> Tile::toObj(){
   v8::Local<v8::Value> floorValue = Nan::New( getFloorTypeId() );
   ret->Set( floorProp, floorValue );
 
+  int wayType = getWayType();
+  if( wayType == 1 ){
+    v8::Local<v8::String> startProp = Nan::New( "isStart" ).ToLocalChecked();
+    v8::Local<v8::Value> startValue = Nan::New( true );
+    ret->Set( startProp, startValue );
+  }else if( wayType == 2 ){
+    v8::Local<v8::String> endProp = Nan::New( "isEnd" ).ToLocalChecked();
+    v8::Local<v8::Value> endValue = Nan::New( true );
+    ret->Set( endProp, endValue );
+  }
   return ret;
 };
+void Tile::setWayInOrOut( std::string _wayType ){
+  if( _wayType == "start" ){
+    isWayInOrOut = 1;
+  }else if( _wayType == "end" ){
+    isWayInOrOut = 2;
+  }else{
+    isWayInOrOut = 0;
+  }
+}
+int Tile::getWayType(){
+  return isWayInOrOut;
+}

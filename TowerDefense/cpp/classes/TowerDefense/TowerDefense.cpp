@@ -192,7 +192,9 @@ NAN_METHOD( TowerDefense::addStructures ){
   std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
   int rotation = info[ 2 ]->IntegerValue();
-  self->level->addStructures( positions, typeName, rotation );
+  bool add = self->level->addStructures( positions, typeName, rotation );
+
+  info.GetReturnValue().Set( Nan::New( add ) );
 }
 
 NAN_METHOD( TowerDefense::getStructures ){
