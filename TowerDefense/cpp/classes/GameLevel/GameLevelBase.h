@@ -8,7 +8,7 @@
 #include "../Structure/Structure.h"
 #include "../Structure/StructuresDefList.h"
 #include "../Tile/Tile.h"
-#include "../Converter/Converter.h"
+#include "../converter/converter.h"
 
 class GameLevelBase {
 
@@ -31,7 +31,12 @@ class GameLevelBase {
     void pushStructure( Structure* _structure );
     int structuresSize();
     Structure* getStructure( int _i );
+    Structure* getStructureById( int _id );
     std::vector<int> getStartByIndex( int _i );
+    v8::Local<v8::Object> getWays();
+    static v8::Local<v8::Array> getCommonTextures();
+    bool isPointOnStructureById( int _id, int _x, int _y );
+    int destroyStructById( int _id );
 
     virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     virtual Tile* getTile( int _i ){ return new Tile(); };
@@ -39,7 +44,8 @@ class GameLevelBase {
     virtual std::vector<double> getMoveMap(){ return std::vector<double>(); };
     virtual bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){ return false;};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
-    bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
+    virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
+    virtual int removeStructById( int _id ){ return 0; };
 
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 };

@@ -3,7 +3,7 @@
     {
       "target_name": "towerdef",
       "sources": [  "./cpp/index.cpp",
-                    "./cpp/classes/Converter/Converter.cpp",
+                    "./cpp/classes/converter/converter.cpp",
                     "./cpp/classes/TowerDefense/TowerDefense.cpp",
                     "./cpp/classes/Tile/Tile.cpp",
                     "./cpp/classes/Structure/Structure.cpp",

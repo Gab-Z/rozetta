@@ -29,6 +29,11 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "addStructures", addStructures );
   Nan::SetPrototypeMethod( ctor, "getStructures", getStructures );
   Nan::SetPrototypeMethod( ctor, "getStructureGrid", getStructureGrid );
+  Nan::SetPrototypeMethod( ctor, "getWays", getWays );
+  Nan::SetPrototypeMethod( ctor, "getStructureById", getStructureById );
+  Nan::SetPrototypeMethod( ctor, "getCommonTextures", getCommonTextures );
+  Nan::SetPrototypeMethod( ctor, "isPtOnStructById", isPtOnStructById );
+  Nan::SetPrototypeMethod( ctor, "destroyStructById", destroyStructById );
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -53,11 +58,11 @@ NAN_METHOD(TowerDefense::New) {
 
   // create a new instance and wrap our javascript instance
 
-  //TowerDefense* towerDef = new TowerDefense( info[0]->IntegerValue(), info[1]->IntegerValue(), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
+  //TowerDefense* towerDef = new TowerDefense( info[0]->IntegerValue(), info[1]->IntegerValue(), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
   TowerDefense* towerDef = new TowerDefense();
   towerDef->Wrap( info.Holder() );
   if( info.Length() == 4 ){
-    towerDef->level = new GameLevel( info[0]->IntegerValue(), info[1]->IntegerValue(), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
+    towerDef->level = new GameLevel( info[0]->IntegerValue(), info[1]->IntegerValue(), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
   }
   info.GetReturnValue().Set( info.Holder() );
 }
@@ -161,12 +166,12 @@ NAN_METHOD( TowerDefense::testStructuresPos ){
   if( ! info[ 0 ]->IsArray() || ! info[ 1 ]->IsString() || ! info[ 2 ]->IsNumber() ) {
     return Nan::ThrowError(Nan::New("TowerDefense::testStructurePos - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number").ToLocalChecked());
   }
-  std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
+  std::vector<int> positions = converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
   int rotation = info[ 2 ]->IntegerValue();
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   std::vector<bool> ret = self->level->testMultipleStructurePos( positions, typeName, rotation );
-  info.GetReturnValue().Set( Converter::vectorBoolToJsArray( ret ) );
+  info.GetReturnValue().Set( converter::vectorBoolToJsArray( ret ) );
 }
 
 NAN_METHOD( TowerDefense::getMoveMap ){
@@ -189,7 +194,7 @@ NAN_METHOD( TowerDefense::addStructures ){
   if( !info[0]->IsArray() || !info[1]->IsString() || !info[2]->IsNumber() ) {
     return Nan::ThrowError( Nan::New( "TowerDefense::addStructures - expected argument 0 to be an array, argument 1 to be a string, argument 2 to be a number" ).ToLocalChecked() );
   }
-  std::vector<int> positions = Converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
+  std::vector<int> positions = converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 0 ] ) );
   std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
   int rotation = info[ 2 ]->IntegerValue();
   bool add = self->level->addStructures( positions, typeName, rotation );
@@ -214,4 +219,55 @@ NAN_METHOD( TowerDefense::getStructureGrid ){
   int rotation = info[ 1 ]->IntegerValue();
 
   info.GetReturnValue().Set( self->level->getStructureGrid( typeName, rotation ) );
+}
+
+NAN_METHOD( TowerDefense::getStructureById ){
+  if( info.Length() != 1 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureById - expected 1 arguments id").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureById - expected argument 0 to be a number").ToLocalChecked());
+  }
+  int searchedId = info[ 0 ]->IntegerValue();
+  if( searchedId == 0 ){
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureById - invalid searched Id").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->getStructureById( searchedId )->toObj() );
+}
+
+NAN_METHOD( TowerDefense::getWays ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->getWays() );
+}
+
+NAN_METHOD( TowerDefense::getCommonTextures ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->getCommonTextures() );
+}
+
+NAN_METHOD( TowerDefense::isPtOnStructById ){
+  if( info.Length() != 3 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::isPtOnStructById - expected 3 arguments id, x, y").ToLocalChecked());
+  }
+  if( !info[ 0 ]->IsNumber() || !info[ 1 ]->IsNumber() || !info[ 2 ]->IsNumber() ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::isPtOnStructById - expected all 3 arguments to be numbers" ).ToLocalChecked() );
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  int id = info[ 0 ]->IntegerValue();
+  int x = info[ 1 ]->IntegerValue();
+  int y = info[ 2 ]->IntegerValue();
+  info.GetReturnValue().Set( self->level->isPointOnStructureById( id, x, y ) );
+}
+
+NAN_METHOD( TowerDefense::destroyStructById ){
+  if( info.Length() != 1 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::destroyStructById - expected 1 argument id").ToLocalChecked());
+  }
+  if( !info[ 0 ]->IsNumber() ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::destroyStructById - expected argument 1 to be a number" ).ToLocalChecked() );
+  }
+  int id = info[ 0 ]->IntegerValue();
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->removeStructById( id ) );  
 }

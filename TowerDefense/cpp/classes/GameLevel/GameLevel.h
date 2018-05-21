@@ -25,6 +25,7 @@ class GameLevel : public GameLevelBase {
     v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation );
     bool testMapOpening();
     bool newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions );
+    int removeStructById( int _id );
 
 };
 

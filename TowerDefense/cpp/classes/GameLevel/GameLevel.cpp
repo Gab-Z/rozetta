@@ -135,7 +135,6 @@ bool GameLevel::addStructures( std::vector<int> _positions, std::string _typeNam
     strucDefPos.push_back( basePos[ 1 ] );
   }
 
-
   std::vector<int> okPositions;
   for( int t = 0; t < nbS; t++ ){
     if( testPositions[ t ] == true ){
@@ -246,7 +245,7 @@ Tile* GameLevel::getTile( int _i ){
 v8::Local<v8::Array> GameLevel::getStructureGrid( std::string _typeName, int _rotation ){
   StructureDef* structDef = StructuresDefList::getStructureTypeByName( _typeName );
   std::vector<int> grid = structDef->getGrid( _rotation );
-  v8::Local<v8::Array> ret = Converter::vectorIntToJsArray( grid );
+  v8::Local<v8::Array> ret = converter::vectorIntToJsArray( grid );
   return ret;
 }
 
@@ -285,50 +284,63 @@ bool GameLevel::testMapOpening(){
     for( int i = 0; i < l; i++ ){
       int px = openList[ i * 2 ];
       int py = openList[ i * 2 + 1 ];
+
       if( px > 0 ){
         int leftPos = to1d( px - 1, py );
-        int intMapVal = intMap[ leftPos ];
-        if( testMap[ leftPos ] == 0 && intMapVal > 0 ){
-          testMap[ leftPos ] = 1;
-          newList.push_back( px - 1 );
-          newList.push_back( py );
-        }else if( intMapVal < 0 ){
-          testMap[ leftPos ] = -1;
+        if( testMap[ leftPos ] == 0 ){
+          int intMapVal = intMap[ leftPos ];
+          if( intMapVal > 0 ){
+            testMap[ leftPos ] = 1;
+            newList.push_back( px - 1 );
+            newList.push_back( py );
+          }else if( intMapVal < 0 ){
+            testMap[ leftPos ] = -1;
+          }
         }
       }
+
       if( px < mw - 1 ){
         int rightPos = to1d( px + 1, py );
-        int intMapVal = intMap[ rightPos ];
-        if( testMap[ rightPos ] == 0 && intMapVal > 0 ){
-          testMap[ rightPos ] = 1;
-          newList.push_back( px + 1 );
-          newList.push_back( py );
-        }else if( intMapVal < 0 ){
-          testMap[ rightPos ] = -1;
+        if( testMap[ rightPos ] == 0 ){
+          int intMapVal = intMap[ rightPos ];
+          if( intMapVal > 0 ){
+            testMap[ rightPos ] = 1;
+            newList.push_back( px + 1 );
+            newList.push_back( py );
+          }else if( intMapVal < 0 ){
+            testMap[ rightPos ] = -1;
+          }
         }
       }
+
       if( py > 0 ){
         int topPos = to1d( px, py - 1 );
-        int intMapVal = intMap[ topPos ];
-        if( testMap[ topPos ] == 0 && intMapVal > 0 ){
-          testMap[ topPos ] = 1;
-          newList.push_back( px );
-          newList.push_back( py - 1 );
-        }else if( intMapVal < 0 ){
-          testMap[ topPos ] = -1;
+        if( testMap[ topPos ] == 0 ){
+          int intMapVal = intMap[ topPos ];
+          if( intMapVal > 0 ){
+            testMap[ topPos ] = 1;
+            newList.push_back( px );
+            newList.push_back( py - 1 );
+          }else if( intMapVal < 0 ){
+            testMap[ topPos ] = -1;
+          }
         }
       }
+
       if( py < mh - 1){
         int bottomPos = to1d( px, py + 1 );
-        int intMapVal = intMap[ bottomPos ];
-        if( testMap[ bottomPos ] == 0 && intMapVal > 0 ){
-          testMap[ bottomPos ] = 1;
-          newList.push_back( px );
-          newList.push_back( py + 1 );
-        }else if( intMapVal < 0 ){
-          testMap[ bottomPos ] = -1;
+        if( testMap[ bottomPos ] == 0 ){
+          int intMapVal = intMap[ bottomPos ];
+          if( intMapVal > 0 ){
+            testMap[ bottomPos ] = 1;
+            newList.push_back( px );
+            newList.push_back( py + 1 );
+          }else if( intMapVal < 0 ){
+            testMap[ bottomPos ] = -1;
+          }
         }
       }
+
     }
     if( newList.size() > 0 ){
       openList = newList;
@@ -338,9 +350,41 @@ bool GameLevel::testMapOpening(){
     }
   }
   for ( int n = 0; n < mapl; n++ ){
-    if( testMap[ n ] == 0 ){
+    if( testMap[ n ] == 0 && intMap[ n ] > 0 ){
       return false;
     }
   }
   return true;
+}
+
+int GameLevel::removeStructById( int _id ){
+  Structure* strucToRemove = getStructureById( _id );
+  StructureDef* strucDef = StructuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
+  int strucRot = strucToRemove->getRotation();
+  std::vector<int> strucGrid = strucDef->getGrid( strucRot );
+  int sx = strucToRemove->getX();
+  int sy = strucToRemove->getY();
+  int l = strucGrid.size();
+  for( int i = 0; i < l; i++ ){
+    if( strucGrid[ i ] == 0 ){ continue; }
+    std::vector<int> gridTilePos2d = strucDef->to2d( i, strucRot );
+    int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
+    Tile* tile = tiles[ pos1d ];
+    tile->setStructureId( 0 );
+    moveMap[ pos1d ] = FloorsList::getFloorTypeById( tile->getFloorTypeId() )->getSpeed();
+    intMap[ pos1d ] = 1;
+  }
+  if( testMapOpening() == false ){
+    for( int ii = 0; ii < l; ii++ ){
+      if( strucGrid[ ii ] == 0 ){ continue; }
+      std::vector<int> gridTilePos2d = strucDef->to2d( ii, strucRot );
+      int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
+      Tile* tile = tiles[ pos1d ];
+      tile->setStructureId( _id );
+      moveMap[ pos1d ] = -2.0;
+      intMap[ pos1d ] = -2;
+    }
+    return 0;
+  }
+  return destroyStructById( _id );
 }

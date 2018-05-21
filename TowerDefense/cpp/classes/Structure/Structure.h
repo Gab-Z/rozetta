@@ -6,12 +6,12 @@
 #include <string>
 #include "./StructureDef.h"
 
-const unsigned int idCounter = 0;
+const int idCounter = 0;
 
 class Structure {
 
-  static unsigned int idCounter;
-  unsigned int id;
+  static int idCounter;
+  int id;
   int x;
   int y;
   int rotation = 0;
@@ -35,6 +35,9 @@ class Structure {
     std::string getImgUrl();
     int getGridWidth();
     int getGridHeight();
+    v8::Local<v8::Object> toObj();
+    bool testPoint( int _x, int _y );
+
 };
 
 #endif

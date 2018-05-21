@@ -1,6 +1,6 @@
 #include "Structure.h"
 
-unsigned int Structure::idCounter = 0;
+int Structure::idCounter = 0;
 
 Structure::Structure(){
   Structure::idCounter++;
@@ -34,8 +34,7 @@ void Structure::setY( int _y ){
   y = _y;
 }
 int Structure::getId(){
-  int _id = (int) id;
-  return _id;
+  return id;
 }
 int Structure::getX(){
   return x;
@@ -58,51 +57,51 @@ int Structure::getGridWidth(){
 int Structure::getGridHeight(){
   return structureDef->getGridHeight();
 }
-/*
-std::vector<int> Structure::getGridPositions(){
-  std::vector<int> baseGrid = structureDef->getGrid();
-  std::vector<int> ret();
-  int bgl = baseGrid.size();
-  for( int  i = 0; i < bgl; i++ ){
-    if( baseGrid[ i ] != 1 ){ continue; };
-    std::vector<int> basePos = structureDef->to2d( i );
-    ret.push_back( x + basePos[ 0 ] );
-    ret.push_back( y + basePos[ 1 ] );
-  }
-  return ret;
-}
-*/
-//StructureDef* Structure::structureDef =  new StructureDef( "Structure", std::vector<int>(), "null", 0, 0, 0 );
-/*
-v8::Local<v8::Object> Structure::getDefinitionObj(){
+v8::Local<v8::Object> Structure::toObj(){
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
 
-  const StructureDef* def = structureDef();
+  v8::Local<v8::String> xProp = Nan::New("x").ToLocalChecked();
+  v8::Local<v8::Value> xVal = Nan::New( x );
+  ret->Set( xProp, xVal );
 
-  v8::Local<v8::String> typeProp = Nan::New( "typeName" ).ToLocalChecked();
-  v8::Local<v8::Value> typeValue = Nan::New( def->typeName ).ToLocalChecked();
-  ret->Set( typeProp, typeValue );
+  v8::Local<v8::String> yProp = Nan::New("y").ToLocalChecked();
+  v8::Local<v8::Value> yVal = Nan::New( y );
+  ret->Set( yProp, yVal );
 
-  v8::Local<v8::String> widthProp = Nan::New( "gridWidth" ).ToLocalChecked();
-  v8::Local<v8::Value> widthValue = Nan::New( gridWidth() );
-  ret->Set( widthProp, widthValue );
+  v8::Local<v8::String> idProp = Nan::New("id").ToLocalChecked();
+  v8::Local<v8::Value> idVal = Nan::New( id );
+  ret->Set( idProp, idVal );
 
-  v8::Local<v8::String> heightProp = Nan::New( "gridHeight" ).ToLocalChecked();
-  v8::Local<v8::Value> heightValue = Nan::New( gridHeight() );
-  ret->Set( heightProp, heightValue );
+  v8::Local<v8::String> rotProp = Nan::New("rotation").ToLocalChecked();
+  v8::Local<v8::Value> rotVal = Nan::New( rotation );
+  ret->Set( rotProp, rotVal );
 
-  v8::Local<v8::String> imgProp = Nan::New( "imgUrl" ).ToLocalChecked();
-  v8::Local<v8::Value> imgValue = Nan::New( getImgUrl() ).ToLocalChecked();
-  ret->Set( imgProp, imgValue );
+  v8::Local<v8::String> typeProp = Nan::New("typeName").ToLocalChecked();
+  v8::Local<v8::Value> typeVal = Nan::New( structureDef->getTypeName() ).ToLocalChecked();
+  ret->Set( typeProp, typeVal );
 
-  v8::Local<v8::String> costProp = Nan::New( "cost" ).ToLocalChecked();
-  v8::Local<v8::Value> costValue = Nan::New( getCost() );
-  ret->Set( costProp, costValue );
+  int gWidth;
+  int gHeight;
+  if( rotation == 0 || rotation == 2 ){
+    gWidth = structureDef->getGridWidth();
+    gHeight = structureDef->getGridHeight();
+  }else{
+    gWidth = structureDef->getGridHeight();
+    gHeight = structureDef->getGridWidth();
+  }
+  v8::Local<v8::String> wProp = Nan::New("gridWidth").ToLocalChecked();
+  v8::Local<v8::Value> wVal = Nan::New( gWidth );
+  ret->Set( wProp, wVal );
 
-  v8::Local<v8::String> gridProp = Nan::New( "grid" ).ToLocalChecked();
-  v8::Local<v8::Array> gridValue = Converter::vectorIntToJsArray( getGrid() );
-  ret->Set( gridProp, gridValue );
+  v8::Local<v8::String> hProp = Nan::New("gridHeight").ToLocalChecked();
+  v8::Local<v8::Value> hVal = Nan::New( gHeight );
+  ret->Set( hProp, hVal );
 
   return ret;
+
 }
-*/
+bool Structure::testPoint( int _x, int _y ){
+  int tx = _x - x;
+  int ty = _y - y;
+  return structureDef->testPoint( tx, ty, rotation );
+}

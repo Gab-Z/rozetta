@@ -45,6 +45,16 @@ Structure* GameLevelBase::getStructure( int _i ){
   return structures[ _i ];
 }
 
+Structure* GameLevelBase::getStructureById( int _id ){
+  int l = structures.size();
+  for( int i = 0; i < l; i++ ){
+    if( structures[ i ]->getId() == _id ){
+      return structures[ i ];
+    }
+  }
+  return structures[ 0 ];
+}
+
 std::vector<int> GameLevelBase::getStartByIndex( int _i ){
   int l = startPoints.size() / 2;
   if( _i < 0 || _i >= l ){
@@ -52,4 +62,59 @@ std::vector<int> GameLevelBase::getStartByIndex( int _i ){
   }else{
     return std::vector<int> { startPoints[ _i * 2 ], startPoints[ _i * 2 + 1 ] };
   }
+}
+
+v8::Local<v8::Array> GameLevelBase::getCommonTextures(){
+  v8::Local<v8::Array> ret = Nan::New<v8::Array>();
+
+  v8::Local<v8::Object> destroyStructObj = Nan::New<v8::Object>();
+    v8::Local<v8::String> nameProp = Nan::New("name").ToLocalChecked();
+    v8::Local<v8::Value> nameVal = Nan::New( std::string( "destroyStructure" ) ).ToLocalChecked();
+    destroyStructObj->Set( nameProp, nameVal );
+
+    v8::Local<v8::String> destroyProp = Nan::New("url").ToLocalChecked();
+    v8::Local<v8::Value> destroyVal = Nan::New( std::string("../img/") + std::string( "Hammer.png" ) ).ToLocalChecked();
+    destroyStructObj->Set( destroyProp, destroyVal );
+
+  ret->Set( 0, destroyStructObj );
+
+  return ret;
+
+}
+
+v8::Local<v8::Object> GameLevelBase::getWays(){
+  v8::Local<v8::Object> ret = Nan::New<v8::Object>();
+
+  v8::Local<v8::String> startProp = Nan::New("startPoints").ToLocalChecked();
+  v8::Local<v8::Array> startArr = converter::vectorIntToJsArray( startPoints );
+  ret->Set( startProp, startArr );
+
+  v8::Local<v8::String> endProp = Nan::New("endPoints").ToLocalChecked();
+  v8::Local<v8::Array> endArr = converter::vectorIntToJsArray( endPoints );
+  ret->Set( endProp, endArr );
+
+  return ret;
+}
+
+bool GameLevelBase::isPointOnStructureById( int _id, int _x, int _y ){
+  return getStructureById( _id )->testPoint( _x, _y );
+}
+
+int GameLevelBase::destroyStructById( int _id ){
+  std::vector<Structure*>::iterator searchedIterator;
+  Structure* searchedStruct;
+  bool found = false;
+  for( std::vector<Structure*>::iterator i = structures.begin(); i < structures.end(); ++i ){
+    if( (*i)->getId() == _id ){
+      searchedStruct = (*i);
+      searchedIterator = i;
+      found = true;
+      break;
+    }
+  }
+  if( found == true ){
+    delete searchedStruct;
+    structures.erase( searchedIterator );
+  }
+  return (int) structures.size();
 }

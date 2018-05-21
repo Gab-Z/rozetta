@@ -22,6 +22,25 @@ StructureDef::StructureDef( std::string _typeName, std::vector<int> _grid, std::
   rotates = _rotates;
 }
 
+StructureDef::StructureDef(
+      std::string _typeName,  std::vector<int> _grid,
+      std::string _imgUrl,    int _cost,
+      int _gridWidth,         int _gridHeight,
+      bool _rotates,          int _level,
+      std::string _upgradeImgUrl, std::vector<std::string> _upgradeList
+  ){
+  typeName = _typeName;
+  grid = _grid;
+  imgUrl = _imgUrl;
+  cost = _cost;
+  gridWidth = _gridWidth;
+  gridHeight = _gridHeight;
+  rotates = _rotates;
+  level = _level;
+  upgradeImgUrl = _upgradeImgUrl;
+  upgradeList = _upgradeList;
+}
+
 v8::Local<v8::Object> StructureDef::toObj(){
 
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
@@ -51,8 +70,20 @@ v8::Local<v8::Object> StructureDef::toObj(){
   ret->Set( rotProp, rotValue );
 
   v8::Local<v8::String> gridProp = Nan::New( "grid" ).ToLocalChecked();
-  v8::Local<v8::Array> gridValue = Converter::vectorIntToJsArray( grid );
+  v8::Local<v8::Array> gridValue = converter::vectorIntToJsArray( grid );
   ret->Set( gridProp, gridValue );
+
+  if( upgradeImgUrl != "null" ){
+    v8::Local<v8::String> upImgProp = Nan::New( "upgradeImgUrl" ).ToLocalChecked();
+    v8::Local<v8::Value> upImgValue = Nan::New( std::string("../img/") + upgradeImgUrl ).ToLocalChecked();
+    ret->Set( upImgProp, upImgValue );
+  }
+
+  if( upgradeList.size() > 0 ){
+    v8::Local<v8::String> upListProp = Nan::New( "upgradeList" ).ToLocalChecked();
+    v8::Local<v8::Array> upListValue = converter::vectorStringToJsArray( upgradeList );
+    ret->Set( upListProp, upListValue );
+  }
 
   return ret;
 }
@@ -64,32 +95,7 @@ std::string StructureDef::getTypeName(){
 std::vector<int> StructureDef::getGrid(){
   return grid;
 }
-/*
-std::vector<int> StructureDef::getGrid( int _rotation ){
-  int l = grid.size();
-  std::vector<int> ret( l );
-  for( int i = 0; i < l; i++ ){
-    int baseInt = grid[ i ];
-    std::vector<int> basePos = to2d( i );
-    std::vector<int> rotPos( 2 );
-    if( _rotation == 1 ){
-      rotPos[ 0 ] = gridHeight - 1 - basePos[ 1 ];
-      rotPos[ 1 ] = basePos[ 0 ];
-    }else if( _rotation == 2 ){
-      rotPos[ 0 ] = gridWidth - 1 - basePos[ 0 ];
-      rotPos[ 1 ] = gridHeight - 1 - basePos[ 1 ];
-    }else if( _rotation == 3 ){
-      rotPos[ 0 ] = basePos[ 1 ];
-      rotPos[ 1 ] = gridHeight - 1 - basePos[ 0 ];
-    }else{
-      rotPos = basePos;
-    }
-    int rotPos1d = to1d( rotPos[ 0 ], rotPos[ 1 ], _rotation );
-    ret[ rotPos1d ] = baseInt;
-  }
-  return ret;
-}
-*/
+
 std::vector<int> StructureDef::getGrid( int _rotation ){
   int l = grid.size();
   std::vector<int> ret( l );
@@ -183,4 +189,17 @@ int StructureDef::getGridHeight(){
 }
 bool StructureDef::isRotating(){
   return rotates;
+}
+std::string StructureDef::getUpgradeImgUrl(){
+  return upgradeImgUrl;
+}
+std::vector<std::string> StructureDef::getUpgradeList(){
+  return upgradeList;
+}
+bool StructureDef::testPoint( int _x, int _y, int _rotation ){
+  //std::vector<int> grd = getGrid( _rotation );
+  if( getGrid( _rotation )[ to1d( _x, _y, _rotation ) ] == 1 ){
+    return true;
+  }
+  return false;
 }
