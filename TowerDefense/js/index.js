@@ -19,8 +19,147 @@ const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ 
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
-//console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
-//console.log( towerDef.getStructureGrid( "shapeL", 3  ).toString() )
+
+const listeners = {
+  clickStructPicker:{
+    on: () => { app.stage.getChildByName( "structPickerCont" ).on( "click", clickStructPicker ); },
+    off: () => { app.stage.getChildByName( "structPickerCont" ).off( "click", clickStructPicker ); }
+  },
+  moveStructPosPreview: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", moveStructPosPreview ); },
+    off: () => { pp.stage.getChildByName( "stageCont" ).off( "mousemove", moveStructPosPreview ); }
+  },
+  cancelStructPosPreview: {
+    on: () => { window.addEventListener( "mousedown", cancelStructPosPreview, false ); },
+    off: () => { window.removeEventListener( "mousedown", cancelStructPosPreview, false ); }
+  },
+  startStructPositioning: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousedown", startStructPositioning ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousedown", startStructPositioning ); }
+  },
+  setStructPreviewRotationByWheel:{
+    on: () => { window.addEventListener( "mousewheel", setStructPreviewRotationByWheel, false ); },
+    off: () => { window.removeEventListener( "mousewheel", setStructPreviewRotationByWheel, false ); }
+  },
+  cancelStructPositioning: {
+    on: () => { window.addEventListener( "mousedown", cancelStructPositioning, false ); },
+    off: () => {  window.removeEventListener( "mousedown", cancelStructPositioning, false );}
+  },
+  dragStructPositionning: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", dragStructPositionning ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousemove", dragStructPositionning ); }
+  },
+  onEndStructPositioning: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", onEndStructPositioning ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", onEndStructPositioning ); }
+  },
+  structSelectMove: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", structSelectMove ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousemove", structSelectMove ); }
+  },
+  openStructMenu: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "click", openStructMenu ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "click", openStructMenu ); }
+  },
+  closeStructMenubyOuterClick: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", closeStructMenubyOuterClick ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", closeStructMenubyOuterClick ); }
+  },
+  cancelStructMenu: {
+    on: () => { window.addEventListener( "mousedown", cancelStructMenu, true ); },
+    off: () => { window.removeEventListener( "mousedown", cancelStructMenu ); }
+  },
+  closeStructMenu: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", closeStructMenu ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", closeStructMenu ); }
+  }
+}
+
+const listenersOb = {
+
+  clickStructPicker: {
+    getEl: () => { return app.stage.getChildByName( "structPickerCont" ); },
+    evt: "click",
+    callback: clickStructPicker
+  },
+
+  moveStructPosPreview: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mousemove",
+    callback: moveStructPosPreview
+  },
+
+  cancelStructPosPreview: {
+    getEl: () => { return window },
+    useListener: true,
+    evt: "mousedown",
+    callback: cancelStructPosPreview
+  },
+
+  startStructPositioning: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mousedown",
+    callback: startStructPositioning
+  },
+
+  setStructPreviewRotationByWheel: {
+    getEl: () => { return window; },
+    useListener: true,
+    evt: "mousewheel",
+    callback: setStructPreviewRotationByWheel
+  },
+
+  cancelStructPositioning: {
+    getEl: () => { return window; },
+    useListener: true,
+    evt: "mousedown",
+    callback: cancelStructPositioning
+  },
+
+  dragStructPositionning: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mousemove",
+    callback: dragStructPositionning
+  },
+
+  onEndStructPositioning: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mouseup",
+    callback: onEndStructPositioning
+  },
+
+  structSelectMove: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mousemove",
+    callback: structSelectMove
+  },
+
+  openStructMenu: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "click",
+    callback: openStructMenu
+  },
+
+  closeStructMenubyOuterClick: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mouseup",
+    callback: closeStructMenubyOuterClick
+  },
+
+  cancelStructMenu: {
+    getEl: () => { return window; },
+    useListener: true,
+    evt: "mousedown",
+    callback: cancelStructMenu
+  },
+
+  closeStructMenu: {
+    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
+    evt: "mouseup",
+    callback: closeStructMenu
+  }
+
+}
 
 const store = {};
 
@@ -288,7 +427,7 @@ function startStructPreview( _typeName, _rotation ){
   strucSprite.position.set( x * ts, y * ts );
 
   stageCont.on( "mousemove", moveStructPosPreview );
-  window.addEventListener( "mousedown", cancelStructPosPreview );
+  window.addEventListener( "mousedown", cancelStructPosPreview, false );
 
   stageCont.on( "mousedown", startStructPositioning );
 
@@ -680,6 +819,9 @@ function openStructMenu( e ){
   stageCont.on( "mouseup", closeStructMenubyOuterClick );
   window.addEventListener( "mousedown", cancelStructMenu, true );
 }
+
+//////ICI///////////////
+
 function drawStructMenu( structureId ){
   let menuGraph = new PIXI.Graphics(),
       menuData = defaults.structureMenu,
@@ -738,7 +880,6 @@ function createStructMenuBut( texName, radius ){
   sprite.height = tex.height * sizeRatio;
   graph.addChild( sprite );
   return graph;
-
 }
 function clickDestroyBut( e ){
   console.log( e.currentTarget.targetId );
@@ -793,7 +934,7 @@ function drawMoveMap(){
   }
 }
 function startDestroyStructures(){
-  
+
 }
 function drawWays(){
   let floorCont = app.stage.getChildByName( "floorCont" ),
