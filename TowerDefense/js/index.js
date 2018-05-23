@@ -70,10 +70,48 @@ const listeners = {
     off: () => { window.removeEventListener( "mousedown", cancelStructMenu ); }
   },
   closeStructMenu: {
-    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", closeStructMenu ); },
-    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", closeStructMenu ); }
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup" ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup" ); }
   }
 }
+const evtStates = {
+  empty: [],
+  basicSelect: [
+    "clickStructPicker",
+    "openStructMenu",
+    "structSelectMove"
+  ],
+  structPosPreview: [
+    "moveStructPosPreview",
+    "clickStructPicker",
+    "cancelStructPosPreview",
+    "startStructPositioning",
+    "setStructPreviewRotationByWheel"
+  ],
+  structPosDrag: [
+    "dragStructPositionning",
+    "onEndStructPositioning",
+    "cancelStructPositioning"
+  ],
+  openedStructMenu: [
+    "clickStructPicker",
+    "closeStructMenubyOuterClick",
+    "cancelStructMenu"
+  ]
+
+}
+var activeEvtStateName = "empty";
+
+function setEvtState( stateName ){
+  evtStates[ activeEvtStateName ].forEach( listenerName => {
+    listeners[ listenerName ].off();
+  });
+  activeEvtStateName = stateName;
+  evtStates[ activeEvtStateName ].forEach( listenerName => {
+    listeners[ listenerName ].on();
+  });
+}
+
 
 const listenersOb = {
 
@@ -353,9 +391,10 @@ function setupStructPicker(){
 
   } )
   app.stage.addChild( spritePickerCont );
-  spritePickerCont.on( "click", clickStructPicker );
+//  spritePickerCont.on( "click", clickStructPicker );
+  setEvtState( "basicSelect" )
   setupToolsPicker();
-  startStructureSelection();
+  //startStructureSelection();
   drawWays();
 }
 function clickStructPicker( e, _name, _rotation ){
@@ -819,9 +858,6 @@ function openStructMenu( e ){
   stageCont.on( "mouseup", closeStructMenubyOuterClick );
   window.addEventListener( "mousedown", cancelStructMenu, true );
 }
-
-//////ICI///////////////
-
 function drawStructMenu( structureId ){
   let menuGraph = new PIXI.Graphics(),
       menuData = defaults.structureMenu,
@@ -859,7 +895,7 @@ function closeStructMenu(){
     if( menuCont ) menuCont.destroy( { children: true,
                                        texture: false,
                                        baseTexture: false } );
-    stageCont.off( "mouseup", closeStructMenu );
+    //stageCont.off( "mouseup", closeStructMenu );
     window.removeEventListener( "mousedown", cancelStructMenu );
     startStructureSelection();
 }
