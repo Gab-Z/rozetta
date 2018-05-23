@@ -27,11 +27,11 @@ const listeners = {
   },
   moveStructPosPreview: {
     on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", moveStructPosPreview ); },
-    off: () => { pp.stage.getChildByName( "stageCont" ).off( "mousemove", moveStructPosPreview ); }
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousemove", moveStructPosPreview ); }
   },
   cancelStructPosPreview: {
     on: () => { window.addEventListener( "mousedown", cancelStructPosPreview, false ); },
-    off: () => { window.removeEventListener( "mousedown", cancelStructPosPreview, false ); }
+    off: () => { window.removeEventListener( "mousedown", cancelStructPosPreview); }
   },
   startStructPositioning: {
     on: () => { app.stage.getChildByName( "stageCont" ).on( "mousedown", startStructPositioning ); },
@@ -66,8 +66,8 @@ const listeners = {
     off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", closeStructMenubyOuterClick ); }
   },
   cancelStructMenu: {
-    on: () => { window.addEventListener( "mousedown", cancelStructMenu, true ); },
-    off: () => { window.removeEventListener( "mousedown", cancelStructMenu ); }
+    on: () => { window.addEventListener( "mousedown", cancelStructMenu, false );console.log("on"); },
+    off: () => { window.removeEventListener( "mousedown", cancelStructMenu );console.log("off"); }
   },
   closeStructMenu: {
     on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup" ); },
@@ -81,7 +81,13 @@ const evtStates = {
     "openStructMenu",
     "structSelectMove"
   ],
-  structPosPreview: [
+  structPosPreviewNoRotation:[
+    "moveStructPosPreview",
+    "clickStructPicker",
+    "cancelStructPosPreview",
+    "startStructPositioning"
+  ],
+  structPosPreviewWithRotation: [
     "moveStructPosPreview",
     "clickStructPicker",
     "cancelStructPosPreview",
@@ -103,6 +109,7 @@ const evtStates = {
 var activeEvtStateName = "empty";
 
 function setEvtState( stateName ){
+  console.log( "setEvtState : " + stateName );
   evtStates[ activeEvtStateName ].forEach( listenerName => {
     listeners[ listenerName ].off();
   });
@@ -110,93 +117,6 @@ function setEvtState( stateName ){
   evtStates[ activeEvtStateName ].forEach( listenerName => {
     listeners[ listenerName ].on();
   });
-}
-
-
-const listenersOb = {
-
-  clickStructPicker: {
-    getEl: () => { return app.stage.getChildByName( "structPickerCont" ); },
-    evt: "click",
-    callback: clickStructPicker
-  },
-
-  moveStructPosPreview: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mousemove",
-    callback: moveStructPosPreview
-  },
-
-  cancelStructPosPreview: {
-    getEl: () => { return window },
-    useListener: true,
-    evt: "mousedown",
-    callback: cancelStructPosPreview
-  },
-
-  startStructPositioning: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mousedown",
-    callback: startStructPositioning
-  },
-
-  setStructPreviewRotationByWheel: {
-    getEl: () => { return window; },
-    useListener: true,
-    evt: "mousewheel",
-    callback: setStructPreviewRotationByWheel
-  },
-
-  cancelStructPositioning: {
-    getEl: () => { return window; },
-    useListener: true,
-    evt: "mousedown",
-    callback: cancelStructPositioning
-  },
-
-  dragStructPositionning: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mousemove",
-    callback: dragStructPositionning
-  },
-
-  onEndStructPositioning: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mouseup",
-    callback: onEndStructPositioning
-  },
-
-  structSelectMove: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mousemove",
-    callback: structSelectMove
-  },
-
-  openStructMenu: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "click",
-    callback: openStructMenu
-  },
-
-  closeStructMenubyOuterClick: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mouseup",
-    callback: closeStructMenubyOuterClick
-  },
-
-  cancelStructMenu: {
-    getEl: () => { return window; },
-    useListener: true,
-    evt: "mousedown",
-    callback: cancelStructMenu
-  },
-
-  closeStructMenu: {
-    getEl: () => { return app.stage.getChildByName( "stageCont" ); },
-    evt: "mouseup",
-    callback: closeStructMenu
-  }
-
 }
 
 const store = {};
@@ -386,15 +306,10 @@ function setupStructPicker(){
     strucCont.addChild( strucSprite );
     strucCont.addChild( text );
     spritePickerCont.addChild( strucCont );
-
-    //strucCont.on( "pointerdown", clickStructPicker );
-
   } )
   app.stage.addChild( spritePickerCont );
-//  spritePickerCont.on( "click", clickStructPicker );
-  setEvtState( "basicSelect" )
+  setEvtState( "basicSelect" );
   setupToolsPicker();
-  //startStructureSelection();
   drawWays();
 }
 function clickStructPicker( e, _name, _rotation ){
@@ -439,7 +354,6 @@ function startStructPreview( _typeName, _rotation ){
   let stageCont = app.stage.getChildByName( "stageCont" );
   stageCont.addChild( previewCont );
   previewCont.tint = 0x5727d9;
-
   let strucSprite = new PIXI.Sprite( PIXI.loader.resources[ _typeName ].texture ),
       def = getStructureDef( _typeName ),
       ts = defaults.tileSize;
@@ -456,40 +370,29 @@ function startStructPreview( _typeName, _rotation ){
     rotation: _rotation || 0,
     anchor: [ 0, 0 ]
   };
-
   previewCont.addChild( strucSprite );
   rotateStructPreview();
-
   let m = app.renderer.plugins.interaction.mouse.global,
       x = Math.floor( m.x / ts ) - Math.floor( def.gridWidth / 2 ),
       y = Math.floor( m.y / ts ) - Math.floor( def.gridHeight / 2 );
   strucSprite.position.set( x * ts, y * ts );
-
-  stageCont.on( "mousemove", moveStructPosPreview );
-  window.addEventListener( "mousedown", cancelStructPosPreview, false );
-
-  stageCont.on( "mousedown", startStructPositioning );
-
   if( def.rotates ){
-    window.addEventListener( "mousewheel", setStructPreviewRotationByWheel, false );
+    setEvtState( "structPosPreviewWithRotation" );
+  }else{
+    setEvtState( "structPosPreviewNoRotation" );
   }
-
   stageCont.getChildByName( "structuresCont" ).children.forEach( structSprite => { structSprite.interactive = false; } );
-
-  //stageCont.cursor="none";
-
 }
 function cancelStructPosPreview( e ){
   if( e && e.button == 0 ) return false;
-  window.removeEventListener( "mousedown", cancelStructPosPreview );
-  window.removeEventListener( "mousewheel", setStructPreviewRotationByWheel );
-  onDragEnd();
+  endStructPosPreview();
   resetStructPicker();
   app.stage .getChildByName( "stageCont" )
             .getChildByName( "structuresCont" ).children.forEach( structSprite => { structSprite.interactive = true; } );
-  startStructureSelection();
+  setEvtState( "basicSelect" );
 }
 function moveStructPosPreview( e ){
+  console.log("moveStructPosPreview");
   let m = e.data.getLocalPosition( this ),
       previewSprit = app.stage  .getChildByName( "stageCont" )
                                 .getChildByName( "structPreviewCont" )
@@ -509,26 +412,19 @@ function moveStructPosPreview( e ){
                     y: y + gridHeight } },
         structureData  ),
       posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name,  structureData.rotation );
-      //console.log( "move positions : " + posData.structPositions );
-    //  console.log( "move name : " + structureData.name )
-      //console.log( "move rot : " + structureData.rotation )
   previewSprit.position.set( x * ts, y * ts );
   previewSprit.tint = posTest[ 0 ] == true ? 0xffffff : 0xff0000;
 }
 function endStructPosPreview(){
+
   let stageCont = app.stage.getChildByName( "stageCont" ),
       structPreviewCont = stageCont.getChildByName( "structPreviewCont" );
   if( ! structPreviewCont ) return false;
+  console.log("endStructPosPreview");
   structPreviewCont.destroy( {  children: true,
                                 texture: false,
                                 baseTexture: false } );
   stageCont.cursor = "default";
-}
-function onDragEnd( e ){
-  endStructPosPreview();
-  let stageCont = app.stage.getChildByName( "stageCont" );
-  stageCont.removeAllListeners();
-  stageCont.onStructSelect = false;
 }
 function setStructPreviewRotationByWheel( e ){
   let delta = Math.max( -1, Math.min( 1, e.wheelDelta ) );
@@ -539,7 +435,7 @@ function setStructPreviewRotation( delta ){
                                 .getChildByName( "structPreviewCont" )
                                 .getChildByName( "previewSprite" ),
       sRot = previewSprit.structureData.rotation + delta;
-  if( sRot >= 4 ){
+  if( sRot > 3 ){
     sRot = 0;
   }else if( sRot < 0 ){
     sRot = 3;
@@ -551,12 +447,13 @@ function rotateStructPreview(){
   let previewSprit = app.stage  .getChildByName( "stageCont" )
                                 .getChildByName( "structPreviewCont" )
                                 .getChildByName( "previewSprite" ),
-      sRot = previewSprit.structureData.rotation ;
+      structureData = previewSprit.structureData,
+      sRot = structureData.rotation,
+      anchor = anchorFromRot( sRot );
   previewSprit.structureData.rotation = sRot;
-  previewSprit.structureData.anchor = anchorFromRot( sRot );
-  let anchor = previewSprit.structureData.anchor;
   previewSprit.anchor.set( anchor[ 0 ], anchor[ 1 ] );
   previewSprit.rotation = ( sRot * 0.5 ) * Math.PI;
+  previewSprit.structureData.anchor = anchor;
 }
 function getStructureDef( _name ){
   let d = store.structureDefs,
@@ -579,7 +476,6 @@ function startStructPositioning( e ){
                           baseTexture: false } );
   structPosCont.position.set( 0, 0 );
   stageCont.addChild( structPosCont );
-
   structPosCont.invalidFilter = new PIXI.filters.ColorMatrixFilter();
   structPosCont.invalidFilter.contrast();
   /*
@@ -590,7 +486,6 @@ function startStructPositioning( e ){
     0,  0,  0,  1,  0,
   ]
   */
-
   let m = e.data.getLocalPosition( this ),
       ts = defaults.tileSize,
       structureData = structPosCont.structureData,
@@ -606,15 +501,7 @@ function startStructPositioning( e ){
   dragAreaGraph.position.set( 0, 0 );
   structPosCont.addChild( dragAreaGraph );
   dragAreaGraph.lineStyle(0);
-
-  stageCont.off( "mousedown", startStructPositioning );
-  stageCont.off( "mousemove", moveStructPosPreview );
-  window.removeEventListener( "mousedown", cancelStructPosPreview );
-  window.removeEventListener( "mousewheel", setStructPreviewRotationByWheel );
-  window.addEventListener( "mousedown", cancelStructPositioning, false );
-  stageCont.on( "mousemove", dragStructPositionning );
-  stageCont.on( "mouseup", onEndStructPositioning );
-
+  setEvtState( "structPosDrag" );
   dragStructPositionning( e, m );
 }
 function dragStructPositionning( e, _localPt ){
@@ -622,12 +509,10 @@ function dragStructPositionning( e, _localPt ){
       stageCont = app.stage.getChildByName( "stageCont" ),
       structPosCont = stageCont.getChildByName( "structPosCont" ),
       structureData = structPosCont.structureData,
-
       sRot = structureData.rotation,
       invertOrientation = sRot == 0 || sRot == 2 ? false : true,
       gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
       gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
-
       posData = getStructPosDragData( m, structPosCont.draggedZone, structureData  ),
       posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name, structureData.rotation ),
       ts = defaults.tileSize,
@@ -684,7 +569,6 @@ function getStructPosDragData( mouse, draggedZone, structureData ){
       first_end_y = axis == "y" ? my + ( direction == 1 ? 1 : 0 ) : start.y + gridHeight;
   end.x = axis == "x" && direction == 1 ? Math.max( first_end_x, start.x + gridWidth ) : first_end_x ;
   end.y = axis == "y" && direction == 1 ? Math.max( first_end_y, start.y + gridHeight ) : first_end_y ;
-
   let dragWidth = Math.abs( ( end.x - drawStart.x ) * ts ),
       dragHeight = Math.abs( ( end.y - drawStart.y ) * ts ),
       nbTileX = Math.floor( dragWidth / ( gridWidth * ts ) ),
@@ -696,7 +580,6 @@ function getStructPosDragData( mouse, draggedZone, structureData ){
       widthOffset = gridWidth * direction,
       heightOfset = gridHeight * direction,
       structPositions = [];
-
   for( let tx = 0; tx < nbTileX; tx++ ){
     let posx = drawStart.x + ( tx + xOffset ) * widthOffset;
     for( let ty = 0; ty < nbTileY; ty++ ){
@@ -720,14 +603,9 @@ function cancelStructPositioning( e ){
   structPosCont.destroy( {  children: true,
                             texture: false,
                             baseTexture: false } );
-  window.removeEventListener( "mousedown", cancelStructPositioning );
-  stageCont.off( "mousemove", dragStructPositionning );
-  stageCont.off( "mouseup", onEndStructPositioning );
-  //startStructPreview( typeName );
   clickStructPicker( false, typeName, rotation );
 }
 function onEndStructPositioning( e ){
-  //console.log( "end drag pos" )
   let m = e.data.getLocalPosition( this ),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structPosCont = stageCont.getChildByName( "structPosCont" ),
@@ -737,15 +615,13 @@ function onEndStructPositioning( e ){
   if( addstructures == false ) console.log( "You can't close any part of the map" );
   cancelStructPositioning();
   updateStructures();
-  //console.log( JSON.stringify( towerDef.getStructures() ) )
 }
 function updateStructures(){
   let structuresList = towerDef.getStructures(),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structuresCont = stageCont.getChildByName( "structuresCont" ),
-      ts = defaults.tileSize;
-
-  let nbC = structuresCont.children.length;
+      ts = defaults.tileSize,
+      nbC = structuresCont.children.length;
   for( let d  = 0; d < nbC; d++ ){
     structuresCont.children[ 0 ].destroy();
   }
@@ -780,21 +656,9 @@ function updateStructures(){
   //console.log( towerDef.getMoveMap() )
   //drawMoveMap();
 }
-function startStructureSelection(){
-  let stageCont = app.stage.getChildByName( "stageCont" );
-  if( ! stageCont.onStructSelect ){
-    console.log("startStructureSelection");
-    stageCont.on( "mousemove", structSelectMove );
-    stageCont.on( "click", openStructMenu );
-    stageCont.onStructSelect = true;
-  }
-}
 function cancelStructureSelection(){
   console.log("cancelStructureSelection");
-  let stageCont = app.stage.getChildByName( "stageCont" );
-  stageCont.off( "mousemove", structSelectMove );
-  stageCont.off( "click", openStructMenu );
-  stageCont.onStructSelect = false;
+  setEvtState( "basicSelect" );
   structSelectMove( false );
 }
 function structSelectMove( e ){
@@ -813,11 +677,9 @@ function structSelectMoveRAF(){
       pt = targetId ? e.data.global : 0,
       tilePt = targetId ? { x: Math.floor( pt.x / ts ), y: Math.floor( pt.y / ts ) } : 0,
       isPtOnStruct = targetId ? towerDef.isPtOnStructById( targetId, tilePt.x, tilePt.y ) : 0;
-
   if( oldId > 0 && ( oldId != targetId || ! isPtOnStruct ) ){
     old.tint = 0xffffff;
     old.name = "sucture_" + old.id;
-
   }
   if( isPtOnStruct ){
     target.tint = 0xfae846;
@@ -825,7 +687,7 @@ function structSelectMoveRAF(){
   }
 }
 function anchorFromRot( _rot ){
-  let anchor = [ 0, 0 ];
+  let anchor;
   if( _rot == 1 ){
     anchor = [ 0, 1 ];
   }else if( _rot == 2 ){
@@ -839,7 +701,7 @@ function anchorFromRot( _rot ){
 }
 function openStructMenu( e ){
   if( ! e.target || ! e.target.structure ) return false;
-  closeStructMenu();
+  //closeStructMenu();
   let sprite = e.target,
       pt = e.data.global,
       ts = defaults.tileSize,
@@ -854,9 +716,7 @@ function openStructMenu( e ){
   menuCont.name = "menuCont";
   let menu = menuCont.addChild( drawStructMenu( sprite.id ) );
   menu.position.set( centerx, centery );
-
-  stageCont.on( "mouseup", closeStructMenubyOuterClick );
-  window.addEventListener( "mousedown", cancelStructMenu, true );
+  setEvtState( "openedStructMenu" );
 }
 function drawStructMenu( structureId ){
   let menuGraph = new PIXI.Graphics(),
@@ -885,19 +745,14 @@ function closeStructMenubyOuterClick( e ){
 }
 function cancelStructMenu( e ){
   if( e && e.button == 0 ) return false;
-  console.log("cancelStructMenu");
-
+  console.log("cancelStructMenu xxx");
   closeStructMenu();
 }
 function closeStructMenu(){
   let stageCont = app.stage.getChildByName( "stageCont" ),
       menuCont = stageCont.getChildByName( "menuCont" );
-    if( menuCont ) menuCont.destroy( { children: true,
-                                       texture: false,
-                                       baseTexture: false } );
-    //stageCont.off( "mouseup", closeStructMenu );
-    window.removeEventListener( "mousedown", cancelStructMenu );
-    startStructureSelection();
+  if( menuCont ){ menuCont.destroy( { children: true, texture: false, baseTexture: false } ); }
+  setEvtState( "basicSelect" );
 }
 function createStructMenuBut( texName, radius ){
   let tex = PIXI.loader.resources[ texName ].texture,
