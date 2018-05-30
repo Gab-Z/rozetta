@@ -26,7 +26,7 @@ class GameLevel : public GameLevelBase {
     bool testMapOpening();
     bool newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions );
     int removeStructById( int _id );
-
+    int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy );
 };
 
 #endif

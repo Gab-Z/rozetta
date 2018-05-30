@@ -19,7 +19,6 @@ const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ 
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
-
 const listeners = {
   clickStructPicker:{
     on: () => { app.stage.getChildByName( "structPickerCont" ).on( "click", clickStructPicker ); },
@@ -62,16 +61,48 @@ const listeners = {
     off: () => { app.stage.getChildByName( "stageCont" ).off( "click", openStructMenu ); }
   },
   closeStructMenubyOuterClick: {
-    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", closeStructMenubyOuterClick ); },
-    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", closeStructMenubyOuterClick ); }
+    on: () => { app.stage.interactive = true;
+                app.stage.on( "mouseup", closeStructMenubyOuterClick );
+              },
+    off: () => {  app.stage.off( "mouseup", closeStructMenubyOuterClick );
+                  app.stage.interactive = false;
+                }
   },
   cancelStructMenu: {
-    on: () => { window.addEventListener( "mousedown", cancelStructMenu, false );console.log("on"); },
-    off: () => { window.removeEventListener( "mousedown", cancelStructMenu );console.log("off"); }
+    on: () => { window.addEventListener( "mousedown", cancelStructMenu, false ); },
+    off: () => { window.removeEventListener( "mousedown", cancelStructMenu ); }
   },
   closeStructMenu: {
     on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup" ); },
     off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup" ); }
+  },
+  clickToolsPicker: {
+    on: () => { app.stage.getChildByName( "toolsPickerCont" ).on( "click", clickToolsPicker );},
+    off: () => { app.stage.getChildByName( "toolsPickerCont" ).off( "click", clickToolsPicker ); }
+  },
+  dragMove: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", dragMove ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousemove", dragMove ); }
+  },
+  endDrag: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mouseup", endDrag ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mouseup", endDrag ); }
+  },
+  cancelDrag: {
+    on: () => { window.addEventListener( "mousedown", cancelDrag, false ); },
+    off: () => { window.removeEventListener( "mousedown", cancelDrag ); }
+  },
+  dragPreviewMove: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousemove", dragPreviewMove ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousemove", dragPreviewMove ); }
+  },
+  startDrag: {
+    on: () => { app.stage.getChildByName( "stageCont" ).on( "mousedown", startDrag ); },
+    off: () => { app.stage.getChildByName( "stageCont" ).off( "mousedown", startDrag ); }
+  },
+  cancelDragPreview:{
+    on: () => { window.addEventListener( "mousedown", cancelDragPreview, false ); },
+    off: () => { window.removeEventListener( "mousedown", cancelDragPreview ); }
   }
 }
 const evtStates = {
@@ -79,20 +110,23 @@ const evtStates = {
   basicSelect: [
     "clickStructPicker",
     "openStructMenu",
-    "structSelectMove"
+    "structSelectMove",
+    "clickToolsPicker"
   ],
   structPosPreviewNoRotation:[
     "moveStructPosPreview",
     "clickStructPicker",
     "cancelStructPosPreview",
-    "startStructPositioning"
+    "startStructPositioning",
+    "clickToolsPicker"
   ],
   structPosPreviewWithRotation: [
     "moveStructPosPreview",
     "clickStructPicker",
     "cancelStructPosPreview",
     "startStructPositioning",
-    "setStructPreviewRotationByWheel"
+    "setStructPreviewRotationByWheel",
+    "clickToolsPicker"
   ],
   structPosDrag: [
     "dragStructPositionning",
@@ -102,12 +136,27 @@ const evtStates = {
   openedStructMenu: [
     "clickStructPicker",
     "closeStructMenubyOuterClick",
-    "cancelStructMenu"
+    "cancelStructMenu",
+    "clickToolsPicker"
+  ],
+  startDragPreview: [
+    "dragPreviewMove",
+    "startDrag",
+    "cancelDragPreview"
+  ],
+  drag: [
+    "dragMove",
+    "endDrag",
+    "cancelDrag"
   ]
 
 }
 var activeEvtStateName = "empty";
-
+var dragData;
+function initDragData(){
+  dragData.positions = {  start:  { x: 0, y: 0 },
+                          end:    { x: 0, y: 0 } }
+}
 function setEvtState( stateName ){
   console.log( "setEvtState : " + stateName );
   evtStates[ activeEvtStateName ].forEach( listenerName => {
@@ -117,6 +166,45 @@ function setEvtState( stateName ){
   evtStates[ activeEvtStateName ].forEach( listenerName => {
     listeners[ listenerName ].on();
   });
+}
+var activeTool = {
+  name: "",
+  texName:""
+}
+
+const funcTools = {
+
+  destroyStructures: {
+    init: ( e ) => {
+      dragData = {
+        callback: destroyStructZone,
+        drawFunc: "drawDragSquare",
+        positions: false
+      }
+      let stageCont = app.stage.getChildByName( "stageCont" ),
+          previewCont = stageCont.addChild( new PIXI.Container() ),
+          prevSprite = previewCont.addChild( new PIXI.Sprite( PIXI.loader.resources[ activeTool.texName ].texture ) ),
+          ts = defaults.tileSize,
+          m = e.data.getLocalPosition( stageCont );
+      previewCont.name = "destructToolCont";
+      prevSprite.name = "destructToolPrevSprite";
+      prevSprite.width = ts;
+      prevSprite.height = ts;
+      dragPreviewMove( false, m );
+      setEvtState( "startDragPreview" );
+    },
+    cancel: () => {
+      app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( {   children: true, texture: false, baseTexture: false } );
+    }
+  }
+
+}
+function clickToolsPicker( e ){
+  console.log( "tools picker clicked" );
+  if( ! e || ! e.target || ! e.target.funcName  ) return false;
+  activeTool.name = e.target.funcName;
+  activeTool.texName = e.target.texName;
+  funcTools[ activeTool.name ].init( e );
 }
 
 const store = {};
@@ -181,7 +269,7 @@ function setupFloorSprites(){
   mask.lineTo( defaults.tileSize * defaults.mapW, defaults.tileSize * defaults.mapH );
   mask.lineTo( 0, defaults.tileSize * defaults.mapH );
   stageCont.mask = mask;
-  stageCont.hitArea = new PIXI.Rectangle( 0, 0, stageWidth, stageHeight );;
+  stageCont.hitArea = new PIXI.Rectangle( 0, 0, window.innerWidth, window.innerHeight );
 
   if( nbTiles <= 1500 ){
     tmpContainer = new PIXI.particles.ParticleContainer();
@@ -256,23 +344,28 @@ function setupToolsPicker(){
       spriteSlotSize = spriteSize + margin * 2,
       buttonList = [
         { textureName: "destroyStructure",
-          func: startDestroyStructures }
+          funcName: "destroyStructures" }
       ],
       direction = {
         x: 0,
         y: 1
       }
   toolsPickerCont.name = "toolsPickerCont";
+  toolsPickerCont.interactive = true;
   buttonList.forEach( ( buttOb, i ) => {
     let sprite = toolsPickerCont.addChild( new PIXI.Sprite( PIXI.loader.resources[ buttOb.textureName ].texture ) ),
         sizeRatio = spriteSize / Math.max( sprite.texture.width, sprite.texture.height );
     sprite.width = sprite.texture.width * sizeRatio;
     sprite.height = sprite.texture.height * sizeRatio;
     sprite.position.set( direction.x * i * spriteSlotSize + margin , direction.y * i * spriteSlotSize + margin );
+    sprite.funcName = buttOb.funcName;
+    sprite.texName = buttOb.textureName;
+    sprite.interactive = true;
   })
 
   toolsPickerCont.position.set( defaults.mapW * defaults.tileSize, 0 );
   app.stage.addChild( toolsPickerCont );
+  setEvtState( "basicSelect" );
 }
 function setupStructPicker(){
   let _structures = this,
@@ -308,7 +401,7 @@ function setupStructPicker(){
     spritePickerCont.addChild( strucCont );
   } )
   app.stage.addChild( spritePickerCont );
-  setEvtState( "basicSelect" );
+
   setupToolsPicker();
   drawWays();
 }
@@ -741,18 +834,22 @@ function drawStructMenu( structureId ){
   return menuGraph;
 }
 function closeStructMenubyOuterClick( e ){
-  if( e.target && ! isDeepChildOf( e.target, "menuCont", "stageCont" ) ) closeStructMenu();
+  if( e.target && ! isDeepChildOf( e.target, "menuCont", "stageCont" ) ){
+    console.log( "outer close" );
+    closeStructMenu();
+    setEvtState( "basicSelect" );
+  }
 }
 function cancelStructMenu( e ){
   if( e && e.button == 0 ) return false;
   console.log("cancelStructMenu xxx");
   closeStructMenu();
+  setEvtState( "basicSelect" );
 }
 function closeStructMenu(){
   let stageCont = app.stage.getChildByName( "stageCont" ),
       menuCont = stageCont.getChildByName( "menuCont" );
   if( menuCont ){ menuCont.destroy( { children: true, texture: false, baseTexture: false } ); }
-  setEvtState( "basicSelect" );
 }
 function createStructMenuBut( texName, radius ){
   let tex = PIXI.loader.resources[ texName ].texture,
@@ -777,7 +874,7 @@ function clickDestroyBut( e ){
   closeStructMenu();
   let destroy = towerDef.destroyStructById( e.currentTarget.targetId );
   if( destroy == 0 ){
-    console.log( "You can't remove a structure that xould create a hole in the map" );
+    console.log( "You can't remove a structure that would create a hole in the map" );
   }
   updateStructures();
 }
@@ -824,9 +921,6 @@ function drawMoveMap(){
     graph.lineTo( px * ts, py * ts + ts );
   }
 }
-function startDestroyStructures(){
-
-}
 function drawWays(){
   let floorCont = app.stage.getChildByName( "floorCont" ),
       floorContIndex = app.stage.getChildIndex( floorCont ),
@@ -854,5 +948,106 @@ function drawWays(){
   endGraph.beginFill( 0xc73229, 0.6 );
   for( let e  = 0; e < el; e++ ){
     endGraph.drawRect( endPoints[ e * 2 ] * ts, endPoints[ e * 2 + 1 ] * ts, ts, ts );
+  }
+}
+function dragPreviewMove( e, _m ){
+  let m = _m || e.data.getLocalPosition( this ),
+      ts = defaults.tileSize,
+      x = Math.floor( m.x / ts ),
+      y = Math.floor( m.y / ts );
+  window.requestAnimationFrame( dragPreviewMoveRAF.bind( { x: x, y: y} ) );
+}
+function dragPreviewMoveRAF(){
+  let destructCont = app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" );
+  if( ! destructCont ) return false;
+  let sprite = destructCont.getChildByName( "destructToolPrevSprite" ),
+      posOb = this,
+      ts = defaults.tileSize;
+  sprite.position.set( posOb.x * ts, posOb.y * ts );
+}
+function cancelDragPreview( e ){
+  if( e && e.button == 0 ) return false;
+  app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( {   children: true,
+                                                                                            texture: false,
+                                                                                            baseTexture: false } );
+  setEvtState( "basicSelect" );
+}
+function destroyStructZone(){
+  console.log("destroyStructZone");
+  let d = dragData.positions;
+  let ret = towerDef.destroyStructsByZone( d.start.x, d.start.y, d.end.x, d.end.y );
+  console.log(ret);
+  updateStructures();
+}
+function dragMove( e, _m ){
+  let stageCont = e.currentTarget,
+      m = _m || e.data.getLocalPosition( this ),
+      ts = defaults.tileSize,
+      x = Math.floor( m.x / ts ),
+      y = Math.floor( m.y / ts );
+  dragData.positions.end.x = x;
+  dragData.positions.end.y = y;
+  console.log("dragMove");
+  if( dragData.drawFunc ) window.requestAnimationFrame( dragDrawFuncs[ dragData.drawFunc ].draw );
+}
+function startDrag( e ){
+  funcTools[ activeTool.name ].cancel( e );
+  let m = e.data.getLocalPosition( this ),
+      ts = defaults.tileSize,
+      x = Math.floor( m.x / ts ),
+      y = Math.floor( m.y / ts );
+  initDragData();
+  dragData.positions.start.x = x;
+  dragData.positions.start.y = y;
+  if( dragData.drawFunc ) dragDrawFuncs[ dragData.drawFunc ].init();
+  dragMove( false, m );
+  setEvtState( "drag" );
+}
+function endDrag( e ){
+  if( dragData.drawFunc ) dragDrawFuncs[ dragData.drawFunc ].cancel();
+  dragData.callback();
+  setEvtState( "basicSelect" );
+}
+function cancelDrag( e ){
+  if( e && e.button == 0 ) return false;
+  if( dragData.drawFunc ) dragDrawFuncs[ dragData.drawFunc ].cancel();
+  funcTools[ activeTool.name ].init();
+}
+const dragDrawFuncs = {
+  drawDragSquare: {
+    init: ()=>{
+      let drawCont = app.stage.getChildByName( "stageCont" ).addChild( new PIXI.Container() ),
+          squareGraph = drawCont.addChild( new PIXI.Graphics() ),
+          sprite = drawCont.addChild( new PIXI.Sprite( PIXI.loader.resources[ activeTool.texName ].texture ) ),
+          ts = defaults.tileSize;
+      drawCont.name = "dragDrawCont";
+      squareGraph.name = "dragDrawGraph";
+      sprite.name = "dragDrawSprite";
+      sprite.width = ts;
+      sprite.height = ts;
+    },
+    draw: ()=>{
+      let drawCont = app.stage.getChildByName( "stageCont" ).getChildByName( "dragDrawCont");
+      if( ! drawCont ) return false;
+      let squareGraph = drawCont.getChildByName( "dragDrawGraph" ),
+          sprite = drawCont.getChildByName( "dragDrawSprite" ),
+          pos = dragData.positions,
+          ts = defaults.tileSize,
+          sx = Math.min( pos.start.x, pos.end.x ),
+          sy = Math.min( pos.start.y, pos.end.y ),
+          ex = Math.max( pos.start.x, pos.end.x ),
+          ey = Math.max( pos.start.y, pos.end.y ),
+          offsetx = pos.start.x < pos.end.x ? 1 : 0,
+          offsety = pos.start.y < pos.end.y ? 1 : 0;
+
+      squareGraph.clear();
+      squareGraph.beginFill( 0xd3d5b4, 0.4 );
+      squareGraph.drawRoundedRect ( sx * ts, sy * ts, (ex - sx + 1 ) * ts, ( ey - sy + 1 ) * ts, 0 );
+
+      sprite.position.set( pos.end.x *ts, pos.end.y * ts );
+    },
+    cancel: ()=>{
+      app.stage.getChildByName( "stageCont" ).getChildByName( "dragDrawCont" ).destroy( { children: true, texture: false, baseTexture: false } );
+    }
   }
 }

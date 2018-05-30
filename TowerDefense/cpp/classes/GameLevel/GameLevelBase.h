@@ -38,6 +38,7 @@ class GameLevelBase {
     bool isPointOnStructureById( int _id, int _x, int _y );
     int destroyStructById( int _id );
 
+
     virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     virtual Tile* getTile( int _i ){ return new Tile(); };
     virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){ return std::vector<bool>(); };
@@ -46,6 +47,7 @@ class GameLevelBase {
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
     virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
     virtual int removeStructById( int _id ){ return 0; };
+    virtual int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){ return 0; };
 
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 };

@@ -115,6 +115,7 @@ int GameLevelBase::destroyStructById( int _id ){
   if( found == true ){
     delete searchedStruct;
     structures.erase( searchedIterator );
+    return 1;
   }
-  return (int) structures.size();
+  return 0;
 }

@@ -30,6 +30,7 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( getCommonTextures );
     static NAN_METHOD( isPtOnStructById );
     static NAN_METHOD( destroyStructById );
+    static NAN_METHOD( destroyStructsByZone );
 
 };
 

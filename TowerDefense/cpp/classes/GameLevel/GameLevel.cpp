@@ -388,3 +388,154 @@ int GameLevel::removeStructById( int _id ){
   }
   return destroyStructById( _id );
 }
+/*
+int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){
+  int w = width();
+  int h = height();
+  if( _startx < 0 || _starty < 0 || _endx < 0 || _endy < 0 || _startx > w || _endx > w || _starty > h || _endy > h ){
+    return 0;
+  }
+  int zoneW = _endx - _startx;
+  int zoneH = _endy - _starty;
+  int nbZoneTiles = zoneW * zoneH;
+  std::vector<int> structsIds;
+  for( int i = 0; i < nbZoneTiles; i++ ){
+    int zoney = std::floor( i / zoneW );
+    int zonex = i - zoney * zoneW;
+    int sx = _startx + zonex;
+    int sy = _starty + zoney;
+    int pos1d = to1d( sx, sy );
+    Tile* tile = getTile( pos1d );
+    int structId = tile->getStructureId();
+    if( structId == 0 ){ continue; }
+    int sIdsl= structsIds.size();
+    bool isPresent = false;
+    for( int y = 0; y < sIdsl; y++ ){
+      if( structsIds[ y ] == structId ){
+        isPresent = true;
+        break;
+      }
+    }
+    if( isPresent == true ){ continue; }
+    structsIds.push_back( structId );
+    Structure* strucToRemove = getStructureById( structId );
+    StructureDef* strucDef = StructuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
+    int strucRot = strucToRemove->getRotation();
+    std::vector<int> strucGrid = strucDef->getGrid( strucRot );
+    int l = strucGrid.size();
+    for( int ii = 0; ii < l; ii++ ){
+      if( strucGrid[ ii ] == 0 ){ continue; }
+      std::vector<int> gridTilePos2d = strucDef->to2d( ii, strucRot );
+      int pos1dB = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
+      Tile* tileB = tiles[ pos1dB ];
+      tileB->setStructureId( 0 );
+      moveMap[ pos1dB ] = FloorsList::getFloorTypeById( tileB->getFloorTypeId() )->getSpeed();
+      intMap[ pos1dB ] = 1;
+    }
+  }
+  int nbStructs = structsIds.size();
+  if( testMapOpening() == false ){
+    for( int iii = 0; iii < nbStructs; iii++ ){
+      int structureId = structsIds[ iii ];
+      Structure* strucToRestore = getStructureById( structureId );
+      int sx = strucToRestore->getX();
+      int sy = strucToRestore->getY();
+      StructureDef* strucDef = StructuresDefList::getStructureTypeByName( strucToRestore->getTypeName() );
+      int strucRot = strucToRestore->getRotation();
+      std::vector<int> strucGrid = strucDef->getGrid( strucRot );
+      int l = strucGrid.size();
+      for( int j = 0; j < l; j++ ){
+        if( strucGrid[ j ] == 0 ){ continue; }
+        std::vector<int> gridTilePos2d = strucDef->to2d( j, strucRot );
+        int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
+        Tile* tile = tiles[ pos1d ];
+        tile->setStructureId( structureId );
+        moveMap[ pos1d ] = -2.0;
+        intMap[ pos1d ] = -2;
+      }
+    }
+    return 0;
+  }
+  for( int jj = 0; jj < nbStructs; jj++ ){
+    int destroRet = destroyStructById( structsIds[ jj ] );
+  }
+  return 1;
+}
+*/
+int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){
+  int w = width();
+  int h = height();
+  if( _startx < 0 || _starty < 0 || _endx < 0 || _endy < 0 || _startx > w || _endx > w || _starty > h || _endy > h ){
+    return 0;
+  }
+  int zoneW = _endx - _startx;
+  int zoneH = _endy - _starty;
+  int nbZoneTiles = zoneW * zoneH;
+  std::vector<int> structsIds;
+  for( int i = 0; i < nbZoneTiles; i++ ){
+    int zoney = std::floor( i / zoneW );
+    int zonex = i - zoney * zoneW;
+    int sx = _startx + zonex;
+    int sy = _starty + zoney;
+    int pos1d = to1d( sx, sy );
+    Tile* tile = getTile( pos1d );
+    int structId = tile->getStructureId();
+    if( structId == 0 ){ continue; }
+    int sIdsl = structsIds.size();
+    bool isPresent = false;
+    for( int y = 0; y < sIdsl; y++ ){
+      if( structsIds[ y ] == structId ){
+        isPresent = true;
+        break;
+      }
+    }
+    if( isPresent == true ){ continue; }
+    structsIds.push_back( structId );
+  }
+  int sIl = structsIds.size();
+  for( int si = 0; si < sIl; si++ ){
+    Structure* strucToRemove = getStructureById( structsIds[ si ] );
+    StructureDef* strucDef = StructuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
+    int strucRot = strucToRemove->getRotation();
+    std::vector<int> strucGrid = strucDef->getGrid( strucRot );
+    int l = strucGrid.size();
+    int sX = strucToRemove->getX();
+    int sY = strucToRemove->getY();
+    for( int ii = 0; ii < l; ii++ ){
+      if( strucGrid[ ii ] == 0 ){ continue; }
+      std::vector<int> gridTilePos2d = strucDef->to2d( ii, strucRot );
+      int pos1dB = to1d( sX + gridTilePos2d[ 0 ], sY + gridTilePos2d[ 1 ] );
+      Tile* tileB = tiles[ pos1dB ];
+      tileB->setStructureId( 0 );
+      moveMap[ pos1dB ] = FloorsList::getFloorTypeById( tileB->getFloorTypeId() )->getSpeed();
+      intMap[ pos1dB ] = 1;
+    }
+  }
+  int nbStructs = structsIds.size();
+  if( testMapOpening() == false ){
+    for( int iii = 0; iii < nbStructs; iii++ ){
+      int structureId = structsIds[ iii ];
+      Structure* strucToRestore = getStructureById( structureId );
+      int sx = strucToRestore->getX();
+      int sy = strucToRestore->getY();
+      StructureDef* strucDef = StructuresDefList::getStructureTypeByName( strucToRestore->getTypeName() );
+      int strucRot = strucToRestore->getRotation();
+      std::vector<int> strucGrid = strucDef->getGrid( strucRot );
+      int l = strucGrid.size();
+      for( int j = 0; j < l; j++ ){
+        if( strucGrid[ j ] == 0 ){ continue; }
+        std::vector<int> gridTilePos2d = strucDef->to2d( j, strucRot );
+        int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
+        Tile* tile = tiles[ pos1d ];
+        tile->setStructureId( structureId );
+        moveMap[ pos1d ] = -2.0;
+        intMap[ pos1d ] = -2;
+      }
+    }
+    return 0;
+  }
+  for( int jj = 0; jj < nbStructs; jj++ ){
+    int destroRet = destroyStructById( structsIds[ jj ] );
+  }
+  return 1;
+}

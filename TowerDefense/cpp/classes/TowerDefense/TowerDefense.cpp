@@ -34,6 +34,8 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getCommonTextures", getCommonTextures );
   Nan::SetPrototypeMethod( ctor, "isPtOnStructById", isPtOnStructById );
   Nan::SetPrototypeMethod( ctor, "destroyStructById", destroyStructById );
+  Nan::SetPrototypeMethod( ctor, "destroyStructsByZone", destroyStructsByZone );
+
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -269,5 +271,20 @@ NAN_METHOD( TowerDefense::destroyStructById ){
   }
   int id = info[ 0 ]->IntegerValue();
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  info.GetReturnValue().Set( self->level->removeStructById( id ) );  
+  info.GetReturnValue().Set( self->level->removeStructById( id ) );
+}
+
+NAN_METHOD( TowerDefense::destroyStructsByZone ){
+  if( info.Length() != 4 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::destroyStructsByZone - expected 4 argument startx, starty, endx, endy").ToLocalChecked());
+  }
+  if( !info[ 0 ]->IsNumber() || !info[ 0 ]->IsNumber() || !info[ 1 ]->IsNumber() || !info[ 2 ]->IsNumber() || !info[ 3 ]->IsNumber() ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::destroyStructById - expected argument 1 to be a number" ).ToLocalChecked() );
+  }
+  int startx = info[ 0 ]->IntegerValue();
+  int starty = info[ 1 ]->IntegerValue();
+  int endx = info[ 2 ]->IntegerValue();
+  int endy = info[ 3 ]->IntegerValue();
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->destroyStructsByZone( startx, starty, endx, endy ) );
 }
