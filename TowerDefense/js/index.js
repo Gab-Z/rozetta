@@ -62,9 +62,9 @@ const listeners = {
   },
   closeStructMenubyOuterClick: {
     on: () => { app.stage.interactive = true;
-                app.stage.on( "mouseup", closeStructMenubyOuterClick );
+                app.stage.on( "mousedown", closeStructMenubyOuterClick, true );
               },
-    off: () => {  app.stage.off( "mouseup", closeStructMenubyOuterClick );
+    off: () => {  app.stage.off( "mousedown", closeStructMenubyOuterClick );
                   app.stage.interactive = false;
                 }
   },
@@ -253,8 +253,8 @@ function setupFloorSprites(){
 
   let stageCont = new PIXI.Container();
   stageCont.name = "stageCont";
-  stageCont.width = stageWidth;
-  stageCont.height = stageHeight;
+  stageCont.width = window.innerWidth;
+  stageCont.height = window.innerHeight;
   stageCont.position.set( 0, 0 );
   stageCont.interactive = true;
   //stageCont.buttonMode = true;
@@ -830,7 +830,7 @@ function drawStructMenu( structureId ){
   destroyBut.interactive = true;
   menuGraph.addChild( destroyBut );
   destroyBut.targetId = structureId;
-  destroyBut.on( "click", clickDestroyBut );
+  destroyBut.on( "click", clickDestroyBut, false );
   return menuGraph;
 }
 function closeStructMenubyOuterClick( e ){
@@ -850,6 +850,7 @@ function closeStructMenu(){
   let stageCont = app.stage.getChildByName( "stageCont" ),
       menuCont = stageCont.getChildByName( "menuCont" );
   if( menuCont ){ menuCont.destroy( { children: true, texture: false, baseTexture: false } ); }
+  structSelectMove( false );
 }
 function createStructMenuBut( texName, radius ){
   let tex = PIXI.loader.resources[ texName ].texture,
