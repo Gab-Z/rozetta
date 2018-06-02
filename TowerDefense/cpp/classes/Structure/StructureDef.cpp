@@ -22,6 +22,17 @@ StructureDef::StructureDef( std::string _typeName, std::vector<int> _grid, std::
   rotates = _rotates;
 }
 
+StructureDef::StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight, bool _rotates, std::vector<std::string> _upgradeList ){
+  typeName = _typeName;
+  grid = _grid;
+  imgUrl = _imgUrl;
+  cost = _cost;
+  gridWidth = _gridWidth;
+  gridHeight = _gridHeight;
+  rotates = _rotates;
+  upgradeList = _upgradeList;
+}
+
 StructureDef::StructureDef(
       std::string _typeName,  std::vector<int> _grid,
       std::string _imgUrl,    int _cost,
@@ -39,6 +50,22 @@ StructureDef::StructureDef(
   level = _level;
   upgradeImgUrl = _upgradeImgUrl;
   upgradeList = _upgradeList;
+}
+
+StructureDef::StructureDef( std::string _typeName,  std::vector<int> _grid,
+              std::string _imgUrl,    int _cost, int _gridWidth,
+              int _gridHeight,        bool _rotates,
+              int _level,             std::string _upgradeImgUrl ){
+
+  typeName = _typeName;
+  grid = _grid;
+  imgUrl = _imgUrl;
+  cost = _cost;
+  gridWidth = _gridWidth;
+  gridHeight = _gridHeight;
+  rotates = _rotates;
+  level = _level;
+  upgradeImgUrl = _upgradeImgUrl;
 }
 
 v8::Local<v8::Object> StructureDef::toObj(){
@@ -75,7 +102,7 @@ v8::Local<v8::Object> StructureDef::toObj(){
 
   if( upgradeImgUrl != "null" ){
     v8::Local<v8::String> upImgProp = Nan::New( "upgradeImgUrl" ).ToLocalChecked();
-    v8::Local<v8::Value> upImgValue = Nan::New( std::string("../img/") + upgradeImgUrl ).ToLocalChecked();
+    v8::Local<v8::Value> upImgValue = Nan::New( std::string("../img/structuresThumbs/") + upgradeImgUrl ).ToLocalChecked();
     ret->Set( upImgProp, upImgValue );
   }
 
@@ -184,22 +211,49 @@ std::string StructureDef::getImgUrl(){
 int StructureDef::getGridWidth(){
   return gridWidth;
 }
+
 int StructureDef::getGridHeight(){
   return gridHeight;
 }
+
 bool StructureDef::isRotating(){
   return rotates;
 }
+
 std::string StructureDef::getUpgradeImgUrl(){
   return upgradeImgUrl;
 }
+
 std::vector<std::string> StructureDef::getUpgradeList(){
   return upgradeList;
 }
+
 bool StructureDef::testPoint( int _x, int _y, int _rotation ){
   //std::vector<int> grd = getGrid( _rotation );
   if( getGrid( _rotation )[ to1d( _x, _y, _rotation ) ] == 1 ){
     return true;
   }
   return false;
+}
+
+v8::Local<v8::Object> StructureDef::getUpgradeData(){
+  v8::Local<v8::Object> ret = Nan::New<v8::Object>();
+
+  v8::Local<v8::String> typeProp = Nan::New( "typeName" ).ToLocalChecked();
+  v8::Local<v8::Value> typeValue = Nan::New( typeName ).ToLocalChecked();
+  ret->Set( typeProp, typeValue );
+
+  v8::Local<v8::String> imgProp = Nan::New( "upgradeImgUrl" ).ToLocalChecked();
+  v8::Local<v8::Value> imgValue = Nan::New( upgradeImgUrl ).ToLocalChecked();
+  ret->Set( imgProp, imgValue );
+
+  v8::Local<v8::String> costProp = Nan::New( "cost" ).ToLocalChecked();
+  v8::Local<v8::Value> costValue = Nan::New( cost );
+  ret->Set( costProp, costValue );
+
+  v8::Local<v8::String> lvlProp = Nan::New( "level" ).ToLocalChecked();
+  v8::Local<v8::Value> lvlValue = Nan::New( level );
+  ret->Set( lvlProp, lvlValue );
+
+  return ret;
 }

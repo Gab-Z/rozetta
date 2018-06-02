@@ -31,6 +31,8 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( isPtOnStructById );
     static NAN_METHOD( destroyStructById );
     static NAN_METHOD( destroyStructsByZone );
+    static NAN_METHOD( getStructureUpgradesByTypeName );
+    static NAN_METHOD( upgradeStructure );
 
 };
 

@@ -4,7 +4,7 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 30,
+  tileSize: 45,
   mapW: 20,
   mapH: 20,
   menuHeight: 50,
@@ -142,7 +142,8 @@ const evtStates = {
   startDragPreview: [
     "dragPreviewMove",
     "startDrag",
-    "cancelDragPreview"
+    "cancelDragPreview",
+    "clickStructPicker"
   ],
   drag: [
     "dragMove",
@@ -168,8 +169,8 @@ function setEvtState( stateName ){
   });
 }
 var activeTool = {
-  name: "",
-  texName:""
+  name: false,
+  texName:false
 }
 
 const funcTools = {
@@ -194,10 +195,9 @@ const funcTools = {
       setEvtState( "startDragPreview" );
     },
     cancel: () => {
-      app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( {   children: true, texture: false, baseTexture: false } );
+      app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( { children: true, texture: false, baseTexture: false } );
     }
   }
-
 }
 function clickToolsPicker( e ){
   console.log( "tools picker clicked" );
@@ -206,46 +206,78 @@ function clickToolsPicker( e ){
   activeTool.texName = e.target.texName;
   funcTools[ activeTool.name ].init( e );
 }
+function clearActiveTool(){
+  if( activeTool.name ){
+    funcTools[ activeTool.name ].cancel();
+    activeTool.name = false;
+    activeTool.texName = false;
+  }
+}
+
+var windowResizeFuncs = [];
+function windowResize( e ){
+  console.log( "window resize" );
+  windowResizeFuncs.forEach( funcOb => {
+    funcOb.func();
+  })
+}
+function removeResizeFunc( name ){
+  let a = windowResizeFuncs,
+      l = a.length;
+  for( let i = 0; i < l; i++ ){
+    if( a[ i ].name == name ){
+      a.splice( i, 1 );
+      break;
+    }
+  }
+}
+window.addEventListener( "resize", () => { window.requestAnimationFrame( windowResize ); } );
 
 const store = {};
 
 setPIXIRenderer();
 //loadFloorsImgs();
-loadCommonTextures();
+//loadCommonTextures();
 //console.log( "test : " + JSON.stringify( towerDef.getStructuresDefs() ) );
-console.log( "test : " + JSON.stringify( towerDef.getCommonTextures() ) );
-
+//console.log( "test : " + JSON.stringify( towerDef.getCommonTextures() ) );
+startImgsLoading();
 function setPIXIRenderer(){
   //Add the canvas that Pixi automatically created for you to the HTML document
   app.view.id = "pixiCanvas";
   document.body.appendChild( app.view );
 }
-function loadCommonTextures(){
-  PIXI.loader.add( towerDef.getCommonTextures() )
-  .on("progress", loadProgressHandler)
-  .load( loadFloorsImgs )
-}
-function loadFloorsImgs(){
-  let _floors = towerDef.getFloors();
-  //console.log( JSON.stringify( _floors ) );
-  let arr = [];
-  for( let k in _floors ){
-    arr.push( _floors[ k ].imgUrl );
+function startImgsLoading(){
+  let arr = towerDef.getCommonTextures(),
+      floorsDefs = towerDef.getFloors();
+  for( let k in floorsDefs ){
     arr.push({
       name: k,
-      url: _floors[ k ].imgUrl
+      url: floorsDefs[ k ].imgUrl
     })
   }
+  towerDef.getStructuresDefs().forEach( struc => {
+    arr.push( {
+      name: struc.typeName,
+      url: struc.imgUrl
+    } )
+    if( struc.upgradeImgUrl ){
+      arr.push( {
+        name: "thumb_"+struc.typeName,
+        url: struc.upgradeImgUrl
+      })
+    }
+  })
+  console.log( JSON.stringify( arr ) );
   PIXI.loader.add( arr )
   .on("progress", loadProgressHandler)
-  .load( setupFloorSprites.bind( _floors ) )
+  .load( setupFloorSprites )
 }
 function loadProgressHandler( loader, resource ){
   console.log("loading: " + resource.url);
   console.log("progress: " + loader.progress + "%");
 }
 function setupFloorSprites(){
-  let _floors = this,
+  let _floors = towerDef.getFloors(),
       nbTiles = defaults.mapW * defaults.mapH,
       stageWidth = defaults.tileSize * defaults.mapW,
       stageHeight = defaults.tileSize * defaults.mapH,
@@ -253,8 +285,8 @@ function setupFloorSprites(){
 
   let stageCont = new PIXI.Container();
   stageCont.name = "stageCont";
-  stageCont.width = window.innerWidth;
-  stageCont.height = window.innerHeight;
+  stageCont.width = stageWidth;//window.innerWidth;
+  stageCont.height = stageHeight;
   stageCont.position.set( 0, 0 );
   stageCont.interactive = true;
   //stageCont.buttonMode = true;
@@ -270,6 +302,15 @@ function setupFloorSprites(){
   mask.lineTo( 0, defaults.tileSize * defaults.mapH );
   stageCont.mask = mask;
   stageCont.hitArea = new PIXI.Rectangle( 0, 0, window.innerWidth, window.innerHeight );
+
+  windowResizeFuncs.push( {
+    name:"stageResize",
+    func: () => {
+      let stageCont = app.stage.getChildByName( "stageCont" );
+      stageCont.hitArea.width = window.innerWidth;
+      stageCont.hitArea.height = window.innerHeight;
+    }
+  } );
 
   if( nbTiles <= 1500 ){
     tmpContainer = new PIXI.particles.ParticleContainer();
@@ -318,24 +359,7 @@ function setupFloorSprites(){
   app.stage.addChild( stageCont );
   app.stage.addChild( mask );
 
-  loadStructuresImgs();
-}
-function loadStructuresImgs(){
-  let _structures = towerDef.getStructuresDefs(),
-      arr = [];
-  _structures.forEach( struc => {
-  //  console.log( "add : " + struc.typeName + " / " + struc.imgUrl )
-    arr.push( {
-      name: struc.typeName,
-      url: struc.imgUrl
-    } )
-  })
-  PIXI.loader.add( arr )
-  .on("progress", loadProgressHandler)
-  .load( setupStructPicker.bind( _structures ) )
-
-  store.structureDefs = _structures;
-
+  setupStructPicker();
 }
 function setupToolsPicker(){
   let toolsPickerCont = new PIXI.Container(),
@@ -362,13 +386,12 @@ function setupToolsPicker(){
     sprite.texName = buttOb.textureName;
     sprite.interactive = true;
   })
-
   toolsPickerCont.position.set( defaults.mapW * defaults.tileSize, 0 );
   app.stage.addChild( toolsPickerCont );
   setEvtState( "basicSelect" );
 }
 function setupStructPicker(){
-  let _structures = this,
+  let _structures = towerDef.getStructuresDefs(),
       nbStrucs = _structures.length,
       spriteSize = Math.floor( defaults.menuHeight * 0.8 ),
       spriteTop = defaults.tileSize * defaults.mapH + ( defaults.menuHeight - spriteSize ) * 0.5,
@@ -409,6 +432,7 @@ function clickStructPicker( e, _name, _rotation ){
   cancelStructPosPreview();
   cancelStructPositioning();
   closeStructMenu();
+  clearActiveTool();
   let cont,
       name,
       spritePickerCont = app.stage.getChildByName( "structPickerCont" );
@@ -549,7 +573,7 @@ function rotateStructPreview(){
   previewSprit.structureData.anchor = anchor;
 }
 function getStructureDef( _name ){
-  let d = store.structureDefs,
+  let d = towerDef.getStructuresDefs(),
       l = d.length;
   for( let i = 0; i < l; i++ ){
     if( d[ i ].typeName == _name ) return d[ i ];
@@ -806,31 +830,52 @@ function openStructMenu( e ){
       menuCont = stageCont.addChild( new PIXI.Container() ),
       centerx = ( structureData.x + structureData.gridWidth / 2 ) * ts,
       centery = ( structureData.y + structureData.gridHeight / 2 ) * ts;
+  console.log( "structureData: " + JSON.stringify( structureData ));
   menuCont.name = "menuCont";
-  let menu = menuCont.addChild( drawStructMenu( sprite.id ) );
+  let menu = menuCont.addChild( drawStructMenu( structureData ) );
   menu.position.set( centerx, centery );
   setEvtState( "openedStructMenu" );
 }
-function drawStructMenu( structureId ){
+function drawStructMenu( structureData ){
   let menuGraph = new PIXI.Graphics(),
       menuData = defaults.structureMenu,
       buttonDiameter = menuData.buttonDiameter,
       buttonRadius = buttonDiameter * 0.5,
       buttonSlotSize = buttonDiameter + 2 * menuData.buttonMargin,
-      menuRows = 2,
+      upgradesArr = towerDef.getStructureUpgradesByTypeName( structureData.typeName ),
+      upgradesButsAr = upgradesArr.map( upgradeOb => {
+        return createStructMenuBut( "thumb_"+upgradeOb.typeName, buttonRadius )
+      } ),
+      nbUpgrades = upgradesButsAr.length,
       menuCols = 3,
+      menuRows = Math.floor( nbUpgrades / menuCols ) + 2,
       menuWidth = menuCols * buttonSlotSize,
       menuHeight = menuRows * buttonSlotSize;
+  console.log( "structureData: " + JSON.stringify( upgradesArr ));
+
   menuGraph.name = "structureMenu"
   menuGraph.beginFill( 0x4c84a7, 0.8 );
   menuGraph.drawRoundedRect (0, 0, menuWidth, menuHeight, buttonRadius * 0.75 );
   menuGraph.interactive = true;
+
+  upgradesButsAr.forEach( ( but, i )=>{
+    let by = Math.floor( i / menuCols ),
+        bx = i - by * menuCols;
+    but.position.set( buttonRadius +  buttonSlotSize * bx, buttonRadius +  buttonSlotSize * by );
+    but.interactive = true;
+    but.upgradeTypeName = upgradesArr[ i ].typeName;
+    but.targetId = structureData.id;
+    but.on( "click", clickUpgradeStrucuture );
+    menuGraph.addChild( but );
+  })
+
   let destroyBut = createStructMenuBut( "destroyStructure", buttonRadius );
-  destroyBut.position.set( buttonRadius +  buttonSlotSize , buttonRadius + ( menuRows - 1 ) * buttonSlotSize );
+  destroyBut.position.set( buttonRadius +  buttonSlotSize * ( ( menuCols - 1 ) / 2 ) , buttonRadius + ( menuRows - 1 ) * buttonSlotSize );
   destroyBut.interactive = true;
   menuGraph.addChild( destroyBut );
-  destroyBut.targetId = structureId;
+  destroyBut.targetId = structureData.id;
   destroyBut.on( "click", clickDestroyBut, false );
+
   return menuGraph;
 }
 function closeStructMenubyOuterClick( e ){
@@ -877,6 +922,12 @@ function clickDestroyBut( e ){
   if( destroy == 0 ){
     console.log( "You can't remove a structure that would create a hole in the map" );
   }
+  updateStructures();
+}
+function clickUpgradeStrucuture( e ){
+  console.log( "upgrade :" + e.currentTarget.targetId + "to : " + e.currentTarget.upgradeTypeName );
+  let upgrade = towerDef.upgradeStructure( e.currentTarget.targetId, e.currentTarget.upgradeTypeName );
+  closeStructMenu();
   updateStructures();
 }
 function isDeepChildOf( startElement, searchedParentName, endElementName ){
@@ -968,17 +1019,20 @@ function dragPreviewMoveRAF(){
 }
 function cancelDragPreview( e ){
   if( e && e.button == 0 ) return false;
-  app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( {   children: true,
-                                                                                            texture: false,
-                                                                                            baseTexture: false } );
+  clearActiveTool();
   setEvtState( "basicSelect" );
 }
-function destroyStructZone(){
+function destroyStructZone( e ){
   console.log("destroyStructZone");
-  let d = dragData.positions;
-  let ret = towerDef.destroyStructsByZone( d.start.x, d.start.y, d.end.x, d.end.y );
+  let d = dragData.positions,
+      sx = Math.min( d.start.x, d.end.x ),
+      sy = Math.min( d.start.y, d.end.y ),
+      ex = Math.max( d.start.x, d.end.x ) + 1,
+      ey = Math.max( d.start.y, d.end.y ) + 1,
+      ret = towerDef.destroyStructsByZone( sx, sy, ex, ey );
   console.log(ret);
   updateStructures();
+  funcTools.destroyStructures.init( e );
 }
 function dragMove( e, _m ){
   let stageCont = e.currentTarget,
@@ -1006,8 +1060,8 @@ function startDrag( e ){
 }
 function endDrag( e ){
   if( dragData.drawFunc ) dragDrawFuncs[ dragData.drawFunc ].cancel();
-  dragData.callback();
-  setEvtState( "basicSelect" );
+  dragData.callback( e );
+  //setEvtState( "basicSelect" );
 }
 function cancelDrag( e ){
   if( e && e.button == 0 ) return false;
@@ -1036,14 +1090,12 @@ const dragDrawFuncs = {
           ts = defaults.tileSize,
           sx = Math.min( pos.start.x, pos.end.x ),
           sy = Math.min( pos.start.y, pos.end.y ),
-          ex = Math.max( pos.start.x, pos.end.x ),
-          ey = Math.max( pos.start.y, pos.end.y ),
-          offsetx = pos.start.x < pos.end.x ? 1 : 0,
-          offsety = pos.start.y < pos.end.y ? 1 : 0;
+          ex = Math.max( pos.start.x, pos.end.x ) + 1,
+          ey = Math.max( pos.start.y, pos.end.y ) + 1;
 
       squareGraph.clear();
       squareGraph.beginFill( 0xd3d5b4, 0.4 );
-      squareGraph.drawRoundedRect ( sx * ts, sy * ts, (ex - sx + 1 ) * ts, ( ey - sy + 1 ) * ts, 0 );
+      squareGraph.drawRoundedRect ( sx * ts, sy * ts, (ex - sx ) * ts, ( ey - sy ) * ts, 0 );
 
       sprite.position.set( pos.end.x *ts, pos.end.y * ts );
     },

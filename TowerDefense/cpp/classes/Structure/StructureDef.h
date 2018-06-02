@@ -25,11 +25,16 @@ class StructureDef {
   StructureDef();
   StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight );
   StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight, bool _rotates );
+  StructureDef( std::string _typeName, std::vector<int> _grid, std::string _imgUrl, int _cost, int _gridWidth, int _gridHeight, bool _rotates, std::vector<std::string> _upgradeList );
   StructureDef( std::string _typeName,  std::vector<int> _grid,
                 std::string _imgUrl,    int _cost, int _gridWidth,
                 int _gridHeight,        bool _rotates,
                 int _level,             std::string _upgradeImgUrl,
                 std::vector<std::string> _upgradeList );
+  StructureDef( std::string _typeName,  std::vector<int> _grid,
+                std::string _imgUrl,    int _cost, int _gridWidth,
+                int _gridHeight,        bool _rotates,
+                int _level,             std::string _upgradeImgUrl );
 
   v8::Local<v8::Object> toObj();
   std::string getTypeName();
@@ -48,7 +53,7 @@ class StructureDef {
   std::string getUpgradeImgUrl();
   std::vector<std::string> getUpgradeList();
   bool testPoint( int _x, int _y, int _rotation );
-
+  v8::Local<v8::Object> getUpgradeData();
 };
 
 #endif

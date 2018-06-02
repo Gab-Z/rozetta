@@ -37,6 +37,8 @@ class GameLevelBase {
     static v8::Local<v8::Array> getCommonTextures();
     bool isPointOnStructureById( int _id, int _x, int _y );
     int destroyStructById( int _id );
+    v8::Local<v8::Array> getStructureUpgradesByTypeName( std::string _typeName );
+    bool upgradeStructure( int _id, std::string _typeName );
 
 
     virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };

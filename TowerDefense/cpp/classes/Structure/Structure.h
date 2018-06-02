@@ -22,6 +22,7 @@ class Structure {
     Structure();
     Structure( int _x, int _y,  StructureDef* _structureDef );
     Structure( int _x, int _y,  StructureDef* _structureDef, int _rotation );
+    Structure( int _id, int _x, int _y,  StructureDef* _structureDef, int _rotation );
     //std::vector<int> getPosition();
     void setPosition( int _x, int _y );
     void setX( int _x );

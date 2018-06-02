@@ -35,7 +35,8 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "isPtOnStructById", isPtOnStructById );
   Nan::SetPrototypeMethod( ctor, "destroyStructById", destroyStructById );
   Nan::SetPrototypeMethod( ctor, "destroyStructsByZone", destroyStructsByZone );
-
+  Nan::SetPrototypeMethod( ctor, "getStructureUpgradesByTypeName", getStructureUpgradesByTypeName );
+  Nan::SetPrototypeMethod( ctor, "upgradeStructure", upgradeStructure );
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -287,4 +288,31 @@ NAN_METHOD( TowerDefense::destroyStructsByZone ){
   int endy = info[ 3 ]->IntegerValue();
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   info.GetReturnValue().Set( self->level->destroyStructsByZone( startx, starty, endx, endy ) );
+}
+
+NAN_METHOD( TowerDefense::getStructureUpgradesByTypeName ){
+  if( info.Length() != 1 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureUpgradesByTypeName - expected 1 argument : typeName").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsString() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureUpgradesByTypeName - expected argument 0 to be a string").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  std::string typeName = std::string( *Nan::Utf8String( info[ 0 ] ) );
+  info.GetReturnValue().Set( self->level->getStructureUpgradesByTypeName( typeName ) );
+}
+
+NAN_METHOD( TowerDefense::upgradeStructure ){
+  if( info.Length() != 2 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::upgradeStructure - expected 2 argument : id, typeName").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsNumber() || ! info[ 1 ]->IsString() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::upgradeStructure - expected argument 0 to be a number, argument 1 to be a String").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  int id = info[ 0 ]->IntegerValue();
+  std::string typeName = std::string( *Nan::Utf8String( info[ 1 ] ) );
+
+  bool upgrade = self->level->upgradeStructure( id, typeName );
+  info.GetReturnValue().Set( Nan::New( upgrade ) );
 }

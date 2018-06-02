@@ -23,6 +23,15 @@ Structure::Structure( int _x, int _y,  StructureDef* _structureDef, int _rotatio
     rotation = _rotation;
   }
 }
+Structure::Structure( int _id, int _x, int _y,  StructureDef* _structureDef, int _rotation ){
+  x = _x;
+  y = _y;
+  structureDef = _structureDef;
+  id = _id;
+  if( structureDef->isRotating() == true ){
+    rotation = _rotation;
+  }
+}
 void Structure::setPosition( int _x, int _y ){
   x = _x;
   y = _y;
