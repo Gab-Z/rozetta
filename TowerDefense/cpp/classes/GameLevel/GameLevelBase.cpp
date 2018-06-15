@@ -78,6 +78,19 @@ v8::Local<v8::Array> GameLevelBase::getCommonTextures(){
 
   ret->Set( 0, destroyStructObj );
 
+  v8::Local<v8::Object> eyeObj = Nan::New<v8::Object>();
+    v8::Local<v8::String> eyeProp = Nan::New("name").ToLocalChecked();
+    v8::Local<v8::Value> eyeVal = Nan::New( std::string( "vue" ) ).ToLocalChecked();
+    eyeObj->Set( eyeProp, eyeVal );
+
+    v8::Local<v8::String> vueProp = Nan::New("url").ToLocalChecked();
+    v8::Local<v8::Value> vueVal = Nan::New( std::string("../img/") + std::string( "eye.png" ) ).ToLocalChecked();
+    eyeObj->Set( vueProp, vueVal );
+
+  ret->Set( 1, eyeObj );
+
+
+
   return ret;
 
 }
@@ -121,14 +134,14 @@ int GameLevelBase::destroyStructById( int _id ){
 }
 
 v8::Local<v8::Array> GameLevelBase::getStructureUpgradesByTypeName( std::string _typeName ){
-  //return StructuresDefList::getStructureTypeByName( _typeName )->getUpgrades();
+  //return structuresDefList::getStructureTypeByName( _typeName )->getUpgrades();
   v8::Local<v8::Array> ret = Nan::New<v8::Array>();
-  StructureDef* baseDef =  StructuresDefList::getStructureTypeByName( _typeName );
+  StructureDef* baseDef =  structuresDefList::getStructureTypeByName( _typeName );
   std::vector<std::string> upgradeList = baseDef->getUpgradeList();
   int l = upgradeList.size();
   for( int i = 0; i < l; i++ ){
     std::string upgradeTypeName = upgradeList[ i ];
-    v8::Local<v8::Object> upgradeData = StructuresDefList::getStructureTypeByName( upgradeTypeName )->getUpgradeData();
+    v8::Local<v8::Object> upgradeData = structuresDefList::getStructureTypeByName( upgradeTypeName )->getUpgradeData();
     ret->Set( i, upgradeData );
   }
   return ret;
@@ -136,16 +149,7 @@ v8::Local<v8::Array> GameLevelBase::getStructureUpgradesByTypeName( std::string 
 
 bool GameLevelBase::upgradeStructure( int _id, std::string _typeName ){
 
-  Structure* baseStructure = getStructureById( _id );
-  StructureDef* targetDef = StructuresDefList::getStructureTypeByName( _typeName );
-
-  int px = baseStructure->getX();
-  int py = baseStructure->getY();
-  int rot = baseStructure->getRotation();
-
-  destroyStructById( _id );
-  pushStructure( new Structure( _id, px, py, targetDef, rot ) );
-
+  getStructureById( _id )->setStructureDef( structuresDefList::getStructureTypeByName( _typeName ) );
   return true;
 
 }

@@ -9,6 +9,7 @@ namespace converter {
     v8::Local<v8::Array> vectorIntToJsArray( std::vector<int> _v );
     v8::Local<v8::Array> vectorBoolToJsArray( std::vector<bool> _v );
     v8::Local<v8::Array> vectorStringToJsArray( std::vector<std::string> _v );
+    v8::Local<v8::Array> vectorFloatToJsArray( std::vector<float> _v );
 };
 
 #endif

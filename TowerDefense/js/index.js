@@ -4,9 +4,9 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 45,
-  mapW: 20,
-  mapH: 20,
+  tileSize: 18,
+  mapW: 50,
+  mapH: 50,
   menuHeight: 50,
   screenW: window.screen.width,
   screenH: window.screen.height,
@@ -19,6 +19,8 @@ const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ 
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
+//const thethaPathfinder = new ThetaStarSearch("OctileDistance");
+
 const listeners = {
   clickStructPicker:{
     on: () => { app.stage.getChildByName( "structPickerCont" ).on( "click", clickStructPicker ); },
@@ -154,6 +156,18 @@ const evtStates = {
 }
 var activeEvtStateName = "empty";
 var dragData;
+var structureSprites = [];
+var getStructureSpriteById = id => {
+  return structureSprites.find( sprite => sprite.id == id );
+}
+var removeSprite = id => {
+  let l = structureSprites.length;
+  for( let i = 0; i < l; i++ ){
+    if( sprites[ i ].id == id ){
+      structureSprites.splice( i, 1 );
+    }
+  }
+}
 function initDragData(){
   dragData.positions = {  start:  { x: 0, y: 0 },
                           end:    { x: 0, y: 0 } }
@@ -197,7 +211,32 @@ const funcTools = {
     cancel: () => {
       app.stage.getChildByName( "stageCont" ).getChildByName( "destructToolCont" ).destroy( { children: true, texture: false, baseTexture: false } );
     }
+  },
+
+  lineSight:{
+    init: (e) => {
+      setEvtState("empty");
+      let stageCont = app.stage.getChildByName( "stageCont" ),
+          lineVueCont = stageCont.addChild( new PIXI.Container() ),
+          lineVueGraph = lineVueCont.addChild( new PIXI.Graphics() ),
+          ts = defaults.tileSize,
+          m = e.data.getLocalPosition( stageCont );
+      lineVueCont.name = "lineVueCont";
+      lineVueGraph.name = "lineVueGraph";
+      stageCont.on( "mousemove", lineSightDraw );
+      window.addEventListener( "mousedown", funcTools.lineSight.cancel, false );
+      lineSightDraw( false, m );
+    },
+    cancel: () => {
+      let stageCont = app.stage.getChildByName( "stageCont" );
+      stageCont.off( "mousemove", lineSightDraw );
+      window.removeEventListener( "mousedown", funcTools.lineSight.cancel );
+      let lineVueCont = stageCont.getChildByName( "lineVueCont" );
+      if( lineVueCont ) lineVueCont.destroy( true );
+      setEvtState("basicSelect");
+    }
   }
+
 }
 function clickToolsPicker( e ){
   console.log( "tools picker clicked" );
@@ -368,7 +407,9 @@ function setupToolsPicker(){
       spriteSlotSize = spriteSize + margin * 2,
       buttonList = [
         { textureName: "destroyStructure",
-          funcName: "destroyStructures" }
+          funcName: "destroyStructures" },
+        { textureName: "vue",
+            funcName: "lineSight" }
       ],
       direction = {
         x: 0,
@@ -509,8 +550,38 @@ function cancelStructPosPreview( e ){
   setEvtState( "basicSelect" );
 }
 function moveStructPosPreview( e ){
+  window.requestAnimationFrame( moveStructPosPreviewRAF.bind( e ) );
+}
+function moveStructPosPreviewRAF(){
   console.log("moveStructPosPreview");
-  let m = e.data.getLocalPosition( this ),
+  let e = this,
+      m = e.data.getLocalPosition( e.currentTarget ),
+      structPrevCont = app.stage  .getChildByName( "stageCont" )
+                                  .getChildByName( "structPreviewCont" );
+  if( ! structPrevCont ) return false;
+  let previewSprit = structPrevCont.getChildByName( "previewSprite" ),
+      ts = defaults.tileSize,
+      structureData = previewSprit.structureData,
+      spriteRot = structureData.rotation,
+      invertOrientation = spriteRot == 0 || spriteRot == 2 ? false : true,
+      gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
+      gridHeight = invertOrientation ? structureData.gridWidth : structureData.gridHeight,
+      x = Math.floor( m.x / ts ) - Math.floor( gridWidth / 2 ),
+      y = Math.floor( m.y / ts ) - Math.floor( gridHeight / 2 ),
+      posData = getStructPosDragData(
+        m,
+        { start:  { x: x, y: y },
+          end:    { x: x + gridWidth,
+                    y: y + gridHeight } },
+        structureData  ),
+      posTest = towerDef.testStructuresPos( posData.structPositions, structureData.name,  structureData.rotation );
+  previewSprit.position.set( x * ts, y * ts );
+  previewSprit.tint = posTest[ 0 ] == true ? 0xffffff : 0xff0000;
+}
+function moveStructPosPreviewRAF_2(){
+  console.log("moveStructPosPreview");
+  let e = this,
+      m = e.data.getLocalPosition( e.currentTarget ),
       previewSprit = app.stage  .getChildByName( "stageCont" )
                                 .getChildByName( "structPreviewCont" )
                                 .getChildByName( "previewSprite" ),
@@ -622,10 +693,14 @@ function startStructPositioning( e ){
   dragStructPositionning( e, m );
 }
 function dragStructPositionning( e, _localPt ){
-  let m = _localPt || e.data.getLocalPosition( this ),
+  window.requestAnimationFrame( dragStructPositionningRAF.bind( _localPt || e.data.getLocalPosition( this ) ) );
+}
+function dragStructPositionningRAF( e, _localPt ){
+  let m = this,
       stageCont = app.stage.getChildByName( "stageCont" ),
-      structPosCont = stageCont.getChildByName( "structPosCont" ),
-      structureData = structPosCont.structureData,
+      structPosCont = stageCont.getChildByName( "structPosCont" );
+  if( ! structPosCont ) return false;
+  let structureData = structPosCont.structureData,
       sRot = structureData.rotation,
       invertOrientation = sRot == 0 || sRot == 2 ? false : true,
       gridWidth = invertOrientation ? structureData.gridHeight : structureData.gridWidth,
@@ -737,11 +812,9 @@ function updateStructures(){
   let structuresList = towerDef.getStructures(),
       stageCont = app.stage.getChildByName( "stageCont" ),
       structuresCont = stageCont.getChildByName( "structuresCont" ),
-      ts = defaults.tileSize,
-      nbC = structuresCont.children.length;
-  for( let d  = 0; d < nbC; d++ ){
-    structuresCont.children[ 0 ].destroy();
-  }
+      ts = defaults.tileSize;
+  structureSprites.forEach( dsprit => dsprit.destroy() );
+  structureSprites = [];
   structuresList.forEach( strucType => {
     let tex = PIXI.loader.resources[ strucType.typeName ].texture,
         positions = strucType.positions,
@@ -766,13 +839,24 @@ function updateStructures(){
       sp.rotation = sRot * 0.5 * Math.PI;
       structuresCont.addChild( sp );
       sp.interactive = true;
+      structureSprites.push( sp );
       //sp.on( "mouseover", structSpriteOver );
       //sp.on( "mouseout", strucSpriteOut );
     }
   })
   //console.log( towerDef.getMoveMap() )
   //drawMoveMap();
+  //console.log(JSON.stringify(towerDef.getPathMap( 0, 0 )))
+  //drawPathMap( towerDef.getPathMap( 0, 0 ) );
+  //drawPathMapBuffer( towerDef.getPathMapBuffer( 0, 0 ) );
+  //.log("bitTest :: " + towerDef.getPathMapBuffer( 0, 0 ).readFloatLE(0) );
+  //console.log( "line of sight : " + towerDef.lineOfSight( towerDef.width - 1, 1,  1, towerDef.height - 1 ) );
+
+  //drawTheta();
+  tethaMap = tethaPathfinder( 0, 0 );
+  console.log( JSON.stringify( tethaMap ) );
 }
+
 function cancelStructureSelection(){
   console.log("cancelStructureSelection");
   setEvtState( "basicSelect" );
@@ -784,6 +868,22 @@ function structSelectMove( e ){
   window.requestAnimationFrame( structSelectMoveRAF.bind( passEvent ) );
 }
 function structSelectMoveRAF(){
+  let spHover = structureSprites.find( sp => sp.name == "structHover" );
+  if( spHover ){
+    spHover.tint = 0xffffff;
+    spHover.name = "sucture_" + spHover.id;
+  }
+  let e = this;
+  if( ! e || ! e.data ) return false;
+  let pt = e.data.getLocalPosition( e.currentTarget ),
+      ts = defaults.tileSize,
+      structureId = towerDef.getStructureIdByPosition( Math.floor( pt.x / ts ), Math.floor( pt.y / ts ) );
+  if( ! structureId ) return false;
+  let target = getStructureSpriteById( structureId );
+  target.tint = 0xfae846;
+  target.name = "structHover";
+}
+function structSelectMoveRAF2(){
   let e = this,
       target = e.target || false,
       structuresCont = app.stage.getChildByName( "stageCont" ).getChildByName( "structuresCont" ),
@@ -817,6 +917,22 @@ function anchorFromRot( _rot ){
   return anchor;
 }
 function openStructMenu( e ){
+  let pt = e.data.getLocalPosition( e.currentTarget ),
+      ts = defaults.tileSize,
+      structureId = towerDef.getStructureIdByPosition( Math.floor( pt.x / ts ), Math.floor( pt.y / ts ) );
+  if( ! structureId ) return false;
+  let structureData = towerDef.getStructureById( structureId ),
+      stageCont = app.stage.getChildByName( "stageCont" ),
+      menuCont = stageCont.addChild( new PIXI.Container() ),
+      centerx = ( structureData.x + structureData.gridWidth / 2 ) * ts,
+      centery = ( structureData.y + structureData.gridHeight / 2 ) * ts;
+  console.log( "structureData: " + JSON.stringify( structureData ));
+  menuCont.name = "menuCont";
+  let menu = menuCont.addChild( drawStructMenu( structureData ) );
+  menu.position.set( centerx, centery );
+  setEvtState( "openedStructMenu" );
+}
+function openStructMenu2( e ){
   if( ! e.target || ! e.target.structure ) return false;
   //closeStructMenu();
   let sprite = e.target,
@@ -1104,3 +1220,763 @@ const dragDrawFuncs = {
     }
   }
 }
+function drawPathMap( pathMap ){
+  let l = pathMap.length,
+      w = towerDef.width,
+      h = towerDef.height,
+      ts = defaults.tileSize;
+      pathCont = app.stage.getChildByName( "stageCont" ).addChild( new PIXI.Container() );
+  pathCont.name = "pathCont";
+  pathMap.forEach( ( val, i ) => {
+    let text = new PIXI.Text( val,{ fontFamily: 'Arial', fontSize: 15, fill : 0xe5dfee, align : 'center', wordWrap:true, wordWrapWidth: ts });
+    text.anchor.set( 0.5, 0.5 );
+    let y = Math.floor( i / w ),
+        x = i - y * w;
+    text.position.set( ts * x + ts * 0.5, ts * y + ts * 0.5 );
+    pathCont.addChild( text );
+  })
+  window.addEventListener( "mousedown", deletePathMap, false );
+}
+function deletePathMap( e ){
+  let pathCont = app.stage.getChildByName( "stageCont").getChildByName( "pathCont" );
+  if( ! pathCont ) return false;
+  pathCont.destroy();
+  window.removeEventListener( "mousedown", deletePathMap );
+}
+function drawPathMapBuffer( pathMapBuffer ){
+  let l = pathMapBuffer.length,
+      w = towerDef.width,
+      h = towerDef.height,
+      ts = defaults.tileSize;
+      pathCont = app.stage.getChildByName( "stageCont" ).addChild( new PIXI.Container() );
+  pathCont.name = "pathCont";
+  let nb = l / 4;
+  for( let i = 0; i < nb; i++ ){
+    let val = pathMapBuffer.readFloatLE( i * 4 ).toFixed(2);
+    let text = new PIXI.Text( val,{ fontFamily: 'Arial', fontSize: 12, fill : 0xe5dfee, align : 'center', wordWrap:true, wordWrapWidth: ts });
+    text.anchor.set( 0.5, 0.5 );
+    let y = Math.floor( i / w ),
+        x = i - y * w;
+    text.position.set( ts * x + ts * 0.5, ts * y + ts * 0.5 );
+    pathCont.addChild( text );
+  }
+  window.addEventListener( "mousedown", deletePathMap, false );
+}
+function lineSightDraw( e, _m ){
+  let m = _m || e.data.getLocalPosition( this ),
+      ts = defaults.tileSize,
+      x = Math.floor( m.x / ts ),
+      y = Math.floor( m.y / ts );
+  window.requestAnimationFrame( lineSightDrawRAF.bind( { x: x, y: y} ) );
+  console.log("callDraw");
+}
+function lineSightDrawRAF(){
+  let lineVueCont = app.stage.getChildByName( "stageCont" ).getChildByName( "lineVueCont" );
+  let map = tethaMap;
+  if( ! lineVueCont ){
+    console.log( "no container");
+    return false;
+  }
+  if( ! map ){
+    console.log( "no map");
+    return false;
+  }
+
+  let m = this,
+      ts = defaults.tileSize,
+      sx = m.x,
+      sy = m.y;
+  if( sx < 0 || sx > towerDef.width - 1 || sy < 0 || sy > towerDef.height - 1 || ! IsTraversable( sx, sy )) return false;
+  let lineVueGraph = lineVueCont.getChildByName( "lineVueGraph" ),
+      points = [sx, sy],
+      end = false;
+  for( let i = 0; end == false; i++ ){
+    let pointx =  points[ points.length - 2 ],
+        pointy = points[ points.length - 1 ],
+        mapObj = map[ pointx ][ pointy ],
+        parent = mapObj.parent,
+        parentx = parent.x,
+        parenty = parent.y;
+    if( parentx == pointx && parenty == pointy ){
+      end = true;
+      break;
+    }
+    points.push( parentx, parenty );
+  }
+  let l = points.length / 2,
+      hts = ts * 0.5;
+  lineVueGraph.clear();
+  lineVueGraph.lineStyle( 2, 0x24f420, 1, 0.5 );
+  lineVueGraph.moveTo( points[ 0 ] * ts + hts, points[ 1 ] * ts + hts );
+  for( let p = 1; p < l; p++ ){
+    lineVueGraph.lineTo( points[ p * 2 ] * ts + hts, points[ p * 2 + 1 ] * ts + hts );
+  }
+  console.log("draw");
+}
+
+function lineSightDrawRAF2(){
+  let lineVueCont = app.stage.getChildByName( "stageCont" ).getChildByName( "lineVueCont" );
+  if( ! lineVueCont ) return false;
+  let m = this,
+      ts = defaults.tileSize,
+      sx = Math.floor( (towerDef.width - 1) / 2 ),
+      sy = Math.floor( (towerDef.height - 1) / 2 ),
+      ex = m.x,
+      ey = m.y,
+      lineVueGraph = lineVueCont.getChildByName( "lineVueGraph" ),
+      //points = towerDef.lineOfSight4View( sx, sy, ex, ey ),
+      points = lineSight( sx, sy, ex, ey ),
+      l = points.length / 2,
+      viewOffset = 0.5;
+  lineVueGraph.clear();
+  for( let i = 0; i < l; i++ ){
+    let px = points[ i * 2 ],
+        py = points[ i * 2 + 1 ];
+    lineVueGraph.beginFill( 0xf0be3c, 0.8);
+    lineVueGraph.moveTo( px * ts, py * ts );
+    lineVueGraph.lineTo( px * ts + ts, py * ts );
+    lineVueGraph.lineTo( px * ts + ts, py * ts + ts );
+    lineVueGraph.lineTo( px * ts, py * ts + ts );
+    lineVueGraph.endFill();
+  }
+
+  lineVueGraph.lineStyle(2, 0x24f420, 1, 0.5 );
+  lineVueGraph.moveTo( sx * ts + ts * viewOffset, sy * ts + ts * viewOffset);
+  lineVueGraph.lineTo( ex * ts + ts * viewOffset, ey * ts + ts * viewOffset);
+
+
+
+}
+
+var IsTraversable = function( _x, _y ){ return towerDef.isTraversable( _x, _y ); }
+
+const lineSight2 = ( x0,y0, x1,y1 )=>{
+  let nx = x1 - x0,
+      ny = y1 - y0,
+      sign_x = 1,
+      sign_y = 1;
+  if( nx < 0 ){
+    nx = -nx;
+    sign_x = -1;
+  }
+  if( ny < 0 ){
+    ny = -ny;
+    sign_y = -1;
+  }
+  let px = x0,
+      py = y0,
+      points = [ px, py ];
+  for (var ix = 0, iy = 0; ix < nx || iy < ny;) {
+      if ((0.5+ix) / nx == (0.5+iy) / ny) {
+          // next step is diagonal
+          if( ! IsTraversable( px, py + sign_y ) || ! IsTraversable( px + sign_x, py ) ) return points;
+          px += sign_x;
+          py += sign_y;
+          ix++;
+          iy++;
+      } else if ((0.5+ix) / nx < (0.5+iy) / ny) {
+          // next step is horizontal
+          px += sign_x;
+          ix++;
+      } else {
+          // next step is vertical
+          py += sign_y;
+          iy++;
+      }
+      if( IsTraversable( px, py ) ){
+        points.push(px, py);
+      }else{
+        return points;
+      }
+  }
+  return points;
+}
+
+const intersection = ( ()=>{
+  const eps = 0.0000001;
+  const between = ( a, b, c ) => a-eps <= b && b <= c+eps;
+  const segment_intersection = ( x1,y1, x2,y2, x3,y3, x4,y4 ) => {
+    let x=((x1*y2-y1*x2)*(x3-x4)-(x1-x2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+    let y=((x1*y2-y1*x2)*(y3-y4)-(y1-y2)*(x3*y4-y3*x4)) /
+            ((x1-x2)*(y3-y4)-(y1-y2)*(x3-x4));
+    if (isNaN(x)||isNaN(y)) {
+        return false;
+    } else {
+        if (x1>=x2) {
+            if (!between(x2, x, x1)) {return false;}
+        } else {
+            if (!between(x1, x, x2)) {return false;}
+        }
+        if (y1>=y2) {
+            if (!between(y2, y, y1)) {return false;}
+        } else {
+            if (!between(y1, y, y2)) {return false;}
+        }
+        if (x3>=x4) {
+            if (!between(x4, x, x3)) {return false;}
+        } else {
+            if (!between(x3, x, x4)) {return false;}
+        }
+        if (y3>=y4) {
+            if (!between(y4, y, y3)) {return false;}
+        } else {
+            if (!between(y3, y, y4)) {return false;}
+        }
+    }
+    return {x: x, y: y};
+  }
+  return segment_intersection;
+})();
+const lineSight = ( x0,y0, x1,y1 )=>{
+  let nx = x1 - x0,
+      ny = y1 - y0,
+      sign_x = 1,
+      sign_y = 1;
+  if( nx < 0 ){
+    nx = -nx;
+    sign_x = -1;
+  }
+  if( ny < 0 ){
+    ny = -ny;
+    sign_y = -1;
+  }
+  let px = x0,
+      py = y0,
+      points = [ px, py ];
+  for (var ix = 0, iy = 0; ix < nx || iy < ny;) {
+      if ((0.5+ix) / nx == (0.5+iy) / ny) {
+          // next step is diagonal
+          if( ! IsTraversable( px, py + sign_y ) || ! IsTraversable( px + sign_x, py ) ) return false;
+          px += sign_x;
+          py += sign_y;
+          ix++;
+          iy++;
+      } else if ((0.5+ix) / nx < (0.5+iy) / ny) {
+          // next step is horizontal
+          px += sign_x;
+          ix++;
+      } else {
+          // next step is vertical
+          py += sign_y;
+          iy++;
+      }
+      if( IsTraversable( px, py ) ){
+        points.push(px, py);
+      }else{
+        return false;
+      }
+  }
+  return true;
+}
+const dist = ( x0, y0, x1, y1 )=>{
+  let dx = x1 - x0,
+      dy = y1 - y0;
+  return Math.sqrt( dx * dx + dy * dy );
+}
+const copyMap = ()=>{
+  let w = towerDef.width,
+      h = towerDef.height,
+      ret = [];
+  for( let c = 0; c < w; c++ ){
+    ret.push( [] );
+    for(let r = 0; r < h; r++ ){
+      ret[ c ].push( {
+        parent: false,
+        hVal: Infinity
+      } );
+    }
+  }
+  return ret;
+}
+var tethaMap;
+
+const tethaPathfinder = ( sx, sy )=>{
+  let w = towerDef.width,
+      h = towerDef.height,
+      ret = copyMap(),
+      openList = [ sx, sy ],
+      baseTile = ret[ sx ][ sy ];
+  baseTile.parent = { x: sx, y: sy };
+  baseTile.hVal = 0;
+  for( let q = 0; q!= -1; q+=0 ){
+    let newList = [];
+    let l = openList.length / 2;
+    for( let i = 0; i < l; i++ ){
+      let neighbx = openList[ i * 2 ],
+          neighby = openList[ i * 2 + 1 ],
+          neighbour = ret[ neighbx ][ neighby ],
+          nv = neighbour.hVal,
+          parentx = neighbour.parent.x,
+          parenty = neighbour.parent.y,
+          parentTile = ret[ parentx ][ parenty ],
+          parentVal = parentTile.hVal;
+
+      if( neighbx > 0 ){
+
+        if( IsTraversable( neighbx - 1, neighby ) ){
+
+          let tx = neighbx - 1,
+              ty = neighby,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          //alert( "t.hVal : " + t.hVal +", distByNeighbour : " + distByNeighbour + ", distByParent : " + distByParent + "testToParent : " + testToParent + ", testToNeighbour : " + testToNeighbour )
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+
+        }
+
+        if( neighby > 0 && IsTraversable( neighbx - 1, neighby - 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+          let tx = neighbx - 1,
+              ty = neighby - 1,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1.41 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+        }
+
+        if( neighby < h - 1 && IsTraversable( neighbx - 1, neighby + 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+          let tx = neighbx - 1,
+              ty = neighby + 1,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1.41 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+        }
+
+      }
+
+      if( neighbx < w - 1 ){
+
+        if( IsTraversable( neighbx + 1, neighby ) ){
+          let tx = neighbx + 1,
+              ty = neighby,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+        }
+
+        if( neighby > 0 && IsTraversable( neighbx + 1, neighby - 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+          let tx = neighbx + 1,
+              ty = neighby - 1,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1.41 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+        }
+
+        if( neighby < h - 1 && IsTraversable( neighbx + 1, neighby + 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+          let tx = neighbx + 1,
+              ty = neighby + 1,
+              t = ret[ tx ][ ty ],
+              distByNeighbour = 1.41 + nv,
+              distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+              testToNeighbour = t.hVal > distByNeighbour,
+              testToParent = t.hVal > distByParent;
+          if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+            t.parent = { x: parentx, y: parenty };
+            t.hVal = distByParent;
+            newList.push( tx, ty );
+          }else if( testToNeighbour ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( tx, ty );
+          }
+        }
+      }
+
+
+      if( neighby > 0 && IsTraversable( neighbx, neighby - 1 ) ){
+        let tx = neighbx,
+            ty = neighby - 1,
+            t = ret[ tx ][ ty ],
+            distByNeighbour = 1 + nv,
+            distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+            testToNeighbour = t.hVal > distByNeighbour,
+            testToParent = t.hVal > distByParent;
+        if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+          t.parent = { x: parentx, y: parenty };
+          t.hVal = distByParent;
+          newList.push( tx, ty );
+        }else if( testToNeighbour ){
+          t.parent = { x: neighbx, y: neighby };
+          t.hVal = distByNeighbour;
+          newList.push( tx, ty );
+        }
+      }
+
+      if( neighby < h - 1 && IsTraversable( neighbx, neighby + 1 ) ){
+        let tx = neighbx,
+            ty = neighby + 1,
+            t = ret[ tx ][ ty ],
+            distByNeighbour = 1 + nv,
+            distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
+            testToNeighbour = t.hVal > distByNeighbour,
+            testToParent = t.hVal > distByParent;
+        if( testToParent && lineSight( tx , ty, parentx,parenty ) ){
+          t.parent = { x: parentx, y: parenty };
+          t.hVal = distByParent;
+          newList.push( tx, ty );
+        }else if( testToNeighbour ){
+          t.parent = { x: neighbx, y: neighby };
+          t.hVal = distByNeighbour;
+          newList.push( tx, ty );
+        }
+      }
+
+    }
+    if( newList.length > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  return ret;
+
+}
+
+
+const tethaPathfinderBackp = ( sx, sy )=>{
+  let w = towerDef.width,
+      h = towerDef.height,
+      ret = copyMap(),
+      openList = [ sx, sy ],
+      baseTile = ret[ sx ][ sy ];
+  baseTile.parent = { x: sx, y: sy };
+  baseTile.hVal = 0;
+  for( let q = 0; q!= -1; q+=0 ){
+    let newList = [];
+    let l = openList.length / 2;
+    for( let i = 0; i < l; i++ ){
+      let neighbx = openList[ i * 2 ],
+          neighby = openList[ i * 2 + 1 ],
+          neighbour = ret[ neighbx ][ neighby ],
+          nv = neighbour.hVal,
+          parentx = neighbour.parent.x,
+          parenty = neighbour.parent.y,
+          parentTile = ret[ parentx ][ parenty ],
+          parentVal = parentTile.hVal;
+
+      if( neighbx > 0 ){
+
+        if( IsTraversable( neighbx - 1, neighby ) ){
+
+          let t = ret[ neighbx - 1][ neighby ],
+              distByNeighbour = 1 + nv;
+
+          if( lineSight( neighbx - 1 , neighby, parentx,parenty ) ){
+            let distByParent = dist( neighbx - 1, neighby, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx - 1, neighby );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx - 1, neighby );
+          }
+
+        }
+
+        if( neighby > 0 && IsTraversable( neighbx - 1, neighby - 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+
+          let t = ret[ neighbx - 1 ][ neighby - 1 ],
+              distByNeighbour = 1.41 + nv;
+
+
+          if( lineSight( neighbx - 1, neighby - 1, parentx, parenty ) ){
+            let distByParent = dist( neighbx - 1, neighby - 1, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx - 1, neighby - 1 );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx - 1, neighby - 1 );
+          }
+
+        }
+        if( neighby < h - 1 && IsTraversable( neighbx - 1, neighby + 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+
+          let t = ret[ neighbx - 1 ][ neighby + 1 ],
+              distByNeighbour = 1.41 + nv;
+          if( lineSight( neighbx - 1, neighby + 1, parentx,parenty ) ){
+            let distByParent = dist( neighbx - 1, neighby + 1, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx - 1, neighby + 1 );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx - 1, neighby + 1 );
+          }
+
+        }
+      }
+      if( neighbx < w - 1 ){
+        if( IsTraversable( neighbx + 1, neighby ) ){
+
+          let t = ret[ neighbx + 1 ][ neighby ],
+              distByNeighbour = 1 + nv;
+          if( lineSight( neighbx + 1, neighby, parentx, parenty ) ){
+            let distByParent = dist( neighbx + 1, neighby, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx + 1, neighby );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx + 1, neighby );
+          }
+
+        }
+        if( neighby > 0 && IsTraversable( neighbx + 1, neighby - 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+
+          let t = ret[ neighbx + 1 ][ neighby - 1 ],
+              distByNeighbour = 1.41 + nv;
+          if( lineSight( neighbx + 1, neighby - 1, parentx,parenty ) ){
+            let distByParent = dist( neighbx + 1, neighby - 1, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx + 1, neighby - 1 );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx + 1, neighby - 1 );
+          }
+
+        }
+        if( neighby < h - 1 && IsTraversable( neighbx + 1, neighby + 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+
+          let t = ret[ neighbx + 1 ][ neighby + 1 ],
+              distByNeighbour = 1.41 + nv;
+          if( lineSight( neighbx + 1, neighby + 1, parentx,parenty ) ){
+            let distByParent = dist( neighbx + 1, neighby + 1, parentx, parenty ) + parentVal;
+            if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+              if( distByParent <= distByNeighbour ){
+                t.parent = { x: parentx, y: parenty };
+                t.hVal = distByParent;
+              }else{
+                t.parent = { x: neighbx, y: neighby };
+                t.hVal = distByNeighbour;
+              }
+              newList.push( neighbx + 1, neighby + 1 );
+            }
+          }else if( distByNeighbour < t.hVal ){
+            t.parent = { x: neighbx, y: neighby };
+            t.hVal = distByNeighbour;
+            newList.push( neighbx + 1, neighby + 1 );
+          }
+
+        }
+      }
+      if( neighby > 0 && IsTraversable( neighbx, neighby - 1 ) ){
+
+        let t = ret[ neighbx ][ neighby - 1 ],
+            distByNeighbour = 1 + nv;
+        if( lineSight( neighbx, neighby - 1, parentx,parenty ) ){
+          let distByParent = dist( neighbx, neighby - 1, parentx, parenty ) + parentVal;
+          if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+            if( distByParent <= distByNeighbour ){
+              t.parent = { x: parentx, y: parenty };
+              t.hVal = distByParent;
+            }else{
+              t.parent = { x: neighbx, y: neighby };
+              t.hVal = distByNeighbour;
+            }
+            newList.push( neighbx, neighby - 1 );
+          }
+        }else if( distByNeighbour < t.hVal ){
+          t.parent = { x: neighbx, y: neighby };
+          t.hVal = distByNeighbour;
+          newList.push( neighbx, neighby - 1 );
+        }
+
+      }
+      if( neighby < h - 1 && IsTraversable( neighbx, neighby + 1 ) ){
+
+        let t = ret[ neighbx ][ neighby + 1 ],
+            distByNeighbour = 1 + nv;
+        if( lineSight( neighbx, neighby + 1, parentx,parenty ) ){
+          let distByParent = dist( neighbx, neighby + 1, parentx, parenty ) + parentVal;
+          if( distByParent < t.hVal || distByNeighbour < t.hVal ){
+            if( distByParent <= distByNeighbour ){
+              t.parent = { x: parentx, y: parenty };
+              t.hVal = distByParent;
+            }else{
+              t.parent = { x: neighbx, y: neighby };
+              t.hVal = distByNeighbour;
+            }
+            newList.push( neighbx, neighby + 1 );
+          }
+        }else if( distByNeighbour < t.hVal ){
+          t.parent = { x: neighbx, y: neighby };
+          t.hVal = distByNeighbour;
+          newList.push( neighbx, neighby + 1 );
+        }
+
+      }
+    }
+    if( newList.length > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  return ret;
+
+}
+
+
+const baseLineOfSight = (x1, y1, x2, y2)=>{
+  var dx, dy, f, sx, sy, x1, x2;
+
+  dy = y2 - y1;
+  dx = x2 - x1;
+  f = 0;
+  sy = 0;
+  sx = 0;
+  if(dy < 0){
+    dy = -dy;
+    sy = -1;
+  }
+  else{
+    sy = 1
+  }
+
+  if(dx < 0){
+    dx = -dx;
+    sx = -1;
+  }
+  else{
+    sx = 1;
+  }
+
+  if(dx >= dy){
+    while(x1 != x2){
+      f = f + dy;
+      if(f >= dx){
+        if(!IsTraversable(x1 + ((sx - 1)/2), y1 + (sy - 1)/2)){
+          return false;
+        }
+
+        y1 = y1 + sy;
+        f = f - dx;
+      }
+      if(f != 0 && !IsTraversable(x1 + ((sx - 1)/2), y1 + (sy - 1)/2)){
+        return false;
+      }
+      if(dy == 0 && !IsTraversable(x1 + ((sx - 1)/2), y1)  && !IsTraversable(x1 + ((sx - 1)/2), y1 - 1)){
+        return false;
+      }
+      x1 = x1 + sx;
+    }
+  }
+  else{
+    while(y1 != y2){
+      f = f + dx;
+      if(f >= dy){
+         if(!IsTraversable(x1 + ((sx - 1)/2), y1 + (sy - 1)/2)){
+          return false;
+        }
+        x1 = x1 + sx;
+        f = f - dy;
+      }
+      if(f != 0 && !IsTraversable(x1 + ((sx - 1)/2), y1 + (sy - 1)/2)){
+        return false;
+      }
+      if(dy == 0 && !IsTraversable(x1, y1 + ((sy - 1)/2))  && !IsTraversable(x1 - 1, y1 + ((sy - 1)/2))){
+        return false;
+      }
+      y1 = y1 +sy;
+    }
+  }
+  return true;
+};

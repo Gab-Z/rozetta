@@ -9,8 +9,8 @@ class TowerDefense  : public Nan::ObjectWrap {
 
   GameLevelBase* level;
 
-  public:
 
+  public:
     void setLevel( GameLevelBase* _level );
     static NAN_MODULE_INIT( Init );
     static NAN_METHOD( New );
@@ -22,6 +22,7 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( getStructuresDefs );
     static NAN_METHOD( testStructuresPos );
     static NAN_METHOD( getMoveMap );
+    static NAN_METHOD( getIntMap );
     static NAN_METHOD( addStructures );
     static NAN_METHOD( getStructures );
     static NAN_METHOD( getStructureGrid );
@@ -33,7 +34,15 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( destroyStructsByZone );
     static NAN_METHOD( getStructureUpgradesByTypeName );
     static NAN_METHOD( upgradeStructure );
+    static NAN_METHOD( getStructureIdByPosition );
+    static NAN_METHOD( getPathMap );
+    static NAN_METHOD( getPathMapBuffer );
+    static NAN_METHOD( lineOfSight );
+    static NAN_METHOD( lineOfSight4View );
+    static NAN_METHOD( isTraversable );
 
 };
+
+
 
 #endif

@@ -114,3 +114,6 @@ bool Structure::testPoint( int _x, int _y ){
   int ty = _y - y;
   return structureDef->testPoint( tx, ty, rotation );
 }
+void Structure::setStructureDef( StructureDef* _structureDef ){
+  structureDef = _structureDef;
+}

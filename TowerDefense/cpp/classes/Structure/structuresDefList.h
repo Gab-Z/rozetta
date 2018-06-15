@@ -1,10 +1,10 @@
-#ifndef DEF_StructuresDefList
-#define DEF_StructuresDefList
+#ifndef DEF_structuresDefList
+#define DEF_structuresDefList
 
 #include <nan.h>
 #include "StructureDef.h"
 
-namespace StructuresDefList {
+namespace structuresDefList {
 
   StructureDef* getStructureTypeByName( std::string _typeName );
   v8::Local<v8::Array> structuresDefs();

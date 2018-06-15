@@ -4,9 +4,9 @@
 #include <nan.h>
 #include <cmath>
 #include <string>
-#include "../Floor/FloorsList.h"
+#include "../Floor/floorsList.h"
 #include "../Structure/Structure.h"
-#include "../Structure/StructuresDefList.h"
+#include "../Structure/structuresDefList.h"
 #include "../Tile/Tile.h"
 #include "../converter/converter.h"
 
@@ -40,18 +40,29 @@ class GameLevelBase {
     v8::Local<v8::Array> getStructureUpgradesByTypeName( std::string _typeName );
     bool upgradeStructure( int _id, std::string _typeName );
 
-
     virtual v8::Local<v8::Array> getTilesArray(){ return Nan::New<v8::Array>(); };
     virtual Tile* getTile( int _i ){ return new Tile(); };
+    virtual Tile* getTileByPosition( int _x, int _y ){ return new Tile(); };
     virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){ return std::vector<bool>(); };
-    virtual std::vector<double> getMoveMap(){ return std::vector<double>(); };
+    virtual std::vector<float> getMoveMap(){ return std::vector<float>(); };
+    virtual std::vector<int> getIntMap(){ return std::vector<int>(); };
     virtual bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){ return false;};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
     virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
     virtual int removeStructById( int _id ){ return 0; };
     virtual int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){ return 0; };
+    virtual int getStructureIdByPosition( int _x, int _y ){ return 0; };
+    virtual std::vector<float> pathMap( int _startx, int _starty){ return std::vector<float>(); };
+    //virtual char * pathMapBuffer( int _startx, int _starty ){ return new char[ 0 ]; };
+    virtual std::vector<char> pathMapChar( int _startx, int _starty){ return std::vector<char>(); };
+
+    virtual std::vector<int> thetaStar( int _startx, int _starty){ return std::vector<int>(); };
+    virtual bool lineOfSight( int x0, int y0, int x1, int y1 ){ return false; };
 
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
+
+    virtual std::vector<int> lineOfSight4View( int x0, int y0, int x1, int y1 ){ return std::vector<int>(); };
+    virtual bool isTraversable( int _x, int _y ){ return false; };
 };
 
 #endif

@@ -7,8 +7,9 @@
 class GameLevel : public GameLevelBase {
 
   std::vector<Tile*> tiles;
-  std::vector<double> moveMap;
+  std::vector<float> moveMap;
   std::vector<int> intMap;
+  std::vector< std::vector<float> > paths;
 
   public:
 
@@ -18,15 +19,28 @@ class GameLevel : public GameLevelBase {
     void fillMoveMap();
     bool testStructurePos( int _x, int _y, std::string _typeName );
     std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation );
-    std::vector<double> getMoveMap();
+    std::vector<float> getMoveMap();
+    std::vector<int> getIntMap();
     bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation );
     v8::Local<v8::Array> getStructures();
     Tile* getTile( int _i );
+    Tile* getTileByPosition( int _x, int _y );
     v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation );
     bool testMapOpening();
     bool newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions );
     int removeStructById( int _id );
     int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy );
+    int getStructureIdByPosition( int _x, int _y );
+    std::vector<float> pathMap( int _startx, int _starty);
+    //char * pathMapBuffer( int _startx, int _starty );
+    std::vector<char> pathMapChar( int _startx, int _starty);
+
+    std::vector<int>  thetaStar( int _startx, int _starty);
+    bool lineOfSight( int x0, int y0, int x1, int y1 );
+
+    std::vector<int> lineOfSight4View( int x0, int y0, int x1, int y1 );
+
+    bool isTraversable( int _x, int _y );
 };
 
 #endif

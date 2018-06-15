@@ -8,7 +8,7 @@ const ipc = electron.ipcMain;
 let mainWindow;
 function createWindow () {
 
-  mainWindow = new BrowserWindow({width: 900, height: 800});
+  mainWindow = new BrowserWindow({width: 1750, height: 1100});
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 //  mainWindow.loadURL(`file://${__dirname}/index.html`);

@@ -26,6 +26,7 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getStructuresDefs", getStructuresDefs );
   Nan::SetPrototypeMethod( ctor, "testStructuresPos", testStructuresPos );
   Nan::SetPrototypeMethod( ctor, "getMoveMap", getMoveMap );
+  Nan::SetPrototypeMethod( ctor, "getIntMap", getIntMap );
   Nan::SetPrototypeMethod( ctor, "addStructures", addStructures );
   Nan::SetPrototypeMethod( ctor, "getStructures", getStructures );
   Nan::SetPrototypeMethod( ctor, "getStructureGrid", getStructureGrid );
@@ -37,6 +38,14 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "destroyStructsByZone", destroyStructsByZone );
   Nan::SetPrototypeMethod( ctor, "getStructureUpgradesByTypeName", getStructureUpgradesByTypeName );
   Nan::SetPrototypeMethod( ctor, "upgradeStructure", upgradeStructure );
+  Nan::SetPrototypeMethod( ctor, "getStructureIdByPosition", getStructureIdByPosition );
+  Nan::SetPrototypeMethod( ctor, "getPathMap", getPathMap );
+  Nan::SetPrototypeMethod( ctor, "getPathMapBuffer", getPathMapBuffer );
+  Nan::SetPrototypeMethod( ctor, "lineOfSight", lineOfSight );
+
+  Nan::SetPrototypeMethod( ctor, "lineOfSight4View", lineOfSight4View );
+  Nan::SetPrototypeMethod( ctor, "isTraversable", isTraversable );
+
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -102,15 +111,15 @@ NAN_METHOD( TowerDefense::getFloors ){
   //v8::Local<v8::Object> TowerDefense::getFloors(){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
-  int nbFloors = FloorsList::floorTypes.size();
+  int nbFloors = floorsList::floorTypes.size();
   int s = self->level->getSize();
   for( int i = 0; i < s; i++ ){
     int floorId = self->level->getTile( i )->getFloorTypeId();
     Floor* testedFloor;
     bool floorFound = false;
     for( int j = 0; j < nbFloors; j++ ){
-      if( FloorsList::floorTypes[ j ]->getId() == floorId ){
-        testedFloor = FloorsList::floorTypes[ j ];
+      if( floorsList::floorTypes[ j ]->getId() == floorId ){
+        testedFloor = floorsList::floorTypes[ j ];
         floorFound = true;
         break;
       }
@@ -158,7 +167,7 @@ NAN_METHOD( TowerDefense::getFloors ){
 NAN_METHOD( TowerDefense::getStructuresDefs ){
   //TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>(info.This());
   //v8::Local<v8::Array> ret = self->structuresDefs();
-  v8::Local<v8::Array> ret = StructuresDefList::structuresDefs();
+  v8::Local<v8::Array> ret = structuresDefList::structuresDefs();
   info.GetReturnValue().Set( ret );
 }
 
@@ -179,7 +188,7 @@ NAN_METHOD( TowerDefense::testStructuresPos ){
 
 NAN_METHOD( TowerDefense::getMoveMap ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  std::vector<double> moveM = self->level->getMoveMap();
+  std::vector<float> moveM = self->level->getMoveMap();
   int size = moveM.size();
   v8::Local<v8::Array> ret = Nan::New<v8::Array>( size );
   for( int i = 0; i < size; i++ ){
@@ -187,6 +196,11 @@ NAN_METHOD( TowerDefense::getMoveMap ){
     ret->Set( i, jsElement );
   }
   info.GetReturnValue().Set( ret );
+}
+
+NAN_METHOD( TowerDefense::getIntMap ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->getIntMap() ) );
 }
 
 NAN_METHOD( TowerDefense::addStructures ){
@@ -315,4 +329,79 @@ NAN_METHOD( TowerDefense::upgradeStructure ){
 
   bool upgrade = self->level->upgradeStructure( id, typeName );
   info.GetReturnValue().Set( Nan::New( upgrade ) );
+}
+
+NAN_METHOD( TowerDefense::getStructureIdByPosition ){
+  if( info.Length() != 2 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureIdByPosition - expected 2 argument : x, y").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsNumber() || ! info[ 1 ]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getStructureIdByPosition - expected argument 0 and 1 to be numbers").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( self->level->getStructureIdByPosition( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
+}
+
+NAN_METHOD( TowerDefense::getPathMap ){
+  if( info.Length() != 2 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getPathMap - expected 2 argument : x, y").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsNumber() || ! info[ 1 ]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getPathMap - expected argument 0 and 1 to be numbers").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( converter::vectorFloatToJsArray( self->level->pathMap( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) ) );
+}
+
+void buffer_delete_callback(char* data, void* the_vector) {
+  delete reinterpret_cast<std::vector<char>*> (the_vector);
+}
+NAN_METHOD( TowerDefense::getPathMapBuffer ){
+  if( info.Length() != 2 ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getPathMap - expected 2 argument : x, y").ToLocalChecked());
+  }
+  if( ! info[ 0 ]->IsNumber() || ! info[ 1 ]->IsNumber() ) {
+    return Nan::ThrowError(Nan::New("TowerDefense::getPathMap - expected argument 0 and 1 to be numbers").ToLocalChecked());
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  std::vector<float> paths = self->level->pathMap( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() );
+  std::vector<char>* chars = new std::vector<char> ();
+  int l = paths.size();
+  for( int i = 0; i < l; i++ ){
+    float baseFloat = paths[ i ];
+    char a[4];
+    memcpy( a, &baseFloat, 4 );
+    chars->push_back( a[ 0 ] );
+    chars->push_back( a[ 1 ] );
+    chars->push_back( a[ 2 ] );
+    chars->push_back( a[ 3 ] );
+  }
+  info.GetReturnValue().Set( Nan::NewBuffer( (char *)chars->data(), chars->size(), buffer_delete_callback, chars).ToLocalChecked() );
+}
+NAN_METHOD( TowerDefense::lineOfSight ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  int x0 = info[ 0 ]->IntegerValue();
+  int y0 = info[ 1 ]->IntegerValue();
+  int x1 = info[ 2 ]->IntegerValue();
+  int y1 = info[ 3 ]->IntegerValue();
+  info.GetReturnValue().Set( Nan::New( self->level->lineOfSight(  x0, y0, x1, y1 ) ) );
+
+}
+
+NAN_METHOD( TowerDefense::lineOfSight4View ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  int x0 = info[ 0 ]->IntegerValue();
+  int y0 = info[ 1 ]->IntegerValue();
+  int x1 = info[ 2 ]->IntegerValue();
+  int y1 = info[ 3 ]->IntegerValue();
+  info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->lineOfSight4View(  x0, y0, x1, y1 ) ) );
+}
+
+NAN_METHOD( TowerDefense::isTraversable ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  if( info.Length() == 1 ) {
+    info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), -1 ) );
+  }else{
+    info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
+  }
 }
