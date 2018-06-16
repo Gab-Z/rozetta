@@ -15,7 +15,43 @@ const defaults = {
     buttonMargin: 2
   }
 };
-const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
+const randomMap = ( width, height, floorsIds )=>{
+  let nbFloors = 0,
+      probaSum = 0;
+  for( let k in floorsIds ){
+    nbFloors++;
+    probaSum += floorsIds[ k ].proba;
+  }
+  let probaRatio = 1 / probaSum,
+      probaArr = [],
+      probaCount = 0;
+  for( let k in floorsIds ){
+    let ob = floorsIds[ k ],
+        newproba = ob.proba * probaRatio
+    probaArr.push( { id: ob.id, proba: probaCount + newproba } );
+    probaCount += newproba;
+  }
+  probaArr.sort( ( a, b )=> a.proba - b.proba );
+  console.log( JSON.stringify( probaArr ) );
+  let ret = [],
+      l = width * height,
+      floorL = probaArr.length;
+  for( let i = 0; i < l; i++ ){
+    let r = Math.random();
+    for( let ii = 0; ii < floorL; ii++ ){
+      if( r < probaArr[ ii ].proba || ii == floorL - 1 ){
+        ret.push( probaArr[ ii ].id );
+        break;
+      }
+    }
+  }
+  console.log(ret);
+  return ret;
+}
+
+//const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
+const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ], randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 4},
+                                                                                                                                                                    water: { id: 2, proba: 1 } } ) );
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
@@ -1348,7 +1384,7 @@ function lineSightDrawRAF2(){
 
 }
 
-var IsTraversable = function( _x, _y ){ return towerDef.isTraversable( _x, _y ); }
+var IsTraversable = function( _x, _y ){ return ( _x == 0 && _y == 0 ) || towerDef.isTraversable( _x, _y ); }
 
 const lineSight2 = ( x0,y0, x1,y1 )=>{
   let nx = x1 - x0,
@@ -1428,7 +1464,7 @@ const intersection = ( ()=>{
   }
   return segment_intersection;
 })();
-const lineSight = ( x0,y0, x1,y1 )=>{
+const lineSightBACKUP = ( x0,y0, x1,y1 )=>{
   let nx = x1 - x0,
       ny = y1 - y0,
       sign_x = 1,
@@ -1469,6 +1505,50 @@ const lineSight = ( x0,y0, x1,y1 )=>{
   }
   return true;
 }
+const lineSight = ( x0,y0, x1,y1 )=>{
+  let nx = x1 - x0,
+      ny = y1 - y0,
+      sign_x = 1,
+      sign_y = 1;
+  if( nx < 0 ){
+    nx = -nx;
+    sign_x = -1;
+  }
+  if( ny < 0 ){
+    ny = -ny;
+    sign_y = -1;
+  }
+  let px = x0,
+      py = y0,
+      //points = [ px, py ],
+      speedsSum = 0,
+      nbTiles = 0;
+  for (var ix = 0, iy = 0; ix < nx || iy < ny;) {
+      if ((0.5+ix) / nx == (0.5+iy) / ny) {
+          // next step is diagonal
+          if( ! IsTraversable( px, py + sign_y ) || ! IsTraversable( px + sign_x, py ) ) return 0;
+          px += sign_x;
+          py += sign_y;
+          ix++;
+          iy++;
+      } else if ((0.5+ix) / nx < (0.5+iy) / ny) {
+          // next step is horizontal
+          px += sign_x;
+          ix++;
+      } else {
+          // next step is vertical
+          py += sign_y;
+          iy++;
+      }
+      if( IsTraversable( px, py ) ){
+        nbTiles++;
+        speedsSum += towerDef.getTileSpeed( px, py );
+      }else{
+        return 0;
+      }
+  }
+  return speedsSum / nbTiles;
+}
 const dist = ( x0, y0, x1, y1 )=>{
   let dx = x1 - x0,
       dy = y1 - y0;
@@ -1491,7 +1571,87 @@ const copyMap = ()=>{
 }
 var tethaMap;
 
+const tethaCheck = ( tx, ty, retMap, neighbx, neighby, parentx, parenty, parentVal, nv, hDist, newList )=>{
+  let t = retMap[ tx ][ ty ],
+      distByNeighbour = hDist * towerDef.getTileSpeed( neighbx, neighby ) + nv,
+      sightDistToParent = lineSight( tx , ty, parentx,parenty ),
+      distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal,
+      testToNeighbour = t.hVal > distByNeighbour,
+      testToParent = t.hVal > distByParent;
+  //alert( "t.hVal : " + t.hVal +", distByNeighbour : " + distByNeighbour + ", distByParent : " + distByParent + "testToParent : " + testToParent + ", testToNeighbour : " + testToNeighbour )
+  if( testToParent && sightDistToParent ){
+    t.parent = { x: parentx, y: parenty };
+    t.hVal = distByParent;
+    newList.push( tx, ty );
+  }else if( testToNeighbour ){
+    t.parent = { x: neighbx, y: neighby };
+    t.hVal = distByNeighbour;
+    newList.push( tx, ty );
+  }
+}
 const tethaPathfinder = ( sx, sy )=>{
+  let w = towerDef.width,
+      h = towerDef.height,
+      ret = copyMap(),
+      openList = [ sx, sy ],
+      baseTile = ret[ sx ][ sy ];
+  baseTile.parent = { x: sx, y: sy };
+  baseTile.hVal = 0;
+  for( let q = 0; q!= -1; q+=0 ){
+    let newList = [];
+    let l = openList.length / 2;
+    for( let i = 0; i < l; i++ ){
+      let neighbx = openList[ i * 2 ],
+          neighby = openList[ i * 2 + 1 ],
+          neighbour = ret[ neighbx ][ neighby ],
+          nv = neighbour.hVal,
+          parentx = neighbour.parent.x,
+          parenty = neighbour.parent.y,
+          parentTile = ret[ parentx ][ parenty ],
+          parentVal = parentTile.hVal;
+
+      if( neighbx > 0 ){
+        if( IsTraversable( neighbx - 1, neighby ) ){
+          tethaCheck( neighbx - 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1, newList );
+        }
+        if( neighby > 0 && IsTraversable( neighbx - 1, neighby - 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && IsTraversable( neighbx - 1, neighby + 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighbx < w - 1 ){
+        if( IsTraversable( neighbx + 1, neighby ) ){
+          tethaCheck( neighbx + 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1, newList );
+        }
+        if( neighby > 0 && IsTraversable( neighbx + 1, neighby - 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && IsTraversable( neighbx + 1, neighby + 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighby > 0 && IsTraversable( neighbx, neighby - 1 ) ){
+        tethaCheck( neighbx, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1, newList );
+      }
+      if( neighby < h - 1 && IsTraversable( neighbx, neighby + 1 ) ){
+        tethaCheck( neighbx, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1, newList );
+      }
+    }
+    if( newList.length > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  return ret;
+
+}
+
+
+const tethaPathfinder2 = ( sx, sy )=>{
   let w = towerDef.width,
       h = towerDef.height,
       ret = copyMap(),
@@ -1540,7 +1700,7 @@ const tethaPathfinder = ( sx, sy )=>{
           let tx = neighbx - 1,
               ty = neighby - 1,
               t = ret[ tx ][ ty ],
-              distByNeighbour = 1.41 + nv,
+              distByNeighbour = 1.414 + nv,
               distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
               testToNeighbour = t.hVal > distByNeighbour,
               testToParent = t.hVal > distByParent;
@@ -1559,7 +1719,7 @@ const tethaPathfinder = ( sx, sy )=>{
           let tx = neighbx - 1,
               ty = neighby + 1,
               t = ret[ tx ][ ty ],
-              distByNeighbour = 1.41 + nv,
+              distByNeighbour = 1.414 + nv,
               distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
               testToNeighbour = t.hVal > distByNeighbour,
               testToParent = t.hVal > distByParent;
@@ -1601,7 +1761,7 @@ const tethaPathfinder = ( sx, sy )=>{
           let tx = neighbx + 1,
               ty = neighby - 1,
               t = ret[ tx ][ ty ],
-              distByNeighbour = 1.41 + nv,
+              distByNeighbour = 1.414 + nv,
               distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
               testToNeighbour = t.hVal > distByNeighbour,
               testToParent = t.hVal > distByParent;
@@ -1620,7 +1780,7 @@ const tethaPathfinder = ( sx, sy )=>{
           let tx = neighbx + 1,
               ty = neighby + 1,
               t = ret[ tx ][ ty ],
-              distByNeighbour = 1.41 + nv,
+              distByNeighbour = 1.414 + nv,
               distByParent = dist( tx, ty, parentx, parenty ) + parentVal,
               testToNeighbour = t.hVal > distByNeighbour,
               testToParent = t.hVal > distByParent;
@@ -1739,7 +1899,7 @@ const tethaPathfinderBackp = ( sx, sy )=>{
         if( neighby > 0 && IsTraversable( neighbx - 1, neighby - 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
 
           let t = ret[ neighbx - 1 ][ neighby - 1 ],
-              distByNeighbour = 1.41 + nv;
+              distByNeighbour = 1.414 + nv;
 
 
           if( lineSight( neighbx - 1, neighby - 1, parentx, parenty ) ){
@@ -1764,7 +1924,7 @@ const tethaPathfinderBackp = ( sx, sy )=>{
         if( neighby < h - 1 && IsTraversable( neighbx - 1, neighby + 1 ) && ( IsTraversable( neighbx - 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
 
           let t = ret[ neighbx - 1 ][ neighby + 1 ],
-              distByNeighbour = 1.41 + nv;
+              distByNeighbour = 1.414 + nv;
           if( lineSight( neighbx - 1, neighby + 1, parentx,parenty ) ){
             let distByParent = dist( neighbx - 1, neighby + 1, parentx, parenty ) + parentVal;
             if( distByParent < t.hVal || distByNeighbour < t.hVal ){
@@ -1812,7 +1972,7 @@ const tethaPathfinderBackp = ( sx, sy )=>{
         if( neighby > 0 && IsTraversable( neighbx + 1, neighby - 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby - 1 ) ) ){
 
           let t = ret[ neighbx + 1 ][ neighby - 1 ],
-              distByNeighbour = 1.41 + nv;
+              distByNeighbour = 1.414 + nv;
           if( lineSight( neighbx + 1, neighby - 1, parentx,parenty ) ){
             let distByParent = dist( neighbx + 1, neighby - 1, parentx, parenty ) + parentVal;
             if( distByParent < t.hVal || distByNeighbour < t.hVal ){
@@ -1835,7 +1995,7 @@ const tethaPathfinderBackp = ( sx, sy )=>{
         if( neighby < h - 1 && IsTraversable( neighbx + 1, neighby + 1 ) && ( IsTraversable( neighbx + 1, neighby ) && IsTraversable( neighbx, neighby + 1 ) ) ){
 
           let t = ret[ neighbx + 1 ][ neighby + 1 ],
-              distByNeighbour = 1.41 + nv;
+              distByNeighbour = 1.414 + nv;
           if( lineSight( neighbx + 1, neighby + 1, parentx,parenty ) ){
             let distByParent = dist( neighbx + 1, neighby + 1, parentx, parenty ) + parentVal;
             if( distByParent < t.hVal || distByNeighbour < t.hVal ){
@@ -1913,7 +2073,6 @@ const tethaPathfinderBackp = ( sx, sy )=>{
   return ret;
 
 }
-
 
 const baseLineOfSight = (x1, y1, x2, y2)=>{
   var dx, dy, f, sx, sy, x1, x2;

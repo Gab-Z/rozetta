@@ -2,6 +2,7 @@
 #define DEF_GameLevel
 
 #include <nan.h>
+#include <limits>
 #include "GameLevelBase.h"
 
 class GameLevel : public GameLevelBase {
@@ -9,12 +10,17 @@ class GameLevel : public GameLevelBase {
   std::vector<Tile*> tiles;
   std::vector<float> moveMap;
   std::vector<int> intMap;
-  std::vector< std::vector<float> > paths;
+
+
+  std::vector<DestinationPt> destinationPoints;
+
+
 
   public:
 
     GameLevel();
     GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts );
+    GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds );
     v8::Local<v8::Array> getTilesArray();
     void fillMoveMap();
     bool testStructurePos( int _x, int _y, std::string _typeName );
@@ -35,12 +41,18 @@ class GameLevel : public GameLevelBase {
     //char * pathMapBuffer( int _startx, int _starty );
     std::vector<char> pathMapChar( int _startx, int _starty);
 
-    std::vector<int>  thetaStar( int _startx, int _starty);
-    bool lineOfSight( int x0, int y0, int x1, int y1 );
 
-    std::vector<int> lineOfSight4View( int x0, int y0, int x1, int y1 );
 
     bool isTraversable( int _x, int _y );
+    float getTileSpeed( int _x, int _y );
+
+    void tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList );
+    void tethaSearch( int _startx, int _starty );
+    float lineSight( int x0, int y0, int x1, int y1 );
+
+    void addDestinationPoint( int _x, int _y );
+    void removeDestinationPoint( int _x, int _y );
+    DestinationPt& getOrAddDestinationPt( int _x, int _y );
 };
 
 #endif

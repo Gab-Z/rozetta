@@ -37,9 +37,9 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( getStructureIdByPosition );
     static NAN_METHOD( getPathMap );
     static NAN_METHOD( getPathMapBuffer );
-    static NAN_METHOD( lineOfSight );
-    static NAN_METHOD( lineOfSight4View );
+
     static NAN_METHOD( isTraversable );
+    static NAN_METHOD( getTileSpeed );
 
 };
 

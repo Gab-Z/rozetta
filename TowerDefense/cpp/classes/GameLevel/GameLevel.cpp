@@ -31,6 +31,35 @@ GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::
   fillMoveMap();
 }
 
+GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds ):GameLevelBase( _width, _height, _startPts, _endPts ){
+  int _size = getSize();
+  tiles = std::vector<Tile*> ( _size );
+  int sl = _startPts.size() / 2;
+  int el = _endPts.size() / 2;
+  for( int i = 0; i < _size; i++ ){
+    std::vector<int> tilePos = to2d( i );
+    Tile* nTile = new Tile( tilePos[ 0 ], tilePos[ 1 ], _floorIds[ i ] );//_floorIds = [  int _floorId... ]
+    for( int si = 0; si < sl; si++ ){
+      int sx = _startPts[ si * 2 ];
+      int sy = _startPts[ si * 2 + 1 ];
+      if( sx == tilePos[ 0 ] && sy == tilePos[ 1 ] ){
+        nTile->setWayInOrOut( "start");
+      }
+    }
+    for( int ei = 0; ei < el; ei++ ){
+      int ex = _endPts[ ei * 2 ];
+      int ey = _endPts[ ei * 2 + 1 ];
+      if( ex == tilePos[ 0 ] && ey == tilePos[ 1 ] ){
+        nTile->setWayInOrOut( "end");
+      }
+    }
+    tiles[ i ] = nTile;
+  }
+  moveMap = std::vector<float>( _size );
+  intMap = std::vector<int>( _size, 0 );
+  fillMoveMap();
+}
+
 v8::Local<v8::Array> GameLevel::getTilesArray(){
   int _size = getSize();
   v8::Local<v8::Array> ret = Nan::New<v8::Array>( _size );
@@ -612,305 +641,6 @@ std::vector<char> GameLevel::pathMapChar( int _startx, int _starty){
   return ret;
 }
 
-std::vector<int> GameLevel::thetaStar( int _startx, int _starty){
-  std::vector<int> ret( getSize(), -1 );
-  /*
-  int basePos = to1d( _startx, _starty );
-  ret[ basePos ] = -1;
-  int w = width() - 1;
-  int h = height() - 1;
-  std::vector<int> posList;
-  if( _startx > 0 ){
-    if( intMap[ to1d( _startx - 1, _starty ) ] > 0 ){ posList.push_back( basePos );
-                                                      posList.push_back( _startx - 1 );
-                                                      posList.push_back( _starty ); }
-    if( _starty > 0 && intMap[ to1d( _startx - 1, _starty - 1 ) ] > 0 ){  posList.push_back( basePos );
-                                                                          posList.push_back( _startx - 1 );
-                                                                          posList.push_back( _starty - 1 ); }
-    if( _starty < h - 1 && intMap[ to1d( _startx - 1, _starty + 1 ) ] > 0  ){ posList.push_back( basePos );
-                                                                              posList.push_back( _startx - 1 );
-                                                                              posList.push_back( _starty + 1 ); }
-  }
-  if( _startx < w - 1 ){
-    if( intMap[ to1d( _startx + 1, _starty ) ] > 0 ){ posList.push_back( basePos );
-                                                      posList.push_back( _startx + 1 );
-                                                      posList.push_back( _starty ); }
-    if( _starty > 0 && intMap[ to1d( _startx + 1, _starty - 1 ) ] > 0 ){  posList.push_back( basePos );
-                                                                          posList.push_back( _startx + 1 );
-                                                                          posList.push_back( _starty - 1 ); }
-    if( _starty < h - 1 && intMap[ to1d( _startx + 1, _starty + 1 ) ] > 0  ){ posList.push_back( basePos );
-                                                                              posList.push_back( _startx + 1 );
-                                                                              posList.push_back( _starty + 1 ); }
-  }
-  if( _starty > 0 && intMap[ to1d( _startx, _starty - 1 ) ] > 0  ){ posList.push_back( basePos );
-                                                                    posList.push_back( _startx );
-                                                                    posList.push_back( _starty - 1 ); }
-  if( _starty < h - 1 && intMap[ to1d( _startx, _starty + 1 ) ] > 0  ){ posList.push_back( basePos );
-                                                                        posList.push_back( _startx );
-                                                                        posList.push_back( _starty + 1 ); }
-
-  for( int n = 0; n != -1 ){
-    std::vector<int> newList;
-    int l = posList.size() / 3;
-    for( int i = 0; i < l; i++ ){
-
-    }
-  }
-  */
-  return ret;
-}
-
-bool GameLevel::lineOfSight( int x0, int y0, int x1, int y1 ){
-  int diffx = x1 - x0;
-  int diffy = y1 - y0;
-  int f = 0;
-  int dirx;
-  int diry;
-  int offsetx;
-  int offsety;
-  if(diffy < 0){
-    diffy = -diffy;
-    diry = -1;
-    offsety = 0; // Cell is to the North
-  }else{
-    diry = 1;
-    offsety = 1; // Cell is to the South
-  }
-
-  if(diffx < 0){
-    diffx = -diffx;
-    dirx = -1;
-    offsetx = 0; // Cell is to the West
-  }else{
-    dirx = 1;
-    offsetx = 1; // Cell is to the East
-  }
-
-  if(diffx >= diffy){ // Move along the x axis and increment/decrement y when f >= diff.x.
-    while(x0 != x1){
-      f += diffy;
-      if(f >= diffx){  // We are changing rows, we might need to check two cells this iteration.
-        //if (!mIsTraversable(l1 + offset)){
-        //if ( intMap[ pos1d(  ) ] < 0 ){
-        if ( intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0 ){
-          return false;
-        }
-        y0 += diry;
-        f -= diffx;
-      }
-      //if(f != 0 && !mIsTraversable(l1 + offset)){
-      if( f == 0 && (
-            ( intMap[ to1d( x0 , y0 ) ] < 0 && intMap[ to1d( x0 - 1, y0 - 1 ) ] < 0 )
-        ||  ( intMap[ to1d( x0 - 1, y0 ) ] < 0 && intMap[ to1d( x0 , y0 - 1 ) ] < 0 )
-      ) ){
-        return false;
-      }
-
-
-
-      if(f != 0 && intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0 ){
-        return false;
-      }
-      // If we are moving along a horizontal line, either the north or the south cell should be unblocked.
-      //if (diff.y == 0 && !mIsTraversable({x0 + offsetx, l1.y}) && !mIsTraversable({l1.x + offsetx, l1.y + 1})){
-      if (diffy == 0 && intMap[ to1d( x0 + offsetx, y0 ) ] < 0 && intMap[ to1d( x0 + offsetx, y0 + 1 ) ] < 0){
-        return false;
-      }
-      x0 += dirx;
-    }
-  }else{  //if (diff.x < diff.y). Move along the y axis and increment/decrement x when f >= diff.y.
-    while (y0 != y1){
-      f += diffx;
-      if(f >= diffy){
-        if(intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0){
-          return false;
-        }
-        x0 += dirx;
-        f -= diffy;
-      }
-
-      if( f == 0 && (
-            ( intMap[ to1d( x0 , y0 ) ] < 0 && intMap[ to1d( x0 - 1, y0 - 1 ) ] < 0 )
-        ||  ( intMap[ to1d( x0 - 1, y0 ) ] < 0 && intMap[ to1d( x0 , y0 - 1 ) ] < 0 )
-      ) ){
-        return false;
-      }
-
-      if(f != 0 && intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0){
-        return false;
-      }
-      //if (diffx == 0 && !mIsTraversable({l1.x, l1.y + offsety}) && !mIsTraversable({l1.x + 1, l1.y + offsety})){
-      if (diffx == 0 && intMap[ to1d( x0, y0 + offsety ) ] < 0 && intMap[ to1d( x0 + 1, y0 + offsety ) ] < 0 ){
-        return false;
-      }
-      y0 += diry;
-    }
-  }
-  return true;
-}
-
-std::vector<int> GameLevel::lineOfSight4View( int x0, int y0, int x1, int y1 ){
-
-  std::vector<int> ret;
-
-  int diffx = x1 - x0;
-  int diffy = y1 - y0;
-  int f = 0;
-  int dirx;
-  int diry;
-  int offsetx;
-  int offsety;
-  if(diffy < 0){
-    diffy = -diffy;
-    diry = -1;
-    offsety = -1; // Cell is to the North
-  }else{
-    diry = 1;
-    offsety = 1; // Cell is to the South
-  }
-
-  if(diffx < 0){
-    diffx = -diffx;
-    dirx = -1;
-    offsetx = -1; // Cell is to the West
-  }else{
-    dirx = 1;
-    offsetx = 1; // Cell is to the East
-  }
-
-  if(diffx >= diffy){ // Move along the x axis and increment/decrement y when f >= diff.x.
-    while(x0 != x1){
-      f += diffy;
-      if(f >= diffx){  // We are changing rows, we might need to check two cells this iteration.
-        //if (!mIsTraversable(l1 + offset)){
-        //if ( intMap[ pos1d(  ) ] < 0 ){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-        if ( intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0 ){
-          return ret;
-        }
-        y0 += diry;
-        f -= diffx;
-      }
-      //if(f != 0 && !mIsTraversable(l1 + offset)){
-
-      if( f == 0 && (
-            ( intMap[ to1d( x0 , y0 ) ] < 0 && intMap[ to1d( x0 - 1, y0 - 1 ) ] < 0 )
-        ||  ( intMap[ to1d( x0 - 1, y0 ) ] < 0 && intMap[ to1d( x0 , y0 - 1 ) ] < 0 )
-      ) ){
-        ret.push_back( x0 );
-        ret.push_back( y0 );
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 - 1 );
-
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 );
-        ret.push_back( x0 );
-        ret.push_back( y0 - 1 );
-        return ret;
-      }else if( f == 0 ){
-        ret.push_back( x0 );
-        ret.push_back( y0 );
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 - 1 );
-
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 );
-        ret.push_back( x0 );
-        ret.push_back( y0 - 1 );
-      }
-
-
-      if(f != 0 && intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0 ){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-        return ret;
-      }else if( f != 0 ){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-      }
-      // If we are moving along a horizontal line, either the north or the south cell should be unblocked.
-      //if (diff.y == 0 && !mIsTraversable({x0 + offsetx, l1.y}) && !mIsTraversable({l1.x + offsetx, l1.y + 1})){
-      if (diffy == 0 && intMap[ to1d( x0 + offsetx, y0 ) ] < 0 && intMap[ to1d( x0 + offsetx, y0 + 1 ) ] < 0){
-        ret.push_back(  x0 + offsetx );
-        ret.push_back( y0 );
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + 1 );
-        return ret;
-      }else if( diffy == 0 ){
-        ret.push_back(  x0 + offsetx );
-        ret.push_back( y0 );
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + 1 );
-      }
-      x0 += dirx;
-    }
-  }else{  //if (diff.x < diff.y). Move along the y axis and increment/decrement x when f >= diff.y.
-    while (y0 != y1){
-      f += diffx;
-      if(f >= diffy){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-        if(intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0){
-          return ret;
-        }
-        x0 += dirx;
-        f -= diffy;
-      }
-
-      if( f == 0 && (
-            ( intMap[ to1d( x0 , y0 ) ] < 0 && intMap[ to1d( x0 - 1, y0 - 1 ) ] < 0 )
-        ||  ( intMap[ to1d( x0 - 1, y0 ) ] < 0 && intMap[ to1d( x0 , y0 - 1 ) ] < 0 )
-      ) ){
-        ret.push_back( x0 );
-        ret.push_back( y0 );
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 - 1 );
-
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 );
-        ret.push_back( x0 );
-        ret.push_back( y0 - 1 );
-        return ret;
-      }else if ( f== 0 ){
-        ret.push_back( x0 );
-        ret.push_back( y0 );
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 - 1 );
-
-        ret.push_back( x0 - 1 );
-        ret.push_back( y0 );
-        ret.push_back( x0 );
-        ret.push_back( y0 - 1 );
-      }
-
-      if(f != 0 && intMap[ to1d( x0 + offsetx, y0 + offsety ) ] < 0){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-        return ret;
-      }else if ( f != 0 ){
-        ret.push_back( x0 + offsetx );
-        ret.push_back( y0 + offsety );
-      }
-      //if (diffx == 0 && !mIsTraversable({l1.x, l1.y + offsety}) && !mIsTraversable({l1.x + 1, l1.y + offsety})){
-      if (diffx == 0 && intMap[ to1d( x0, y0 + offsety ) ] < 0 && intMap[ to1d( x0 + 1, y0 + offsety ) ] < 0 ){
-        ret.push_back( x0 );
-        ret.push_back( y0 + offsety );
-        ret.push_back( x0 + 1 );
-        ret.push_back( y0 + offsety );
-        return ret;
-      }else if( diffx == 0 ){
-        ret.push_back( x0 );
-        ret.push_back( y0 + offsety );
-        ret.push_back( x0 + 1 );
-        ret.push_back( y0 + offsety );
-      }
-      y0 += diry;
-    }
-  }
-  return ret;
-}
-
 bool GameLevel::isTraversable( int _x, int _y ){
   if( _y < 0 ){
     if( intMap[ _x ] < 0 ){
@@ -923,3 +653,196 @@ bool GameLevel::isTraversable( int _x, int _y ){
   }
   return true;
 };
+
+float GameLevel::getTileSpeed( int _x, int _y ){
+  if( _y < 0 ){
+    return moveMap[ _x ];
+  }else{
+    return moveMap[ to1d( _x, _y ) ];
+  }
+}
+
+
+
+void GameLevel::addDestinationPoint( int _x, int _y ){
+  int l = destinationPoints.size();
+  int pos1d;
+  if( _y < 0 ){
+    pos1d = _x;
+  }else{
+    pos1d = to1d( _x, _y );
+  }
+  for( int i = 0; i < l; i++ ){
+    if( destinationPoints[ i ].pos1d == pos1d ){ return void(); };
+  }
+  destinationPoints.push_back( DestinationPt( pos1d, getSize() ) );
+};
+
+void GameLevel::removeDestinationPoint( int _x, int _y ){
+  int pos1d;
+  if( _y < 0 ){
+    pos1d = _x;
+  }else{
+    pos1d = to1d( _x, _y );
+  }
+  std::vector<DestinationPt>::iterator searchedIterator;
+  for( std::vector<DestinationPt>::iterator i = destinationPoints.begin(); i < destinationPoints.end(); ++i ){
+      if( (*i).pos1d == pos1d ){
+        destinationPoints.erase( i );
+      }
+  }
+};
+
+GameLevelBase::DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y ){
+  int pos1d = to1d( _x, _y );
+  int l = destinationPoints.size();
+  for( int i = 0; i < l; i++ ){
+    if( destinationPoints[ i ].pos1d == pos1d ){
+      return destinationPoints[ i ];
+    }
+  }
+  addDestinationPoint( pos1d, -1 );
+  int ll = destinationPoints.size();
+  for( int ii = 0; ii < ll; ii++ ){
+    if( destinationPoints[ ii ].pos1d == pos1d ){
+      return destinationPoints[ ii ];
+    }
+  }
+}
+
+float GameLevel::lineSight( int x0, int y0, int x1, int y1 ){
+  int nx = x1 - x0;
+  int ny = y1 - y0;
+  int sign_x = 1;
+  int sign_y = 1;
+  if( nx < 0 ){
+    nx = -nx;
+    sign_x = -1;
+  }
+  if( ny < 0 ){
+    ny = -ny;
+    sign_y = -1;
+  }
+  int px = x0;
+  int py = y0;
+  float speedsSum = 0;
+  int nbTiles = 0;
+  for (int ix = 0, iy = 0; ix < nx || iy < ny;) {
+      if ((0.5+(float)ix) / (float)nx == (0.5+(float)iy) / (float)ny) {
+          // next step is diagonal
+          if( ! isTraversable( px, py + sign_y ) || ! isTraversable( px + sign_x, py ) ) return 0.0;
+          px += sign_x;
+          py += sign_y;
+          ix++;
+          iy++;
+      } else if ((0.5+(float)ix) / (float)nx < (0.5+(float)iy) / (float)ny) {
+          // next step is horizontal
+          px += sign_x;
+          ix++;
+      } else {
+          // next step is vertical
+          py += sign_y;
+          iy++;
+      }
+      if( isTraversable( px, py ) ){
+        nbTiles++;
+        speedsSum += getTileSpeed( px, py );
+      }else{
+        return 0.0;
+      }
+  }
+  return speedsSum / (float)nbTiles;
+}
+
+float dist( int x0, int y0, int x1, int y1 ){
+  int dx = x1 - x0;
+  int dy = y1 - y0;
+  return (float) sqrt( dx * dx + dy * dy );
+}
+
+void GameLevel::tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
+  TethaSearchTile t = retMap[ to1d( tx, ty ) ];
+  float distByNeighbour = hDist * getTileSpeed( neighbx, neighby ) + nv;
+  float sightDistToParent = lineSight( tx , ty, parentx, parenty );
+  float distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal;
+  bool testToNeighbour = t.hVal > distByNeighbour;
+  bool testToParent = t.hVal > distByParent;
+  if( testToParent && sightDistToParent ){
+    t.parentPos = to1d( parentx, parenty );
+    t.hVal = distByParent;
+    newList.push_back( tx );
+    newList.push_back( ty );
+  }else if( testToNeighbour ){
+    t.parentPos = to1d( neighbx, neighby );
+    t.hVal = distByNeighbour;
+    newList.push_back( tx );
+    newList.push_back( ty );
+  }
+}
+
+void GameLevel::tethaSearch( int _startx, int _starty ){
+  int w = width();
+  int h = height();
+  int mapL = getSize();
+  std::vector<TethaSearchTile> ret = std::vector<TethaSearchTile>( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
+  std::vector<int> openList{ _startx, _starty };
+  TethaSearchTile  &baseTile = ret[ to1d( _startx, _starty ) ];
+  baseTile.parentPos = to1d( _startx, _starty );
+  baseTile.hVal = 0.0;
+  for( int q = 0; q!= -1; q+=0 ){
+    std::vector<int> newList;
+    int l = openList.size() / 2;
+    for( int i = 0; i < l; i++ ){
+      int& neighbx = openList[ i * 2 ];
+      int& neighby = openList[ i * 2 + 1 ];
+      TethaSearchTile& neighbour = ret[ to1d( neighbx, neighby ) ];
+      float& nv = neighbour.hVal;
+      std::vector<int> parentPos = to2d( neighbour.parentPos );
+      int& parentx = parentPos[ 0 ];
+      int& parenty = parentPos[ 1 ];
+      TethaSearchTile& parentTile = ret[ to1d( parentx, parenty ) ];
+      float& parentVal = parentTile.hVal;
+
+      if( neighbx > 0 ){
+        if( isTraversable( neighbx - 1, neighby ) ){
+          tethaCheck( neighbx - 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+        }
+        if( neighby > 0 && isTraversable( neighbx - 1, neighby - 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && isTraversable( neighbx - 1, neighby + 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighbx < w - 1 ){
+        if( isTraversable( neighbx + 1, neighby ) ){
+          tethaCheck( neighbx + 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+        }
+        if( neighby > 0 && isTraversable( neighbx + 1, neighby - 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && isTraversable( neighbx + 1, neighby + 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighby > 0 && isTraversable( neighbx, neighby - 1 ) ){
+        tethaCheck( neighbx, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+      }
+      if( neighby < h - 1 && isTraversable( neighbx, neighby + 1 ) ){
+        tethaCheck( neighbx, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+      }
+    }
+    if( newList.size() > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  //return ret;
+  GameLevelBase::DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
+  destPt.init( mapL );
+  for( int j = 0; j < mapL; j++ ){
+    destPt.pathPoints[ j ] = ret[ j ].parentPos;
+  }
+}

@@ -41,11 +41,9 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getStructureIdByPosition", getStructureIdByPosition );
   Nan::SetPrototypeMethod( ctor, "getPathMap", getPathMap );
   Nan::SetPrototypeMethod( ctor, "getPathMapBuffer", getPathMapBuffer );
-  Nan::SetPrototypeMethod( ctor, "lineOfSight", lineOfSight );
 
-  Nan::SetPrototypeMethod( ctor, "lineOfSight4View", lineOfSight4View );
   Nan::SetPrototypeMethod( ctor, "isTraversable", isTraversable );
-
+  Nan::SetPrototypeMethod( ctor, "getTileSpeed", getTileSpeed );
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -67,6 +65,9 @@ NAN_METHOD(TowerDefense::New) {
   if( ! info[ 0 ]->IsNumber() || ! info[ 1 ]->IsNumber() || ! info[ 2 ]->IsArray() || ! info[ 3 ]->IsArray() ) {
     return Nan::ThrowError( Nan::New( "TowerDefense::New - expected arguments 0 & 1 to be numbers, 2 & 3 arrays" ).ToLocalChecked() );
   }
+  if( info.Length() == 5 && ! info[ 4 ]->IsArray() ){
+    return Nan::ThrowError( Nan::New( "TowerDefense::New - expected arguments 4 to be an array" ).ToLocalChecked() );
+  }
 
   // create a new instance and wrap our javascript instance
 
@@ -75,6 +76,11 @@ NAN_METHOD(TowerDefense::New) {
   towerDef->Wrap( info.Holder() );
   if( info.Length() == 4 ){
     towerDef->level = new GameLevel( info[0]->IntegerValue(), info[1]->IntegerValue(), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ), converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ) );
+  }else if( info.Length() == 5 ){
+    towerDef->level = new GameLevel(  info[0]->IntegerValue(), info[1]->IntegerValue(),//width, height
+                                      converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 2 ] ) ),//startPoints
+                                      converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ),//endPoints
+                                      converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 4 ] ) ) );//floorIds
   }
   info.GetReturnValue().Set( info.Holder() );
 }
@@ -378,24 +384,7 @@ NAN_METHOD( TowerDefense::getPathMapBuffer ){
   }
   info.GetReturnValue().Set( Nan::NewBuffer( (char *)chars->data(), chars->size(), buffer_delete_callback, chars).ToLocalChecked() );
 }
-NAN_METHOD( TowerDefense::lineOfSight ){
-  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  int x0 = info[ 0 ]->IntegerValue();
-  int y0 = info[ 1 ]->IntegerValue();
-  int x1 = info[ 2 ]->IntegerValue();
-  int y1 = info[ 3 ]->IntegerValue();
-  info.GetReturnValue().Set( Nan::New( self->level->lineOfSight(  x0, y0, x1, y1 ) ) );
 
-}
-
-NAN_METHOD( TowerDefense::lineOfSight4View ){
-  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
-  int x0 = info[ 0 ]->IntegerValue();
-  int y0 = info[ 1 ]->IntegerValue();
-  int x1 = info[ 2 ]->IntegerValue();
-  int y1 = info[ 3 ]->IntegerValue();
-  info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->lineOfSight4View(  x0, y0, x1, y1 ) ) );
-}
 
 NAN_METHOD( TowerDefense::isTraversable ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
@@ -403,5 +392,14 @@ NAN_METHOD( TowerDefense::isTraversable ){
     info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), -1 ) );
   }else{
     info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
+  }
+}
+
+NAN_METHOD( TowerDefense::getTileSpeed ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  if( info.Length() == 1 ) {
+    info.GetReturnValue().Set( self->level->getTileSpeed( info[ 0 ]->IntegerValue(), -1 ) );
+  }else{
+    info.GetReturnValue().Set( self->level->getTileSpeed( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
   }
 }
