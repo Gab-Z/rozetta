@@ -3,6 +3,8 @@
 
 #include <nan.h>
 #include <vector>
+#include "../Floor/Floor.h"
+#include "../Floor/floorsList.h"
 
 class Tile {
 
@@ -28,6 +30,7 @@ class Tile {
     v8::Local<v8::Object> toObj();
     void setWayInOrOut( std::string _wayType );
     int getWayType();
+    bool isBuildable();
 };
 
 #endif

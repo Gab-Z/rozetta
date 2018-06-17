@@ -1,5 +1,8 @@
 #include "GameLevel.h"
 
+DestinationPt GameLevel::nullDestinationPt = DestinationPt();
+
+
 GameLevel::GameLevel(){}
 
 GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts ):GameLevelBase( _width, _height, _startPts, _endPts ){
@@ -20,6 +23,7 @@ GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::
     for( int ei = 0; ei < el; ei++ ){
       int ex = _endPts[ ei * 2 ];
       int ey = _endPts[ ei * 2 + 1 ];
+      addDestinationPoint( ex, ey );
       if( ex == tilePos[ 0 ] && ey == tilePos[ 1 ] ){
         nTile->setWayInOrOut( "end");
       }
@@ -49,6 +53,7 @@ GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::
     for( int ei = 0; ei < el; ei++ ){
       int ex = _endPts[ ei * 2 ];
       int ey = _endPts[ ei * 2 + 1 ];
+      addDestinationPoint( ex, ey );
       if( ex == tilePos[ 0 ] && ey == tilePos[ 1 ] ){
         nTile->setWayInOrOut( "end");
       }
@@ -77,14 +82,15 @@ void GameLevel::fillMoveMap(){
     if( _tile->getStructureId() != 0 ){
       moveMap[ i ] = -2.0;
       intMap[ i ] = -2;
-    }else if( _tile->getWayType() > 0 ){
+    }/*else if( _tile->getWayType() > 0 ){
       moveMap[ i ] = -1.0;
       intMap[ i ] = -1;
-    }else{
+    }*/else{
       moveMap[ i ] = floorsList::getFloorTypeById( _tile->getFloorTypeId() )->getSpeed();
       intMap[ i ] = 1;
     }
   }
+  updateAllTethaPaths();
 }
 
 bool GameLevel::testStructurePos( int _x, int _y, std::string _typeName ){
@@ -124,7 +130,7 @@ std::vector<bool> GameLevel::testMultipleStructurePos( std::vector<int> _positio
       int tx = sx + gridPt2dCoords[ 0 ];
       int ty = sy + gridPt2dCoords[ 1 ];
       int coord1d = to1d( tx, ty );
-      if( moveMap[ coord1d ] < 0.0 || tx < 0 || tx >= width() || ty < 0 || ty >= height() ){
+      if( tx < 0 || tx >= width() || ty < 0 || ty >= height() || ! tiles[ coord1d ]->isBuildable() ){
         ret[ si ] = false;
         breakFound = true;
         break;
@@ -195,6 +201,7 @@ bool GameLevel::addStructures( std::vector<int> _positions, std::string _typeNam
     }
     pushStructure( newStruct );
   }
+  updateAllTethaPaths();
   return true;
 }
 
@@ -424,7 +431,14 @@ int GameLevel::removeStructById( int _id ){
     }
     return 0;
   }
-  return destroyStructById( _id );
+  if( _id == 0 ){
+    return 0;
+  }else{
+    int destroyedStructId = destroyStructById( _id );
+    updateAllTethaPaths();
+    return destroyedStructId;
+  }
+
 }
 
 int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){
@@ -503,6 +517,7 @@ int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _e
     //int destroRet = destroyStructById( structsIds[ jj ] );
     destroyStructById( structsIds[ jj ] );
   }
+  updateAllTethaPaths();
   return 1;
 }
 
@@ -642,13 +657,16 @@ std::vector<char> GameLevel::pathMapChar( int _startx, int _starty){
 }
 
 bool GameLevel::isTraversable( int _x, int _y ){
+  int pos1d;
   if( _y < 0 ){
-    if( intMap[ _x ] < 0 ){
-      return false;
-    }
+    pos1d = _x;
+  }else{
+    pos1d = to1d( _x, _y );
+  }
+  if( tiles[ pos1d ]->getWayType() != 0 ){
     return true;
   }
-  if( intMap[ to1d( _x, _y ) ] < 0 ){
+  if( intMap[ pos1d ] < 0 ){
     return false;
   }
   return true;
@@ -661,8 +679,6 @@ float GameLevel::getTileSpeed( int _x, int _y ){
     return moveMap[ to1d( _x, _y ) ];
   }
 }
-
-
 
 void GameLevel::addDestinationPoint( int _x, int _y ){
   int l = destinationPoints.size();
@@ -693,7 +709,7 @@ void GameLevel::removeDestinationPoint( int _x, int _y ){
   }
 };
 
-GameLevelBase::DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y ){
+DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y ){
   int pos1d = to1d( _x, _y );
   int l = destinationPoints.size();
   for( int i = 0; i < l; i++ ){
@@ -708,6 +724,20 @@ GameLevelBase::DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y )
       return destinationPoints[ ii ];
     }
   }
+  DestinationPt& refToNullDestinationPt = nullDestinationPt;
+  return refToNullDestinationPt;
+}
+
+DestinationPt& GameLevel::getDestinationPt( int _x, int _y ){
+  int pos1d = to1d( _x, _y );
+  int ll = destinationPoints.size();
+  for( int ii = 0; ii < ll; ii++ ){
+    if( destinationPoints[ ii ].pos1d == pos1d ){
+      return destinationPoints[ ii ];
+    }
+  }
+  DestinationPt& refToNullDestinationPt = nullDestinationPt;
+  return refToNullDestinationPt;
 }
 
 float GameLevel::lineSight( int x0, int y0, int x1, int y1 ){
@@ -759,36 +789,139 @@ float dist( int x0, int y0, int x1, int y1 ){
   int dy = y1 - y0;
   return (float) sqrt( dx * dx + dy * dy );
 }
-
+/*
 void GameLevel::tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
-  TethaSearchTile t = retMap[ to1d( tx, ty ) ];
+  TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
   float distByNeighbour = hDist * getTileSpeed( neighbx, neighby ) + nv;
   float sightDistToParent = lineSight( tx , ty, parentx, parenty );
   float distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal;
-  bool testToNeighbour = t.hVal > distByNeighbour;
-  bool testToParent = t.hVal > distByParent;
-  if( testToParent && sightDistToParent ){
-    t.parentPos = to1d( parentx, parenty );
-    t.hVal = distByParent;
+  bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
+  bool testToParent = t.hVal > distByParent ? true : false;
+  if( testToParent == true && sightDistToParent > 0.0 ){
+    //t.parentPos = to1d( parentx, parenty );
+    t.setParentPos( to1d( parentx, parenty ) );
+    //t.hVal = distByParent;
+    t.setHVal( distByParent );
     newList.push_back( tx );
     newList.push_back( ty );
-  }else if( testToNeighbour ){
-    t.parentPos = to1d( neighbx, neighby );
-    t.hVal = distByNeighbour;
+  }else if( testToNeighbour == true ){
+    //t.parentPos = to1d( neighbx, neighby );
+    t.setParentPos( to1d( neighbx, neighby ) );
+    //t.hVal = distByNeighbour;
+    t.setHVal( distByNeighbour );
     newList.push_back( tx );
     newList.push_back( ty );
   }
 }
-
+*/
+void GameLevel::tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
+  //TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
+  float distByNeighbour = hDist * getTileSpeed( neighbx, neighby ) + nv;
+  float sightDistToParent = lineSight( tx , ty, parentx, parenty );
+  float distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal;
+  bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
+  bool testToParent = t.hVal > distByParent ? true : false;
+  if( testToParent == true && sightDistToParent > 0.0 ){
+    //t.parentPos = to1d( parentx, parenty );
+    t.setParentPos( to1d( parentx, parenty ) );
+    //t.hVal = distByParent;
+    t.setHVal( distByParent );
+    newList.push_back( tx );
+    newList.push_back( ty );
+  }else if( testToNeighbour == true ){
+    //t.parentPos = to1d( neighbx, neighby );
+    t.setParentPos( to1d( neighbx, neighby ) );
+    //t.hVal = distByNeighbour;
+    t.setHVal( distByNeighbour );
+    newList.push_back( tx );
+    newList.push_back( ty );
+  }
+}
 void GameLevel::tethaSearch( int _startx, int _starty ){
   int w = width();
   int h = height();
   int mapL = getSize();
-  std::vector<TethaSearchTile> ret = std::vector<TethaSearchTile>( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
+  //std::vector<TethaSearchTile> ret ( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
+  TethaSearchTile ret[ mapL ];// = { TethaSearchTile( -1, std::numeric_limits<float>::max() ) };
+  for( int u = 0; u < mapL; u++ ){ ret[ u ] = TethaSearchTile( -1, std::numeric_limits<float>::max() ); };
   std::vector<int> openList{ _startx, _starty };
-  TethaSearchTile  &baseTile = ret[ to1d( _startx, _starty ) ];
-  baseTile.parentPos = to1d( _startx, _starty );
-  baseTile.hVal = 0.0;
+  int basePos = to1d( _startx, _starty );
+  TethaSearchTile  &baseTile = ret[ basePos ];
+  //baseTile.parentPos = to1d( _startx, _starty );
+  baseTile.setParentPos( basePos );
+  //baseTile.hVal = 0.0;
+  baseTile.setHVal( -1.0 );
+  for( int q = 0; q!= -1; q+=0 ){
+    std::vector<int> newList;
+    int l = openList.size() / 2;
+    for( int i = 0; i < l; i++ ){
+      int& neighbx = openList[ i * 2 ];
+      int& neighby = openList[ i * 2 + 1 ];
+      TethaSearchTile& neighbour = ret[ to1d( neighbx, neighby ) ];
+      float& nv = neighbour.hVal;
+      std::vector<int> parentPos = to2d( neighbour.parentPos );
+      int& parentx = parentPos[ 0 ];
+      int& parenty = parentPos[ 1 ];
+      TethaSearchTile& parentTile = ret[ to1d( parentx, parenty ) ];
+      float& parentVal = parentTile.hVal;
+
+      if( neighbx > 0 ){
+        if( isTraversable( neighbx - 1, neighby ) ){
+          tethaCheck( neighbx - 1, neighby, ret[ to1d( neighbx - 1, neighby ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+        }
+        if( neighby > 0 && isTraversable( neighbx - 1, neighby - 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby - 1, ret[ to1d( neighbx - 1, neighby - 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && isTraversable( neighbx - 1, neighby + 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx - 1, neighby + 1, ret[ to1d( neighbx - 1, neighby + 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighbx < w - 1 ){
+        if( isTraversable( neighbx + 1, neighby ) ){
+          tethaCheck( neighbx + 1, neighby, ret[ to1d( neighbx + 1, neighby ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+        }
+        if( neighby > 0 && isTraversable( neighbx + 1, neighby - 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby - 1, ret[ to1d( neighbx + 1, neighby - 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+        if( neighby < h - 1 && isTraversable( neighbx + 1, neighby + 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
+          tethaCheck( neighbx + 1, neighby + 1, ret[ to1d( neighbx + 1, neighby + 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
+        }
+      }
+      if( neighby > 0 && isTraversable( neighbx, neighby - 1 ) ){
+        tethaCheck( neighbx, neighby - 1, ret[ to1d( neighbx, neighby - 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+      }
+      if( neighby < h - 1 && isTraversable( neighbx, neighby + 1 ) ){
+        tethaCheck( neighbx, neighby + 1, ret[ to1d( neighbx, neighby + 1 ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
+      }
+    }
+    if( newList.size() > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  //return ret;
+  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
+  destPt.init( mapL );
+  for( int j = 0; j < mapL; j++ ){
+    //destPt.pathPoints[ j ] = ret[ j ].parentPos;
+    destPt.setPointTarget( j, ret[ j ].parentPos );
+  }
+}
+/*
+void GameLevel::tethaSearch( int _startx, int _starty ){
+  int w = width();
+  int h = height();
+  int mapL = getSize();
+  std::vector<TethaSearchTile> ret ( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
+  std::vector<int> openList{ _startx, _starty };
+  int basePos = to1d( _startx, _starty );
+  TethaSearchTile  &baseTile = ret[ basePos ];
+  //baseTile.parentPos = to1d( _startx, _starty );
+  baseTile.setParentPos( basePos );
+  //baseTile.hVal = 0.0;
+  baseTile.setHVal( 0.0 );
   for( int q = 0; q!= -1; q+=0 ){
     std::vector<int> newList;
     int l = openList.size() / 2;
@@ -840,9 +973,39 @@ void GameLevel::tethaSearch( int _startx, int _starty ){
 
   }
   //return ret;
-  GameLevelBase::DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
+  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
   destPt.init( mapL );
   for( int j = 0; j < mapL; j++ ){
-    destPt.pathPoints[ j ] = ret[ j ].parentPos;
+    //destPt.pathPoints[ j ] = ret[ j ].parentPos;
+    destPt.setPointTarget( j, ret[ j ].parentPos );
   }
+}
+*/
+void GameLevel::updateAllTethaPaths(){
+  int nbDestPts = destinationPoints.size();
+  if( nbDestPts == 0 ){ return void(); };
+  for( int i = 0; i < nbDestPts; i++ ){
+    std::vector<int> DestPtPos = to2d( destinationPoints[ i ].pos1d );
+    tethaSearch( DestPtPos[ 0 ], DestPtPos[ 1 ] );
+  }
+}
+
+std::vector<int> GameLevel::getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy ){
+  DestinationPt& destPt = getDestinationPt( _destinationx, _destinationy );
+  std::vector<int> ret;
+  int lastPos1d = to1d( _startx, _starty );
+  ret.push_back( _startx );
+  ret.push_back( _starty );
+  std::vector<int>& pathPoints = destPt.pathPoints;
+  for( int i = 0; i != 1; i+=0 ){
+    int parentPos1d = pathPoints[ lastPos1d ];
+    if( parentPos1d == lastPos1d ){
+      return ret;
+    }
+    std::vector<int> parentPos2d = to2d( parentPos1d );
+    ret.push_back( parentPos2d[ 0 ] );
+    ret.push_back( parentPos2d[ 1 ] );
+    lastPos1d = parentPos1d;
+  }
+  return ret;
 }

@@ -14,6 +14,8 @@
                     "./cpp/classes/Floor/floorsList.cpp",
                     "./cpp/classes/GameLevel/GameLevelBase.cpp",
                     "./cpp/classes/GameLevel/GameLevel.cpp",
+                    "./cpp/classes/GameLevel/DestinationPt.cpp",
+                    "./cpp/classes/GameLevel/TethaSearchTile.cpp",
                     "./cpp/classes/GameLevel/index.cpp",
                     "./cpp/classes/Character/Character.cpp",
                     "./cpp/classes/Character/CharacterType.cpp",

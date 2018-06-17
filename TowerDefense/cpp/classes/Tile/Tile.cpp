@@ -80,3 +80,11 @@ void Tile::setWayInOrOut( std::string _wayType ){
 int Tile::getWayType(){
   return isWayInOrOut;
 }
+bool Tile::isBuildable(){
+  if(   ! floorsList::getFloorTypeById( floorTypeId )->isBuildable()
+    ||   getWayType() != 0
+  ){
+    return false;
+  }
+  return true;
+}

@@ -9,8 +9,8 @@
 #include "../Structure/structuresDefList.h"
 #include "../Tile/Tile.h"
 #include "../converter/converter.h"
-
-
+#include "DestinationPt.h"
+#include "TethaSearchTile.h"
 
 class GameLevelBase {
 
@@ -21,30 +21,7 @@ class GameLevelBase {
   std::vector<int> endPoints;
   std::vector<Structure*> structures;
 
-
-
   public:
-
-    struct TethaSearchTile {
-      int parentPos;
-      float hVal;
-      TethaSearchTile( int _parentPos, float _hVal ){
-        parentPos = _parentPos;
-        hVal = _hVal;
-      };
-    };
-
-    struct DestinationPt {
-      int pos1d;
-      std::vector<int> pathPoints;
-      DestinationPt();
-      DestinationPt( int _pos1d ){ pos1d = _pos1d; };
-      DestinationPt( int _pos1d, int _l ){  pos1d = _pos1d;
-                                            pathPoints = std::vector<int>( _l ); };
-      void init( int _l ){ pathPoints = std::vector<int>( _l ); };
-      void setPointTarget( int _pos, int _targetPos ){ pathPoints[ _pos ] = _targetPos; };
-      int getPointTarget( int _pos ){ return pathPoints[ _pos ]; };
-    };
 
     std::vector<DestinationPt> nullDestPt{ DestinationPt() };
     GameLevelBase();
@@ -78,9 +55,9 @@ class GameLevelBase {
     virtual int removeStructById( int _id ){ return 0; };
     virtual int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){ return 0; };
     virtual int getStructureIdByPosition( int _x, int _y ){ return 0; };
-    virtual std::vector<float> pathMap( int _startx, int _starty){ return std::vector<float>(); };
+    virtual std::vector<float> pathMap( int _startx, int _starty ){ return std::vector<float>(); };
     //virtual char * pathMapBuffer( int _startx, int _starty ){ return new char[ 0 ]; };
-    virtual std::vector<char> pathMapChar( int _startx, int _starty){ return std::vector<char>(); };
+    virtual std::vector<char> pathMapChar( int _startx, int _starty ){ return std::vector<char>(); };
 
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 
@@ -88,14 +65,16 @@ class GameLevelBase {
     virtual bool isTraversable( int _x, int _y ){ return false; };
     virtual float getTileSpeed( int _x, int _y ){ return 0.0; };
 
-    virtual void tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){};
+    virtual void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){};
     virtual void tethaSearch( int _startx, int _starty ){};
     virtual float lineSight( int x0, int y0, int x1, int y1 ){ return 0.0; };
+    virtual void updateAllTethaPaths(){};
+    virtual std::vector<int> getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy ){ return std::vector<int>(); };
 
     virtual void addDestinationPoint( int _x, int _y ){};
     virtual void removeDestinationPoint( int _x, int _y ){};
     virtual DestinationPt& getOrAddDestinationPt( int _x, int _y ){ DestinationPt& dp = nullDestPt[ 0 ]; return dp; };
-
+    virtual DestinationPt& getDestinationPt( int _x, int _y ){ DestinationPt& dp = nullDestPt[ 0 ]; return dp; };
 };
 
 #endif

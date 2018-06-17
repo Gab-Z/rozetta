@@ -41,6 +41,7 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getStructureIdByPosition", getStructureIdByPosition );
   Nan::SetPrototypeMethod( ctor, "getPathMap", getPathMap );
   Nan::SetPrototypeMethod( ctor, "getPathMapBuffer", getPathMapBuffer );
+  Nan::SetPrototypeMethod( ctor, "getTethaPath", getTethaPath );
 
   Nan::SetPrototypeMethod( ctor, "isTraversable", isTraversable );
   Nan::SetPrototypeMethod( ctor, "getTileSpeed", getTileSpeed );
@@ -402,4 +403,13 @@ NAN_METHOD( TowerDefense::getTileSpeed ){
   }else{
     info.GetReturnValue().Set( self->level->getTileSpeed( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
   }
+}
+
+NAN_METHOD( TowerDefense::getTethaPath ){
+  if( info.Length() != 4 ) {
+    return Nan::ThrowError( Nan::New( "TowerDefense::getTethaPath - expected 4 argument : startx, starty, destinationx, destinationy" ).ToLocalChecked() );
+  }
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->getTethaPath( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue(), info[ 2 ]->IntegerValue(), info[ 3 ]->IntegerValue() ) ) );
+
 }

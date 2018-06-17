@@ -14,7 +14,7 @@ class GameLevel : public GameLevelBase {
 
   std::vector<DestinationPt> destinationPoints;
 
-
+  static DestinationPt nullDestinationPt;
 
   public:
 
@@ -46,13 +46,16 @@ class GameLevel : public GameLevelBase {
     bool isTraversable( int _x, int _y );
     float getTileSpeed( int _x, int _y );
 
-    void tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList );
+    void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList );
     void tethaSearch( int _startx, int _starty );
     float lineSight( int x0, int y0, int x1, int y1 );
+    void updateAllTethaPaths();
+    std::vector<int> getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy );
 
     void addDestinationPoint( int _x, int _y );
     void removeDestinationPoint( int _x, int _y );
     DestinationPt& getOrAddDestinationPt( int _x, int _y );
+    DestinationPt& getDestinationPt( int _x, int _y );
 };
 
 #endif

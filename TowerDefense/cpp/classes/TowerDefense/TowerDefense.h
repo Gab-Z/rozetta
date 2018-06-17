@@ -40,6 +40,8 @@ class TowerDefense  : public Nan::ObjectWrap {
 
     static NAN_METHOD( isTraversable );
     static NAN_METHOD( getTileSpeed );
+    static NAN_METHOD( getTethaPath );
+
 
 };
 

@@ -4,9 +4,9 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 18,
-  mapW: 50,
-  mapH: 50,
+  tileSize: 6,
+  mapW: 150,
+  mapH: 150,
   menuHeight: 50,
   screenW: window.screen.width,
   screenH: window.screen.height,
@@ -48,9 +48,31 @@ const randomMap = ( width, height, floorsIds )=>{
   console.log(ret);
   return ret;
 }
+let endPts = [  defaults.mapW - 1, defaults.mapH - 1,
+                defaults.mapW - 1, 0,
+                defaults.mapW - 1, Math.floor( (defaults.mapH - 1) / 6 ),
+                defaults.mapW - 1, Math.floor( (defaults.mapH - 1) / 4 ),
+                defaults.mapW - 1, Math.floor( (defaults.mapH - 1) / 2 ),
 
+                0, defaults.mapH - 1,
+                0, Math.floor( (defaults.mapH - 1) / 6 ),
+                0, Math.floor( (defaults.mapH - 1) / 4 ),
+                0, Math.floor( (defaults.mapH - 1) / 2 ),
+
+                Math.floor( (defaults.mapW - 1) / 8 ), 0,
+                Math.floor( (defaults.mapW - 1) / 6 ), 0,
+                Math.floor( (defaults.mapW - 1) / 4 ), 0,
+                Math.floor( (defaults.mapW - 1) / 2 ), 0,
+
+                Math.floor( (defaults.mapW - 1) / 8 ), defaults.mapH - 1,
+                Math.floor( (defaults.mapW - 1) / 6 ), defaults.mapH - 1,
+                Math.floor( (defaults.mapW - 1) / 4 ), defaults.mapH - 1,
+                Math.floor( (defaults.mapW - 1) / 2 ), defaults.mapH - 1
+
+
+ ]
 //const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
-const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ], randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 4},
+const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], endPts /*[ defaults.mapW - 1, defaults.mapH - 1 ]*/, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10},
                                                                                                                                                                     water: { id: 2, proba: 1 } } ) );
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
@@ -889,8 +911,8 @@ function updateStructures(){
   //console.log( "line of sight : " + towerDef.lineOfSight( towerDef.width - 1, 1,  1, towerDef.height - 1 ) );
 
   //drawTheta();
-  tethaMap = tethaPathfinder( 0, 0 );
-  console.log( JSON.stringify( tethaMap ) );
+  //tethaMap = tethaPathfinder( 0, 0 );
+  //console.log( JSON.stringify( tethaMap ) );
 }
 
 function cancelStructureSelection(){
@@ -1306,7 +1328,45 @@ function lineSightDraw( e, _m ){
   window.requestAnimationFrame( lineSightDrawRAF.bind( { x: x, y: y} ) );
   console.log("callDraw");
 }
+var memTile = { x: NaN, y: NaN };
 function lineSightDrawRAF(){
+  let lineVueCont = app.stage.getChildByName( "stageCont" ).getChildByName( "lineVueCont" );
+  if( ! lineVueCont ){
+    console.log( "no container");
+    return false;
+  }
+
+
+  let m = this,
+      ts = defaults.tileSize,
+      sx = m.x,
+      sy = m.y;
+
+  if( sx < 0 || sx > towerDef.width - 1 || sy < 0 || sy > towerDef.height - 1 || ! IsTraversable( sx, sy )) return false;
+  if( sx == memTile.x && sy == memTile.y ) return false;
+  let lineVueGraph = lineVueCont.getChildByName( "lineVueGraph" ),
+      ends = endPts,
+      el = ends.length / 2;
+  lineVueGraph.clear();
+  for( let i = 0; i < el; i++ ){
+    let points = towerDef.getTethaPath( sx, sy, ends[ i* 2 ], ends[ i * 2 + 1 ] );
+        //console.log( points );
+    let l = points.length / 2,
+        hts = ts * 0.5;
+
+    lineVueGraph.lineStyle( 2, 0x24f420, 1, 0.5 );
+    lineVueGraph.moveTo( points[ 0 ] * ts + hts, points[ 1 ] * ts + hts );
+    for( let p = 1; p < l; p++ ){
+      lineVueGraph.lineTo( points[ p * 2 ] * ts + hts, points[ p * 2 + 1 ] * ts + hts );
+    }
+  }
+  memTile.x = sx;
+  memTile.y = sy;
+
+  console.log("draw");
+}
+
+function lineSightDrawRAF3(){
   let lineVueCont = app.stage.getChildByName( "stageCont" ).getChildByName( "lineVueCont" );
   let map = tethaMap;
   if( ! lineVueCont ){
