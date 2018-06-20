@@ -9,7 +9,7 @@ class GameLevel : public GameLevelBase {
 
   std::vector<Tile*> tiles;
   std::vector<float> moveMap;
-  std::vector<int> intMap;
+  //std::vector<int> intMap;
 
 
   std::vector<DestinationPt> destinationPoints;
@@ -22,11 +22,11 @@ class GameLevel : public GameLevelBase {
     GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts );
     GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds );
     v8::Local<v8::Array> getTilesArray();
-    void fillMoveMap();
+    //void fillMoveMap();
     bool testStructurePos( int _x, int _y, std::string _typeName );
     std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation );
-    std::vector<float> getMoveMap();
-    std::vector<int> getIntMap();
+    //std::vector<float> getMoveMap();
+    //std::vector<int> getIntMap();
     bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation );
     v8::Local<v8::Array> getStructures();
     Tile* getTile( int _i );
@@ -43,7 +43,7 @@ class GameLevel : public GameLevelBase {
 
 
 
-    bool isTraversable( int _x, int _y );
+    //bool isTraversable( int _x, int _y );
     float getTileSpeed( int _x, int _y );
 
     void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList );

@@ -25,8 +25,8 @@ NAN_MODULE_INIT(TowerDefense::Init) {
   Nan::SetPrototypeMethod( ctor, "getTiles", getTiles );
   Nan::SetPrototypeMethod( ctor, "getStructuresDefs", getStructuresDefs );
   Nan::SetPrototypeMethod( ctor, "testStructuresPos", testStructuresPos );
-  Nan::SetPrototypeMethod( ctor, "getMoveMap", getMoveMap );
-  Nan::SetPrototypeMethod( ctor, "getIntMap", getIntMap );
+  //Nan::SetPrototypeMethod( ctor, "getMoveMap", getMoveMap );
+  //Nan::SetPrototypeMethod( ctor, "getIntMap", getIntMap );
   Nan::SetPrototypeMethod( ctor, "addStructures", addStructures );
   Nan::SetPrototypeMethod( ctor, "getStructures", getStructures );
   Nan::SetPrototypeMethod( ctor, "getStructureGrid", getStructureGrid );
@@ -45,6 +45,9 @@ NAN_MODULE_INIT(TowerDefense::Init) {
 
   Nan::SetPrototypeMethod( ctor, "isTraversable", isTraversable );
   Nan::SetPrototypeMethod( ctor, "getTileSpeed", getTileSpeed );
+
+  //Nan::SetPrototypeMethod( ctor, "testArrays", testArrays );
+
 
 
   target->Set(Nan::New("TowerDefense").ToLocalChecked(), ctor->GetFunction());
@@ -83,8 +86,23 @@ NAN_METHOD(TowerDefense::New) {
                                       converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 3 ] ) ),//endPoints
                                       converter::jsArrayToVectorInt( v8::Local<v8::Array>::Cast( info[ 4 ] ) ) );//floorIds
   }
+  /*
+  int it = towerDef->ite;
+  towerDef->vecVar.reserve( it );
+  towerDef->vecVar = std::vector<Tile> ( it, Tile() );
+
+  towerDef->vecPtr = std::vector<Tile*> ( it, new Tile() );
+  towerDef->vecPtr.reserve( it );
+  for( int i = 0; i < it; i++ ){
+    towerDef->arrVar[ i ] = Tile();
+    towerDef->arrPtr[ i ]= new Tile();
+  }
+  */
+
   info.GetReturnValue().Set( info.Holder() );
 }
+
+//int TowerDefense::ite = 10000000;
 
 NAN_GETTER( TowerDefense::HandleGetters ) {
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
@@ -193,6 +211,7 @@ NAN_METHOD( TowerDefense::testStructuresPos ){
   info.GetReturnValue().Set( converter::vectorBoolToJsArray( ret ) );
 }
 
+/*
 NAN_METHOD( TowerDefense::getMoveMap ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   std::vector<float> moveM = self->level->getMoveMap();
@@ -204,11 +223,13 @@ NAN_METHOD( TowerDefense::getMoveMap ){
   }
   info.GetReturnValue().Set( ret );
 }
-
+*/
+/*
 NAN_METHOD( TowerDefense::getIntMap ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->getIntMap() ) );
 }
+*/
 
 NAN_METHOD( TowerDefense::addStructures ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
@@ -363,6 +384,7 @@ NAN_METHOD( TowerDefense::getPathMap ){
 void buffer_delete_callback(char* data, void* the_vector) {
   delete reinterpret_cast<std::vector<char>*> (the_vector);
 }
+
 NAN_METHOD( TowerDefense::getPathMapBuffer ){
   if( info.Length() != 2 ) {
     return Nan::ThrowError(Nan::New("TowerDefense::getPathMap - expected 2 argument : x, y").ToLocalChecked());
@@ -386,13 +408,12 @@ NAN_METHOD( TowerDefense::getPathMapBuffer ){
   info.GetReturnValue().Set( Nan::NewBuffer( (char *)chars->data(), chars->size(), buffer_delete_callback, chars).ToLocalChecked() );
 }
 
-
 NAN_METHOD( TowerDefense::isTraversable ){
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   if( info.Length() == 1 ) {
-    info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), -1 ) );
+    info.GetReturnValue().Set( self->level->getTile( info[ 0 ]->IntegerValue() )->getSpeed() );
   }else{
-    info.GetReturnValue().Set( self->level->isTraversable( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
+    info.GetReturnValue().Set( self->level->getTileByPosition( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() )->getSpeed() );
   }
 }
 
@@ -413,3 +434,47 @@ NAN_METHOD( TowerDefense::getTethaPath ){
   info.GetReturnValue().Set( converter::vectorIntToJsArray( self->level->getTethaPath( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue(), info[ 2 ]->IntegerValue(), info[ 3 ]->IntegerValue() ) ) );
 
 }
+/*
+NAN_METHOD( TowerDefense::testArrays ){
+  TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
+  int tVal = info[ 0 ]->IntegerValue();
+  std::clock_t start;
+  int ct = 0;
+  //float ret;
+  if( tVal == 0 ){
+    start = std::clock();
+    for( int i = 0; i < ite; i++ ){
+      Tile& vt = self->vecVar[ i ];
+      vt.setWayInOrOut( "start" );
+      int v = vt.getWayType();
+      ct+=v;
+    }
+  }else if( tVal == 1 ){
+    start = std::clock();
+    for( int i = 0; i < ite; i++ ){
+      Tile* vt = self->vecPtr[ i ];
+      vt->setWayInOrOut( "start" );
+      int v = vt->getWayType();
+      ct+=v;
+    }
+  }else if( tVal == 2 ){
+    start = std::clock();
+    for( int i = 0; i < ite; i++ ){
+      Tile& vt = self->arrVar[ i ];
+      vt.setWayInOrOut( "start" );
+      int v = vt.getWayType();
+      ct+=v;
+    }
+  }else if( tVal == 3 ){
+    start = std::clock();
+    for( int i = 0; i < ite; i++ ){
+      Tile* vt = self->arrPtr[ i ];
+      vt->setWayInOrOut( "start" );
+      int v = vt->getWayType();
+      ct+=v;
+    }
+  }
+  double ret = std::clock() - start;
+  info.GetReturnValue().Set( Nan::New( ret ) );
+}
+*/

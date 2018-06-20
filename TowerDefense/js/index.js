@@ -4,9 +4,9 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 6,
-  mapW: 150,
-  mapH: 150,
+  tileSize: 30,
+  mapW: 20,
+  mapH: 20,
   menuHeight: 50,
   screenW: window.screen.width,
   screenH: window.screen.height,
@@ -72,13 +72,33 @@ let endPts = [  defaults.mapW - 1, defaults.mapH - 1,
 
  ]
 //const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
-const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], endPts /*[ defaults.mapW - 1, defaults.mapH - 1 ]*/, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10},
-                                                                                                                                                                    water: { id: 2, proba: 1 } } ) );
+const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] /*[ defaults.mapW - 1, defaults.mapH - 1 ]*/, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10}/*, water: { id: 2, proba: 1 }*/ } ) );
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
 //const thethaPathfinder = new ThetaStarSearch("OctileDistance");
 
+/*
+let str="";
+for( let b = 0; b < 4; b++ ){
+  let st = Date.now();
+  test = towerDef.testArrays( b );
+  str += b + " : " + ( test / 1000) + "\n";
+
+}
+alert( str );
+*/
+//5000000
+// 0 : 0.072
+// 1 : 0.087
+// 2 : 0.072
+// 3 : 0.084
+
+//10000000
+// 0 : 0.142
+// 1 : 0.172
+// 2 : 0.142
+// 3 : 0.172
 const listeners = {
   clickStructPicker:{
     on: () => { app.stage.getChildByName( "structPickerCont" ).on( "click", clickStructPicker ); },

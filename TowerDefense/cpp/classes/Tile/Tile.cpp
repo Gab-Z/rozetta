@@ -83,8 +83,22 @@ int Tile::getWayType(){
 bool Tile::isBuildable(){
   if(   ! floorsList::getFloorTypeById( floorTypeId )->isBuildable()
     ||   getWayType() != 0
+    ||   structureId != 0
   ){
     return false;
   }
   return true;
+}
+bool Tile::isTraversable(){
+  if( structureId != 0 ){
+    return false;
+  };
+  return true;
+}
+float Tile::getSpeed(){
+  if( floorTypeId != 0 ){
+    return floorsList::getFloorTypeById( floorTypeId )->getSpeed();
+  }else{
+    return 0.0;
+  }
 }

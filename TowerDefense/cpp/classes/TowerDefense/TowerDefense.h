@@ -5,12 +5,25 @@
 #include "../GameLevel/index.h"
 #include "../converter/converter.h"
 
+#include "../Tile/Tile.h"
+#include <ctime>
+
 class TowerDefense  : public Nan::ObjectWrap {
 
   GameLevelBase* level;
 
 
+
   public:
+
+    /*
+    static int ite;
+    std::vector<Tile> vecVar;
+    std::vector<Tile*> vecPtr;
+    Tile arrVar[ 10000000 ];
+    Tile* arrPtr[ 10000000 ];
+    */
+
     void setLevel( GameLevelBase* _level );
     static NAN_MODULE_INIT( Init );
     static NAN_METHOD( New );
@@ -21,8 +34,8 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( getTiles );
     static NAN_METHOD( getStructuresDefs );
     static NAN_METHOD( testStructuresPos );
-    static NAN_METHOD( getMoveMap );
-    static NAN_METHOD( getIntMap );
+    //static NAN_METHOD( getMoveMap );
+    //static NAN_METHOD( getIntMap );
     static NAN_METHOD( addStructures );
     static NAN_METHOD( getStructures );
     static NAN_METHOD( getStructureGrid );
@@ -41,6 +54,8 @@ class TowerDefense  : public Nan::ObjectWrap {
     static NAN_METHOD( isTraversable );
     static NAN_METHOD( getTileSpeed );
     static NAN_METHOD( getTethaPath );
+
+    //static NAN_METHOD( testArrays );
 
 
 };

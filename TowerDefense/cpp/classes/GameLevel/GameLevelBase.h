@@ -47,8 +47,8 @@ class GameLevelBase {
     virtual Tile* getTile( int _i ){ return new Tile(); };
     virtual Tile* getTileByPosition( int _x, int _y ){ return new Tile(); };
     virtual std::vector<bool> testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){ return std::vector<bool>(); };
-    virtual std::vector<float> getMoveMap(){ return std::vector<float>(); };
-    virtual std::vector<int> getIntMap(){ return std::vector<int>(); };
+    //virtual std::vector<float> getMoveMap(){ return std::vector<float>(); };
+    //virtual std::vector<int> getIntMap(){ return std::vector<int>(); };
     virtual bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){ return false;};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
     virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
@@ -62,7 +62,7 @@ class GameLevelBase {
     virtual v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation ){ return Nan::New<v8::Array>(); };
 
     virtual std::vector<int> lineOfSight4View( int x0, int y0, int x1, int y1 ){ return std::vector<int>(); };
-    virtual bool isTraversable( int _x, int _y ){ return false; };
+    //virtual bool isTraversable( int _x, int _y ){ return false; };
     virtual float getTileSpeed( int _x, int _y ){ return 0.0; };
 
     virtual void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){};

@@ -14,6 +14,7 @@ class Tile {
   int floorTypeId = 0;
   int isWayInOrOut = 0;
 
+
   public:
 
     Tile();
@@ -31,6 +32,8 @@ class Tile {
     void setWayInOrOut( std::string _wayType );
     int getWayType();
     bool isBuildable();
+    bool isTraversable();
+    float getSpeed();
 };
 
 #endif
