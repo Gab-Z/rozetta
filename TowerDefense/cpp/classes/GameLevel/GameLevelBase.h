@@ -51,7 +51,7 @@ class GameLevelBase {
     //virtual std::vector<int> getIntMap(){ return std::vector<int>(); };
     virtual bool addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){ return false;};
     virtual v8::Local<v8::Array> getStructures(){ return Nan::New<v8::Array>(); };
-    virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
+    //virtual bool testMapOpening( std::vector<int> _positions, std::vector<int> _strucDefPositions ){ return false; };
     virtual int removeStructById( int _id ){ return 0; };
     virtual int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){ return 0; };
     virtual int getStructureIdByPosition( int _x, int _y ){ return 0; };

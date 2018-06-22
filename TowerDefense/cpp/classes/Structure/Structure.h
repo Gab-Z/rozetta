@@ -39,7 +39,7 @@ class Structure {
     v8::Local<v8::Object> toObj();
     bool testPoint( int _x, int _y );
     void setStructureDef( StructureDef* _structureDef );
-
+    StructureDef* getStructureDef();
 };
 
 #endif

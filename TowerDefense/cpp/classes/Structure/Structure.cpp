@@ -117,3 +117,6 @@ bool Structure::testPoint( int _x, int _y ){
 void Structure::setStructureDef( StructureDef* _structureDef ){
   structureDef = _structureDef;
 }
+StructureDef* Structure::getStructureDef(){
+  return structureDef;
+}

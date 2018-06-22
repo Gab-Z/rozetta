@@ -32,15 +32,18 @@ class GameLevel : public GameLevelBase {
     Tile* getTile( int _i );
     Tile* getTileByPosition( int _x, int _y );
     v8::Local<v8::Array> getStructureGrid( std::string _typeName, int _rotation );
-    bool testMapOpening();
+    //bool testMapOpening();
     bool newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions );
+    bool newStructuresBlockingTest( std::vector<std::vector<int>> _positions, std::vector<std::vector<int>> _strucDefPositions );
+    bool removeStructuresBlockingTest( std::vector<int> _positions );
+    bool testCharMapOpening( std::vector<char> testMap );
     int removeStructById( int _id );
     int destroyStructsByZone( int _startx, int _starty, int _endx, int _endy );
     int getStructureIdByPosition( int _x, int _y );
     std::vector<float> pathMap( int _startx, int _starty);
     //char * pathMapBuffer( int _startx, int _starty );
     std::vector<char> pathMapChar( int _startx, int _starty);
-
+    std::vector<char> getCharMap();
 
 
     //bool isTraversable( int _x, int _y );

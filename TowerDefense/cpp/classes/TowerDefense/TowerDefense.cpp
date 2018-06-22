@@ -368,6 +368,7 @@ NAN_METHOD( TowerDefense::getStructureIdByPosition ){
   }
   TowerDefense* self = Nan::ObjectWrap::Unwrap<TowerDefense>( info.This() );
   info.GetReturnValue().Set( self->level->getStructureIdByPosition( info[ 0 ]->IntegerValue(), info[ 1 ]->IntegerValue() ) );
+  //info.GetReturnValue().Set( 0 );
 }
 
 NAN_METHOD( TowerDefense::getPathMap ){

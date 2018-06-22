@@ -72,7 +72,7 @@ let endPts = [  defaults.mapW - 1, defaults.mapH - 1,
 
  ]
 //const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
-const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] /*[ defaults.mapW - 1, defaults.mapH - 1 ]*/, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10}/*, water: { id: 2, proba: 1 }*/ } ) );
+const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], endPts, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10}/*, water: { id: 2, proba: 1 }*/ } ) );
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
@@ -956,6 +956,7 @@ function structSelectMoveRAF(){
   let pt = e.data.getLocalPosition( e.currentTarget ),
       ts = defaults.tileSize,
       structureId = towerDef.getStructureIdByPosition( Math.floor( pt.x / ts ), Math.floor( pt.y / ts ) );
+  console.log( structureId );
   if( ! structureId ) return false;
   let target = getStructureSpriteById( structureId );
   target.tint = 0xfae846;
@@ -1350,13 +1351,12 @@ function lineSightDraw( e, _m ){
 }
 var memTile = { x: NaN, y: NaN };
 function lineSightDrawRAF(){
+  console.log( "view tetha path start" );
   let lineVueCont = app.stage.getChildByName( "stageCont" ).getChildByName( "lineVueCont" );
   if( ! lineVueCont ){
     console.log( "no container");
     return false;
   }
-
-
   let m = this,
       ts = defaults.tileSize,
       sx = m.x,
@@ -1365,7 +1365,7 @@ function lineSightDrawRAF(){
   if( sx < 0 || sx > towerDef.width - 1 || sy < 0 || sy > towerDef.height - 1 || ! IsTraversable( sx, sy )) return false;
   if( sx == memTile.x && sy == memTile.y ) return false;
   let lineVueGraph = lineVueCont.getChildByName( "lineVueGraph" ),
-      ends = endPts,
+      ends = towerDef.getWays().endPoints,
       el = ends.length / 2;
   lineVueGraph.clear();
   for( let i = 0; i < el; i++ ){
