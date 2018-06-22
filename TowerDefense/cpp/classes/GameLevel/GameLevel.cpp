@@ -2,7 +2,6 @@
 
 DestinationPt GameLevel::nullDestinationPt = DestinationPt();
 
-
 GameLevel::GameLevel(){}
 
 GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts ):GameLevelBase( _width, _height, _startPts, _endPts ){
@@ -30,9 +29,7 @@ GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::
     }
     tiles[ i ] = nTile;
   }
-  //moveMap = std::vector<float>( _size );
-  //intMap = std::vector<int>( _size, 0 );
-  //fillMoveMap();
+  updateAllTethaPaths();
 }
 
 GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds ):GameLevelBase( _width, _height, _startPts, _endPts ){
@@ -60,9 +57,7 @@ GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::
     }
     tiles[ i ] = nTile;
   }
-  //moveMap = std::vector<float>( _size );
-  //intMap = std::vector<int>( _size, 0 );
-  //fillMoveMap();
+  updateAllTethaPaths();
 }
 
 v8::Local<v8::Array> GameLevel::getTilesArray(){
