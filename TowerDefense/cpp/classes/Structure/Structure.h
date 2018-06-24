@@ -40,6 +40,7 @@ class Structure {
     bool testPoint( int _x, int _y );
     void setStructureDef( StructureDef* _structureDef );
     StructureDef* getStructureDef();
+    std::vector<int> getPositions();
 };
 
 #endif

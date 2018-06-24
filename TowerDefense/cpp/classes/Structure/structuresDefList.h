@@ -24,7 +24,15 @@ namespace structuresDefList {
                         0,  1,  0,
                         1,  1,  1,
                         0,  1,  0 },
-                      "cross.png", 60, 3, 3 ),
+                      "cross.png", 60, 3, 3, false, std::vector<std::string> { "Cross_lvl2" } ),
+
+    new StructureDef( "Cross_lvl2",
+                      std::vector<int>{
+                        0,  1,  0,
+                        1,  1,  1,
+                        0,  1,  0 },
+                      "cross_lvl2.png", 60, 3, 3, false, 2, "thumb_cross_lvl2.png" ),
+
 
     new StructureDef( "shapeL",
                       std::vector<int>{

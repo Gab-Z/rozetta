@@ -120,3 +120,16 @@ void Structure::setStructureDef( StructureDef* _structureDef ){
 StructureDef* Structure::getStructureDef(){
   return structureDef;
 }
+std::vector<int> Structure::getPositions(){
+  int strucRot = getRotation();
+  std::vector<int> strucGrid = structureDef->getGrid( strucRot );
+  int l = strucGrid.size();
+  std::vector<int> gridPositions;
+  for( int i = 0; i < l; i++ ){
+    if( strucGrid[ i ] == 0 ){ continue; }
+    std::vector<int> gridTilePos2d = structureDef->to2d( i, strucRot );
+    gridPositions.push_back( x + gridTilePos2d[ 0 ] );
+    gridPositions.push_back( y + gridTilePos2d[ 1 ] );
+  }
+  return gridPositions;
+}

@@ -35,6 +35,7 @@ class GameLevelBase {
     int structuresSize();
     Structure* getStructure( int _i );
     Structure* getStructureById( int _id );
+    Structure*& getStructureRefById( int _id );
     std::vector<int> getStartByIndex( int _i );
     v8::Local<v8::Object> getWays();
     static v8::Local<v8::Array> getCommonTextures();

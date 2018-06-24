@@ -39,6 +39,9 @@ void Tile::setStructure( Structure* _structure ){
 Structure* Tile::getStructure(){
   return structure;
 }
+Structure*& Tile::getStructureRef(){
+  return structure;
+}
 void Tile::setFloorTypeId( int _id ){
   floorTypeId = _id;
 }

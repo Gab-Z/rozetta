@@ -609,6 +609,7 @@ bool GameLevel::testMapOpening(){
 */
 int GameLevel::removeStructById( int _id ){
   Structure* strucToRemove = getStructureById( _id );
+  /*
   StructureDef* strucDef = structuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
   int strucRot = strucToRemove->getRotation();
   std::vector<int> strucGrid = strucDef->getGrid( strucRot );
@@ -628,14 +629,17 @@ int GameLevel::removeStructById( int _id ){
     //moveMap[ pos1d ] = floorsList::getFloorTypeById( tile->getFloorTypeId() )->getSpeed();
     //intMap[ pos1d ] = 1;
   }
-
+  */
+  std::vector<int> gridPositions = strucToRemove->getPositions();
   if( removeStructuresBlockingTest( gridPositions ) == false ){
     return 0;
   }
+
   int nbTiles = gridPositions.size() / 2;
   for( int s = 0; s < nbTiles; s++ ){
     tiles[ to1d( gridPositions[ s * 2 ], gridPositions[ s * 2 + 1 ] ) ]->setStructure( nullptr );
   }
+
 
   int destroyedStructId = destroyStructById( _id );
   updateAllTethaPaths();
@@ -706,7 +710,6 @@ int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _e
   int nbZoneTiles = zoneW * zoneH;
   std::vector<int> structsIds;
   std::vector<int> structuresPos;
-  std::vector<Tile*> tilesStructstoRemove;
   for( int i = 0; i < nbZoneTiles; i++ ){
     int zoney = std::floor( i / zoneW );
     int zonex = i - zoney * zoneW;
@@ -716,9 +719,7 @@ int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _e
     Tile* tile = tiles[ pos1d ];
     Structure* tileStruct = tile->getStructure();
     int structId;
-    //int structId = tile->getStructureId();
     if( ! tileStruct ){ continue; }
-    tilesStructstoRemove.push_back( tile );
     structId = tileStruct->getId();
     int sIdsl = structsIds.size();
     bool isPresent = false;
@@ -730,26 +731,13 @@ int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _e
     }
     if( isPresent == true ){ continue; }
     structsIds.push_back( structId );
-    //structuresPos.push_back( tileStruct->getX() );
-    //structuresPos.push_back( tileStruct->getY() );
-    StructureDef* strucTRDef = tileStruct->getStructureDef();
-    int rot = tileStruct->getRotation();
-    std::vector<int> grid = strucTRDef->getGrid( rot );
-    int tsx = tileStruct->getX();
-    int tsy = tileStruct->getY();
-    int gl = grid.size();
-    for( int t = 0; t < gl; t++ ){
-      if( grid[ t ] == 0 ){ continue; }
-      std::vector<int> pos2d = strucTRDef->to2d( t, rot );
-      structuresPos.push_back( tsx + pos2d[ 0 ] );
-      structuresPos.push_back( tsy + pos2d[ 1 ] );
-
-    }
+    std::vector<int> tileStructPoses = tileStruct->getPositions();
+    structuresPos.insert( structuresPos.end(), tileStructPoses.begin(), tileStructPoses.end() );
   }
   if( ! removeStructuresBlockingTest( structuresPos ) ){ return 0; }
-  int nbT = tilesStructstoRemove.size();
+  int nbT = structuresPos.size() / 2;
   for( int s = 0; s < nbT; s++ ){
-    tilesStructstoRemove[ s ]->setStructure( nullptr );
+    tiles[ to1d( structuresPos[ s * 2 ], structuresPos[ s * 2 + 1 ] ) ]->setStructure( nullptr );
   }
 
   int sIl = structsIds.size();

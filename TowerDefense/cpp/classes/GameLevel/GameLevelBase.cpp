@@ -55,6 +55,16 @@ Structure* GameLevelBase::getStructureById( int _id ){
   return structures[ 0 ];
 }
 
+Structure*& GameLevelBase::getStructureRefById( int _id ){
+  int l = structures.size();
+  for( int i = 0; i < l; i++ ){
+    if( structures[ i ]->getId() == _id ){
+      return structures[ i ];
+    }
+  }
+  return structures[ 0 ];
+}
+
 std::vector<int> GameLevelBase::getStartByIndex( int _i ){
   int l = startPoints.size() / 2;
   if( _i < 0 || _i >= l ){
@@ -126,7 +136,9 @@ int GameLevelBase::destroyStructById( int _id ){
     }
   }
   if( found == true ){
-    delete searchedStruct;
+    //delete searchedStruct;
+    Structure*& dl = getStructureRefById( _id );
+    delete dl;
     structures.erase( searchedIterator );
     return 1;
   }

@@ -16,6 +16,7 @@ class Tile {
   int floorTypeId = 0;
   int isWayInOrOut = 0;
   Structure* structure = nullptr;
+  //Floor* floor = nullptr;
 
 
   public:
@@ -32,6 +33,7 @@ class Tile {
     //void setStructureId( int _id );
     void setStructure( Structure* _structure );
     Structure* getStructure();
+    Structure*& getStructureRef();
     void setFloorTypeId( int _id );
     v8::Local<v8::Object> toObj();
     void setWayInOrOut( std::string _wayType );
