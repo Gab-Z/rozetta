@@ -10,7 +10,8 @@ Tile::Tile( int _x, int _y ){
 Tile::Tile( int _x, int _y, int _floorTypeId ){
   x = _x;
   y = _y;
-  floorTypeId = _floorTypeId;
+  //floorTypeId = _floorTypeId;
+  floor = floorsList::getFloorTypeById( _floorTypeId );
 }
 std::vector<int> Tile::getPosition(){
   return std::vector<int> { x, y };
@@ -22,7 +23,8 @@ int Tile::getStructureId(){
   return 0;
 }
 int Tile::getFloorTypeId(){
-  return floorTypeId;
+  //return floorTypeId;
+  return floor->getId();
 }
 void Tile::setPosition( int _x, int _y ){
   x = _x;
@@ -42,8 +44,13 @@ Structure* Tile::getStructure(){
 Structure*& Tile::getStructureRef(){
   return structure;
 }
+/*
 void Tile::setFloorTypeId( int _id ){
   floorTypeId = _id;
+}
+*/
+void Tile::setFloorType( int _id ){
+  floor = floorsList::getFloorTypeById( _id );
 }
 int Tile::getx(){
   return x;
@@ -95,7 +102,7 @@ int Tile::getWayType(){
   return isWayInOrOut;
 }
 bool Tile::isBuildable(){
-  if(   ! floorsList::getFloorTypeById( floorTypeId )->isBuildable()
+  if(   ! floor->isBuildable()
     ||   getWayType() != 0
     ||   structure
   ){
@@ -110,8 +117,8 @@ bool Tile::isTraversable(){
   return true;
 }
 float Tile::getSpeed(){
-  if( floorTypeId != 0 ){
-    return floorsList::getFloorTypeById( floorTypeId )->getSpeed();
+  if( floor ){
+    return floor->getSpeed();
   }else{
     return 0.0;
   }
