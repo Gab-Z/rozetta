@@ -127,9 +127,9 @@ std::vector<int> Structure::getPositions(){
   std::vector<int> gridPositions;
   for( int i = 0; i < l; i++ ){
     if( strucGrid[ i ] == 0 ){ continue; }
-    std::vector<int> gridTilePos2d = structureDef->to2d( i, strucRot );
-    gridPositions.push_back( x + gridTilePos2d[ 0 ] );
-    gridPositions.push_back( y + gridTilePos2d[ 1 ] );
+    Vec2<int> gridTilePos2d = structureDef->to2d( i, strucRot );
+    gridPositions.push_back( x + gridTilePos2d.x );
+    gridPositions.push_back( y + gridTilePos2d.y );
   }
   return gridPositions;
 }

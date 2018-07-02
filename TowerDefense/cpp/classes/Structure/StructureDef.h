@@ -6,6 +6,7 @@
 #include <cmath>
 #include <string>
 #include "../converter/converter.h"
+#include "../geometry/Vec2.h"
 
 class StructureDef {
 
@@ -40,12 +41,14 @@ class StructureDef {
   std::string getTypeName();
   std::vector<int> getGrid();
   std::vector<int> getGrid( int _rotation );
-  std::vector<int> rotPoint( int _x, int _y, int _rotation );
+  Vec2<int> rotPoint( int _x, int _y, int _rotation );
   int to1d( int _x, int _y );
-  std::vector<int> to2d( int _idx );
-  //int to1d( int _x, int _y, int _rotation );
-  std::vector<int> to2d( int _idx, int _rotation );
+  int to1d( Vec2<int> _pos );
   int to1d( int _x, int _y, int _rotation );
+  int to1d( Vec2<int> _pos, int _rotation );
+  Vec2<int> to2d( int _idx );
+  Vec2<int> to2d( int _idx, int _rotation );
+
   std::string getImgUrl();
   int getGridWidth();
   int getGridHeight();

@@ -75,31 +75,56 @@ std::vector<int> GameLevelBase::getStartByIndex( int _i ){
 }
 
 v8::Local<v8::Array> GameLevelBase::getCommonTextures(){
+  std::vector<std::string> strings {
+    "destroyStructure", "Hammer.png",
+    "vue",              "eye.png",
+    "lab",              "lab.png",
+    "start",            "play-button.png"
+  };
+
   v8::Local<v8::Array> ret = Nan::New<v8::Array>();
 
-  v8::Local<v8::Object> destroyStructObj = Nan::New<v8::Object>();
-    v8::Local<v8::String> nameProp = Nan::New("name").ToLocalChecked();
-    v8::Local<v8::Value> nameVal = Nan::New( std::string( "destroyStructure" ) ).ToLocalChecked();
-    destroyStructObj->Set( nameProp, nameVal );
+  v8::Local<v8::String> nameProp = Nan::New("name").ToLocalChecked();
+  v8::Local<v8::String> urlProp = Nan::New("url").ToLocalChecked();
 
-    v8::Local<v8::String> destroyProp = Nan::New("url").ToLocalChecked();
-    v8::Local<v8::Value> destroyVal = Nan::New( std::string("../img/") + std::string( "Hammer.png" ) ).ToLocalChecked();
-    destroyStructObj->Set( destroyProp, destroyVal );
+  int l = strings.size() / 2;
+
+  for( int i = 0; i < l; i++ ){
+    v8::Local<v8::Object> obj = Nan::New<v8::Object>();
+    v8::Local<v8::Value> nameVal = Nan::New( strings[ i * 2 ] ).ToLocalChecked();
+    obj->Set( nameProp, nameVal );
+    v8::Local<v8::Value> urlVal = Nan::New( std::string("../img/") + strings[ i * 2 + 1 ] ).ToLocalChecked();
+    obj->Set( urlProp, urlVal );
+    ret->Set( i, obj );
+  }
+  /*
+  v8::Local<v8::Object> destroyStructObj = Nan::New<v8::Object>();
+    v8::Local<v8::Value> destroyNameVal = Nan::New( std::string( "destroyStructure" ) ).ToLocalChecked();
+    destroyStructObj->Set( nameProp, destroyNameVal );
+
+    v8::Local<v8::Value> destroyUrlVal = Nan::New( std::string("../img/") + std::string( "Hammer.png" ) ).ToLocalChecked();
+    destroyStructObj->Set( urlProp, destroyUrlVal );
 
   ret->Set( 0, destroyStructObj );
 
   v8::Local<v8::Object> eyeObj = Nan::New<v8::Object>();
-    v8::Local<v8::String> eyeProp = Nan::New("name").ToLocalChecked();
-    v8::Local<v8::Value> eyeVal = Nan::New( std::string( "vue" ) ).ToLocalChecked();
-    eyeObj->Set( eyeProp, eyeVal );
+    v8::Local<v8::Value> eyeNameVal = Nan::New( std::string( "vue" ) ).ToLocalChecked();
+    eyeObj->Set( nameProp, eyeNameVal );
 
-    v8::Local<v8::String> vueProp = Nan::New("url").ToLocalChecked();
-    v8::Local<v8::Value> vueVal = Nan::New( std::string("../img/") + std::string( "eye.png" ) ).ToLocalChecked();
-    eyeObj->Set( vueProp, vueVal );
+    v8::Local<v8::Value> vueUrlVal = Nan::New( std::string("../img/") + std::string( "eye.png" ) ).ToLocalChecked();
+    eyeObj->Set( urlProp, vueUrlVal );
 
   ret->Set( 1, eyeObj );
 
+  v8::Local<v8::Object> labObj = Nan::New<v8::Object>();
+    v8::Local<v8::Value> labNameVal = Nan::New( std::string( "lab" ) ).ToLocalChecked();
+    labObj->Set( nameProp, labNameVal );
 
+    v8::Local<v8::Value> labUrlVal = Nan::New( std::string("../img/") + std::string( "lab.png" ) ).ToLocalChecked();
+    labObj->Set( urlProp, labUrlVal );
+
+  ret->Set( 2, labObj );
+  */
 
   return ret;
 
@@ -125,11 +150,11 @@ bool GameLevelBase::isPointOnStructureById( int _id, int _x, int _y ){
 
 int GameLevelBase::destroyStructById( int _id ){
   std::vector<Structure*>::iterator searchedIterator;
-  Structure* searchedStruct;
+  //Structure* searchedStruct;
   bool found = false;
   for( std::vector<Structure*>::iterator i = structures.begin(); i < structures.end(); ++i ){
     if( (*i)->getId() == _id ){
-      searchedStruct = (*i);
+      //searchedStruct = (*i);
       searchedIterator = i;
       found = true;
       break;

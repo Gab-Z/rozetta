@@ -21,6 +21,7 @@ class GameLevel : public GameLevelBase {
     GameLevel();
     GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts );
     GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds );
+    void init( std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds );
     v8::Local<v8::Array> getTilesArray();
     //void fillMoveMap();
     bool testStructurePos( int _x, int _y, std::string _typeName );
@@ -50,7 +51,9 @@ class GameLevel : public GameLevelBase {
     float getTileSpeed( int _x, int _y );
 
     void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList );
+    //void tethaCheckN( Tile* testedTile, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<Tile*> &newList );
     void tethaSearch( int _startx, int _starty );
+    //void tethaSearchN( int _startx, int _starty );
     float lineSight( int x0, int y0, int x1, int y1 );
     void updateAllTethaPaths();
     std::vector<int> getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy );
@@ -59,6 +62,7 @@ class GameLevel : public GameLevelBase {
     void removeDestinationPoint( int _x, int _y );
     DestinationPt& getOrAddDestinationPt( int _x, int _y );
     DestinationPt& getDestinationPt( int _x, int _y );
+
 };
 
 #endif

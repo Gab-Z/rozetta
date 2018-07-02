@@ -1,81 +1,156 @@
-#include "GameLevel.h"
+#include "Level.h"
 
-DestinationPt GameLevel::nullDestinationPt = DestinationPt();
-
-GameLevel::GameLevel(){}
-
-GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts ):GameLevelBase( _width, _height, _startPts, _endPts ){
-  init( _startPts, _endPts, std::vector<int>( getSize(), 1 ) );
+template <>
+void Level<std::vector<Tile*>>::initSize( int _size ){
+  tiles.reserve( _size );
 }
 
-GameLevel::GameLevel( int _width, int _height, std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds ):GameLevelBase( _width, _height, _startPts, _endPts ){
-  init( _startPts, _endPts, _floorIds );
+
+/*
+template<typename T>
+int Level<T>::width(){
+  return mapWidth;
 }
 
-void GameLevel::init( std::vector<int> _startPts, std::vector<int> _endPts, std::vector<int> _floorIds ){
-  int _size = getSize();
-  tiles = std::vector<Tile*> ( _size );
-  int sl = _startPts.size() / 2;
-  int el = _endPts.size() / 2;
-  for( int i = 0; i < _size; i++ ){
-    std::vector<int> tilePos = to2d( i );
-    Tile* nTile = new Tile( tilePos[ 0 ], tilePos[ 1 ], _floorIds[ i ] );//_floorIds = [  int _floorId... ]
-    for( int si = 0; si < sl; si++ ){
-      int sx = _startPts[ si * 2 ];
-      int sy = _startPts[ si * 2 + 1 ];
-      if( sx == tilePos[ 0 ] && sy == tilePos[ 1 ] ){
-        nTile->setWayInOrOut( "start");
-      }
-    }
-    for( int ei = 0; ei < el; ei++ ){
-      int ex = _endPts[ ei * 2 ];
-      int ey = _endPts[ ei * 2 + 1 ];
-      addDestinationPoint( ex, ey );
-      if( ex == tilePos[ 0 ] && ey == tilePos[ 1 ] ){
-        nTile->setWayInOrOut( "end");
-      }
-    }
-    tiles[ i ] = nTile;
-  }
-  /*
-  for( int t = 0; t < _size; t++ ){
-    std::vector<int> pos2d = to2d( t );
-    int tx = pos2d[ 0 ];
-    int ty = pos2d[ 1 ];
-    int w = width();
-    int h = height();
-    Tile* targetTile = tiles[ t ];
-    if( tx > 0 ){
-      targetTile->setNeighbour( "left", tiles[ to1d( tx - 1, ty ) ] );
-      if( ty > 0 ){
-        targetTile->setNeighbour( "topLeft", tiles[ to1d( tx - 1, ty - 1 ) ] );
-      }
-      if( ty < h - 1 ){
-        targetTile->setNeighbour( "bottomLeft", tiles[ to1d( tx - 1, ty + 1 ) ] );
-      }
-    }
-    if( tx < w - 1 ){
-      targetTile->setNeighbour( "right", tiles[ to1d( tx + 1, ty ) ] );
-      if( ty > 0 ){
-        targetTile->setNeighbour( "topRight", tiles[ to1d( tx + 1, ty - 1 ) ] );
-      }
-      if( ty < h - 1 ){
-        targetTile->setNeighbour( "bottomRight", tiles[ to1d( tx + 1, ty + 1 ) ] );
-      }
-    }
-    if ( ty > 0 ){
-      targetTile->setNeighbour( "top", tiles[ to1d( tx, ty - 1 ) ] );
-    }
-    if( ty < h - 1 ){
-      targetTile->setNeighbour( "bottom", tiles[ to1d( tx, ty + 1 ) ] );
+template<typename T>
+int Level<T>::height(){
+  return mapHeight;
+}
+
+template<typename T>
+int Level<T>::to1d( int _x, int _y ){
+  int pos = _y * mapWidth + _x;
+  return pos;
+}
+
+template<typename T>
+std::vector<int> Level<T>::to2d( int _idx ){
+  int _y = std::floor( _idx / mapWidth );
+  int _x = _idx - (_y * mapWidth );
+  std::vector<int> pos { _x, _y };
+  return pos;
+}
+
+template<typename T>
+int Level<T>::getSize(){
+  return size;
+}
+
+template<typename T>
+void Level<T>::pushStructure( Structure* _structure ){
+  structures.push_back( _structure );
+}
+
+template<typename T>
+int Level<T>::structuresSize(){
+  return structures.size();
+}
+
+template<typename T>
+Structure* Level<T>::getStructure( int _i ){
+  return structures[ _i ];
+}
+
+template<typename T>
+Structure* Level<T>::getStructureById( int _id ){
+  int l = structures.size();
+  for( int i = 0; i < l; i++ ){
+    if( structures[ i ]->getId() == _id ){
+      return structures[ i ];
     }
   }
-  */
-  updateAllTethaPaths();
-
+  return structures[ 0 ];
 }
 
-v8::Local<v8::Array> GameLevel::getTilesArray(){
+template<typename T>
+Structure*& Level<T>::getStructureRefById( int _id ){
+  int l = structures.size();
+  for( int i = 0; i < l; i++ ){
+    if( structures[ i ]->getId() == _id ){
+      return structures[ i ];
+    }
+  }
+  return structures[ 0 ];
+}
+
+template<typename T>
+std::vector<int> Level<T>::getStartByIndex( int _i ){
+  int l = startPoints.size() / 2;
+  if( _i < 0 || _i >= l ){
+    return std::vector<int> { startPoints[ 0 ], startPoints[ 1 ] };
+  }else{
+    return std::vector<int> { startPoints[ _i * 2 ], startPoints[ _i * 2 + 1 ] };
+  }
+}
+
+template<typename T>
+v8::Local<v8::Object> Level<T>::getWays(){
+  v8::Local<v8::Object> ret = Nan::New<v8::Object>();
+
+  v8::Local<v8::String> startProp = Nan::New("startPoints").ToLocalChecked();
+  v8::Local<v8::Array> startArr = converter::vectorIntToJsArray( startPoints );
+  ret->Set( startProp, startArr );
+
+  v8::Local<v8::String> endProp = Nan::New("endPoints").ToLocalChecked();
+  v8::Local<v8::Array> endArr = converter::vectorIntToJsArray( endPoints );
+  ret->Set( endProp, endArr );
+
+  return ret;
+}
+
+template<typename T>
+bool Level<T>::isPointOnStructureById( int _id, int _x, int _y ){
+  return getStructureById( _id )->testPoint( _x, _y );
+}
+
+template<typename T>
+int Level<T>::destroyStructById( int _id ){
+  std::vector<Structure*>::iterator searchedIterator;
+  //Structure* searchedStruct;
+  bool found = false;
+  for( std::vector<Structure*>::iterator i = structures.begin(); i < structures.end(); ++i ){
+    if( (*i)->getId() == _id ){
+      //searchedStruct = (*i);
+      searchedIterator = i;
+      found = true;
+      break;
+    }
+  }
+  if( found == true ){
+    //delete searchedStruct;
+    Structure*& dl = getStructureRefById( _id );
+    delete dl;
+    structures.erase( searchedIterator );
+    return 1;
+  }
+  return 0;
+}
+
+template<typename T>
+v8::Local<v8::Array> Level<T>::getStructureUpgradesByTypeName( std::string _typeName ){
+  //return structuresDefList::getStructureTypeByName( _typeName )->getUpgrades();
+  v8::Local<v8::Array> ret = Nan::New<v8::Array>();
+  StructureDef* baseDef =  structuresDefList::getStructureTypeByName( _typeName );
+  std::vector<std::string> upgradeList = baseDef->getUpgradeList();
+  int l = upgradeList.size();
+  for( int i = 0; i < l; i++ ){
+    std::string upgradeTypeName = upgradeList[ i ];
+    v8::Local<v8::Object> upgradeData = structuresDefList::getStructureTypeByName( upgradeTypeName )->getUpgradeData();
+    ret->Set( i, upgradeData );
+  }
+  return ret;
+}
+
+template<typename T>
+bool Level<T>::upgradeStructure( int _id, std::string _typeName ){
+  getStructureById( _id )->setStructureDef( structuresDefList::getStructureTypeByName( _typeName ) );
+  return true;
+}
+
+/////////////////////////////////
+
+template<typename T>
+v8::Local<v8::Array> Level<T>::getTilesArray(){
   int _size = getSize();
   v8::Local<v8::Array> ret = Nan::New<v8::Array>( _size );
   for( int i = 0; i < _size; i++ ){
@@ -85,27 +160,8 @@ v8::Local<v8::Array> GameLevel::getTilesArray(){
   return ret;
 }
 
-/*
-void GameLevel::fillMoveMap(){
-  int _size = getSize();
-  for( int i = 0; i < _size; i++ ){
-    Tile* _tile = tiles[ i ];
-    if( _tile->getStructureId() != 0 ){
-      moveMap[ i ] = -2.0;
-      intMap[ i ] = -2;
-    }else if( _tile->getWayType() > 0 ){
-      moveMap[ i ] = -1.0;
-      intMap[ i ] = -1;
-    }else{
-      moveMap[ i ] = floorsList::getFloorTypeById( _tile->getFloorTypeId() )->getSpeed();
-      intMap[ i ] = 1;
-    }
-  }
-  updateAllTethaPaths();
-}
-*/
-
-bool GameLevel::testStructurePos( int _x, int _y, std::string _typeName ){
+template<typename T>
+bool Level<T>::testStructurePos( int _x, int _y, std::string _typeName ){
   StructureDef* structureType = structuresDefList::getStructureTypeByName( _typeName );
   std::vector<int> grid = structureType->getGrid();
   int gl = grid.size();
@@ -117,14 +173,15 @@ bool GameLevel::testStructurePos( int _x, int _y, std::string _typeName ){
     int tx = _x + gridPt2dCoords[ 0 ];
     int ty = _y + gridPt2dCoords[ 1 ];
     int coord1d = to1d( tx, ty );
-    if( moveMap[ coord1d ] < 0.0 || tx < 0 || tx >= width() || ty < 0 || ty >= height() ){
+    if(  tx < 0 || tx >= mapWidth || ty < 0 || ty >= mapHeight || ! tiles[ coord1d ]->isTraversable() ){
       return false;
     }
   }
   return true;
 }
 
-std::vector<bool> GameLevel::testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){
+template<typename T>
+std::vector<bool> Level<T>::testMultipleStructurePos( std::vector<int> _positions, std::string _typeName, int _rotation ){
   StructureDef* structureType = structuresDefList::getStructureTypeByName( _typeName );
   std::vector<int> grid = structureType->getGrid( _rotation );
   int gl = grid.size();
@@ -155,24 +212,8 @@ std::vector<bool> GameLevel::testMultipleStructurePos( std::vector<int> _positio
   return ret;
 }
 
-/*
-std::vector<float> GameLevel::getMoveMap(){
-  //return moveMap;
-  int l = moveMap.size();
-  std::vector<float> ret( l * 3 );
-  for( int i = 0; i < l; i++ ){
-    std::vector<int> pos = to2d( i );
-    ret[ i * 3 ] = moveMap[ i ];
-    ret[ i * 3 + 1 ] = (float) pos[ 0 ];
-    ret[ i * 3 + 2 ] = (float) pos[ 1 ];
-  }
-  return ret;
-}
-*/
-
-//std::vector<int> GameLevel::getIntMap(){ return intMap; };
-
-bool GameLevel::addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){
+template<typename T>
+bool Level<T>::addStructures( std::vector<int> _positions, std::string _typeName, int _rotation ){
   std::vector<bool> testPositions = testMultipleStructurePos( _positions, _typeName, _rotation );
   int nbS = testPositions.size();
   StructureDef* strucDef = structuresDefList::getStructureTypeByName( _typeName );
@@ -218,7 +259,8 @@ bool GameLevel::addStructures( std::vector<int> _positions, std::string _typeNam
   return true;
 }
 
-v8::Local<v8::Array> GameLevel::getStructures(){
+template<typename T>
+v8::Local<v8::Array> Level<T>::getStructures(){
   v8::Local<v8::Array> ret = Nan::New<v8::Array>();
   int structL = structuresSize();
   for( int i = 0; i < structL; i++ ){
@@ -289,54 +331,36 @@ v8::Local<v8::Array> GameLevel::getStructures(){
   return ret;
 }
 
-Tile* GameLevel::getTile( int _i ){
+template<typename T>
+Tile* Level<T>::getTile( int _i ){
   return tiles[ _i ];
 }
 
-Tile* GameLevel::getTileByPosition( int _x, int _y ){
+template<typename T>
+Tile* Level<T>::getTileByPosition( int _x, int _y ){
   if( _x >= 0 && _y >= 0 && _x <  width() && _y < height() ){
     return tiles[ to1d( _x, _y ) ];
   }
   return new Tile();
 }
 
-v8::Local<v8::Array> GameLevel::getStructureGrid( std::string _typeName, int _rotation ){
+template<typename T>
+v8::Local<v8::Array> Level<T>::getStructureGrid( std::string _typeName, int _rotation ){
   StructureDef* structDef = structuresDefList::getStructureTypeByName( _typeName );
   std::vector<int> grid = structDef->getGrid( _rotation );
   v8::Local<v8::Array> ret = converter::vectorIntToJsArray( grid );
   return ret;
 }
 
-/*
-bool GameLevel::newStructuresBlockingTest(  std::vector<int> _positions, std::vector<int> _strucDefPositions ){
-  int l = _positions.size() / 2;
-  int nbTiles = _strucDefPositions.size() / 2;
-  for( int i = 0; i < l; i++ ){
-    int px = _positions[ i * 2 ];
-    int py = _positions[ i * 2 + 1 ];
-    for( int ii = 0; ii < nbTiles; ii++ ){
-      //  intMap[ to1d( px + _strucDefPositions[ ii * 2 ], py + _strucDefPositions[ ii * 2 + 1 ] ) ] = -2;
-        tiles[ to1d( px + _strucDefPositions[ ii * 2 ], py + _strucDefPositions[ ii * 2 + 1 ] ) ]->setStructureId( 1 );
-    }
-  }
-  bool test = testMapOpening();
-  for( int iii = 0; iii < l; iii++ ){
-    int px = _positions[ iii * 2 ];
-    int py = _positions[ iii * 2 + 1 ];
-    for( int iiii = 0; iiii < nbTiles; iiii++ ){
-        //intMap[ to1d( px + _strucDefPositions[ iiii * 2 ], py + _strucDefPositions[ iiii * 2 + 1 ] ) ] = 1;
-        tiles[ to1d( px + _strucDefPositions[ iiii * 2 ], py + _strucDefPositions[ iiii * 2 + 1 ] ) ]->setStructureId( 0 );
-    }
-  }
-  return test;
-}
-*/
-bool GameLevel::newStructuresBlockingTest( std::vector<int> _positions, std::vector<int> _strucDefPositions ){
+template<typename T>
+bool Level<T>::newStructuresBlockingTest( std::vector<int> _positions, std::vector<int> _strucDefPositions ){
   std::vector<std::vector<int>> poses = { _positions };
   std::vector<std::vector<int>> structuresPos = { _strucDefPositions };
   return newStructuresBlockingTest( poses, structuresPos );
 }
-bool GameLevel::newStructuresBlockingTest( std::vector<std::vector<int>> _positions, std::vector<std::vector<int>> _strucDefPositions ){
+
+template<typename T>
+bool Level<T>::newStructuresBlockingTest( std::vector<std::vector<int>> _positions, std::vector<std::vector<int>> _strucDefPositions ){
   std::vector<char> testMap = getCharMap();
 
   int nbStructDefs = _positions.size();
@@ -357,7 +381,9 @@ bool GameLevel::newStructuresBlockingTest( std::vector<std::vector<int>> _positi
   return testCharMapOpening( testMap );
 
 }
-bool GameLevel::testCharMapOpening( std::vector<char> testMap ){
+
+template<typename T>
+bool Level<T>::testCharMapOpening( std::vector<char> testMap ){
   int l = getSize();
   std::vector<int> openList = getStartByIndex( 0 );
   testMap[ to1d( openList[ 0 ], openList[ 1 ] ) ] = 2;
@@ -423,7 +449,9 @@ bool GameLevel::testCharMapOpening( std::vector<char> testMap ){
   }
   return true;
 }
-bool GameLevel::removeStructuresBlockingTest( std::vector<int> _positions ){
+
+template<typename T>
+bool Level<T>::removeStructuresBlockingTest( std::vector<int> _positions ){
   std::vector<char> charMap = getCharMap();
   int pl = _positions.size() / 2;
   for( int i = 0; i < pl; i++ ){
@@ -431,220 +459,10 @@ bool GameLevel::removeStructuresBlockingTest( std::vector<int> _positions ){
   }
   return testCharMapOpening( charMap );
 }
-/*
-bool GameLevel::newStructuresBlockingTest( std::vector<int> _positions, std::vector<int> _strucDefPositions ){
 
-  int mapl =  getSize();
-  int testMap[ mapl ] = { 0 };
-
-  int l = _positions.size() / 2;
-  int nbTiles = _strucDefPositions.size() / 2;
-  for( int i = 0; i < l; i++ ){
-    int px = _positions[ i * 2 ];
-    int py = _positions[ i * 2 + 1 ];
-    for( int ii = 0; ii < nbTiles; ii++ ){
-        testMap[ to1d( px + _strucDefPositions[ ii * 2 ], py + _strucDefPositions[ ii * 2 + 1 ] ) ] = -1;
-    }
-  }
-
-
-  std::vector<int> openList = getStartByIndex( 0 );
-  testMap[ to1d( openList[ 0 ], openList[ 1 ] ) ] = 2;
-  bool endFound = false;
-  int mw = width();
-  int mh = height();
-  for( int s = 0; endFound == false; s++ ){
-    std::vector<int> newList;
-    int l = openList.size() / 2;
-    for( int i = 0; i < l; i++ ){
-      int px = openList[ i * 2 ];
-      int py = openList[ i * 2 + 1 ];
-
-      if( px > 0 ){
-
-        int leftPos = to1d( px - 1, py );
-        if( testMap[ leftPos ] == 0 ){
-          //int intMapVal = intMap[ leftPos ];
-          if( tiles[ leftPos ]->getStructureId() == 0 ){
-            testMap[ leftPos ] = 1;
-            newList.push_back( px - 1 );
-            newList.push_back( py );
-          }else{
-            testMap[ leftPos ] = -1;
-          }
-        }
-      }
-
-      if( px < mw - 1 ){
-        int rightPos = to1d( px + 1, py );
-        if( testMap[ rightPos ] == 0 ){
-          //int intMapVal = intMap[ rightPos ];
-          if( tiles[ rightPos]->getStructureId() == 0 ){
-            testMap[ rightPos ] = 1;
-            newList.push_back( px + 1 );
-            newList.push_back( py );
-          }else{
-            testMap[ rightPos ] = -1;
-          }
-        }
-      }
-
-      if( py > 0 ){
-        int topPos = to1d( px, py - 1 );
-        if( testMap[ topPos ] == 0 ){
-          //int intMapVal = intMap[ topPos ];
-          if( tiles[ topPos]->getStructureId() == 0 ){
-            testMap[ topPos ] = 1;
-            newList.push_back( px );
-            newList.push_back( py - 1 );
-          }else{
-            testMap[ topPos ] = -1;
-          }
-        }
-      }
-
-      if( py < mh - 1){
-        int bottomPos = to1d( px, py + 1 );
-        if( testMap[ bottomPos ] == 0 ){
-          //int intMapVal = intMap[ bottomPos ];
-          if( tiles[ bottomPos ]->getStructureId() == 0 ){
-            testMap[ bottomPos ] = 1;
-            newList.push_back( px );
-            newList.push_back( py + 1 );
-          }else{
-            testMap[ bottomPos ] = -1;
-          }
-        }
-      }
-
-    }
-    if( newList.size() > 0 ){
-      openList = newList;
-    }else{
-      endFound = true;
-      break;
-    }
-  }
-  for ( int n = 0; n < mapl; n++ ){
-    if( testMap[ n ] == 0 && tiles[ n ]->getStructureId() == 0 ){
-      return false;
-    }
-  }
-  return true;
-}
-*/
-/*
-bool GameLevel::testMapOpening(){
-  int mapl =  getSize();
-  int testMap[ mapl ] = { 0 };
-  std::vector<int> openList = getStartByIndex( 0 );
-  testMap[ to1d( openList[ 0 ], openList[ 1 ] ) ] = 2;
-  bool endFound = false;
-  int mw = width();
-  int mh = height();
-  for( int s = 0; endFound == false; s++ ){
-    std::vector<int> newList;
-    int l = openList.size() / 2;
-    for( int i = 0; i < l; i++ ){
-      int px = openList[ i * 2 ];
-      int py = openList[ i * 2 + 1 ];
-
-      if( px > 0 ){
-
-        int leftPos = to1d( px - 1, py );
-        if( testMap[ leftPos ] == 0 ){
-          //int intMapVal = intMap[ leftPos ];
-          if( tiles[ leftPos ]->getStructureId() == 0 ){
-            testMap[ leftPos ] = 1;
-            newList.push_back( px - 1 );
-            newList.push_back( py );
-          }else{
-            testMap[ leftPos ] = -1;
-          }
-        }
-      }
-
-      if( px < mw - 1 ){
-        int rightPos = to1d( px + 1, py );
-        if( testMap[ rightPos ] == 0 ){
-          //int intMapVal = intMap[ rightPos ];
-          if( tiles[ rightPos]->getStructureId() == 0 ){
-            testMap[ rightPos ] = 1;
-            newList.push_back( px + 1 );
-            newList.push_back( py );
-          }else{
-            testMap[ rightPos ] = -1;
-          }
-        }
-      }
-
-      if( py > 0 ){
-        int topPos = to1d( px, py - 1 );
-        if( testMap[ topPos ] == 0 ){
-          //int intMapVal = intMap[ topPos ];
-          if( tiles[ topPos]->getStructureId() == 0 ){
-            testMap[ topPos ] = 1;
-            newList.push_back( px );
-            newList.push_back( py - 1 );
-          }else{
-            testMap[ topPos ] = -1;
-          }
-        }
-      }
-
-      if( py < mh - 1){
-        int bottomPos = to1d( px, py + 1 );
-        if( testMap[ bottomPos ] == 0 ){
-          //int intMapVal = intMap[ bottomPos ];
-          if( tiles[ bottomPos ]->getStructureId() == 0 ){
-            testMap[ bottomPos ] = 1;
-            newList.push_back( px );
-            newList.push_back( py + 1 );
-          }else{
-            testMap[ bottomPos ] = -1;
-          }
-        }
-      }
-
-    }
-    if( newList.size() > 0 ){
-      openList = newList;
-    }else{
-      endFound = true;
-      break;
-    }
-  }
-  for ( int n = 0; n < mapl; n++ ){
-    if( testMap[ n ] == 0 && tiles[ n ]->getStructureId() == 0 ){
-      return false;
-    }
-  }
-  return true;
-}
-*/
-int GameLevel::removeStructById( int _id ){
+template<typename T>
+int Level<T>::removeStructById( int _id ){
   Structure* strucToRemove = getStructureById( _id );
-  /*
-  StructureDef* strucDef = structuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
-  int strucRot = strucToRemove->getRotation();
-  std::vector<int> strucGrid = strucDef->getGrid( strucRot );
-  int sx = strucToRemove->getX();
-  int sy = strucToRemove->getY();
-  int l = strucGrid.size();
-  std::vector<int> gridPositions;
-
-  for( int i = 0; i < l; i++ ){
-    if( strucGrid[ i ] == 0 ){ continue; }
-    std::vector<int> gridTilePos2d = strucDef->to2d( i, strucRot );
-    gridPositions.push_back( sx + gridTilePos2d[ 0 ] );
-    gridPositions.push_back( sy + gridTilePos2d[ 1 ] );
-    //int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
-    //Tile* tile = tiles[ pos1d ];
-    //tile->setStructureId( 0 );
-    //moveMap[ pos1d ] = floorsList::getFloorTypeById( tile->getFloorTypeId() )->getSpeed();
-    //intMap[ pos1d ] = 1;
-  }
-  */
   std::vector<int> gridPositions = strucToRemove->getPositions();
   if( removeStructuresBlockingTest( gridPositions ) == false ){
     return 0;
@@ -654,55 +472,14 @@ int GameLevel::removeStructById( int _id ){
   for( int s = 0; s < nbTiles; s++ ){
     tiles[ to1d( gridPositions[ s * 2 ], gridPositions[ s * 2 + 1 ] ) ]->setStructure( nullptr );
   }
-
-
   int destroyedStructId = destroyStructById( _id );
   updateAllTethaPaths();
   return destroyedStructId;
 
-
 }
-/*
-int GameLevel::removeStructById( int _id ){
-  Structure* strucToRemove = getStructureById( _id );
-  StructureDef* strucDef = structuresDefList::getStructureTypeByName( strucToRemove->getTypeName() );
-  int strucRot = strucToRemove->getRotation();
-  std::vector<int> strucGrid = strucDef->getGrid( strucRot );
-  int sx = strucToRemove->getX();
-  int sy = strucToRemove->getY();
-  int l = strucGrid.size();
-  for( int i = 0; i < l; i++ ){
-    if( strucGrid[ i ] == 0 ){ continue; }
-    std::vector<int> gridTilePos2d = strucDef->to2d( i, strucRot );
-    int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
-    Tile* tile = tiles[ pos1d ];
-    tile->setStructureId( 0 );
-    //moveMap[ pos1d ] = floorsList::getFloorTypeById( tile->getFloorTypeId() )->getSpeed();
-    //intMap[ pos1d ] = 1;
-  }
-  if( testMapOpening() == false ){
-    for( int ii = 0; ii < l; ii++ ){
-      if( strucGrid[ ii ] == 0 ){ continue; }
-      std::vector<int> gridTilePos2d = strucDef->to2d( ii, strucRot );
-      int pos1d = to1d( sx + gridTilePos2d[ 0 ], sy + gridTilePos2d[ 1 ] );
-      Tile* tile = tiles[ pos1d ];
-      tile->setStructureId( _id );
-      //moveMap[ pos1d ] = -2.0;
-      //intMap[ pos1d ] = -2;
-    }
-    return 0;
-  }
-  if( _id == 0 ){
-    return 0;
-  }else{
-    int destroyedStructId = destroyStructById( _id );
-    updateAllTethaPaths();
-    return destroyedStructId;
-  }
 
-}
-*/
-std::vector<char> GameLevel::getCharMap(){
+template<typename T>
+std::vector<char> Level<T>::getCharMap(){
   int l = getSize();
   std::vector<char> ret( l, 0 );
   for( int i = 0; i < l; i ++ ){
@@ -714,7 +491,8 @@ std::vector<char> GameLevel::getCharMap(){
   return ret;
 }
 
-int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){
+template<typename T>
+int Level<T>::destroyStructsByZone( int _startx, int _starty, int _endx, int _endy ){
   int w = width();
   int h = height();
   if( _startx < 0 || _starty < 0 || _endx < 0 || _endy < 0 || _startx > w || _endx > w || _starty > h || _endy > h ){
@@ -764,14 +542,16 @@ int GameLevel::destroyStructsByZone( int _startx, int _starty, int _endx, int _e
   return 1;
 }
 
-int GameLevel::getStructureIdByPosition( int _x, int _y ){
+template<typename T>
+int Level<T>::getStructureIdByPosition( int _x, int _y ){
   if( _x >= 0 && _y >= 0 && _x <  width() && _y < height() ){
     return getTileByPosition( _x, _y )->getStructureId();
   }
   return 0;
 }
 
-std::vector<float> GameLevel::pathMap( int _startx, int _starty){
+template<typename T>
+std::vector<float> Level<T>::pathMap( int _startx, int _starty){
   std::vector<float> ret( getSize(), -1.0 );
   std::vector<int> posList{ _startx, _starty };
   int basePos = to1d( _startx, _starty );
@@ -839,7 +619,8 @@ std::vector<float> GameLevel::pathMap( int _startx, int _starty){
   return ret;
 }
 
-std::vector<char> GameLevel::pathMapChar( int _startx, int _starty){
+template<typename T>
+std::vector<char> Level<T>::pathMapChar( int _startx, int _starty){
   std::vector<char> ret ( getSize(), -1.0 );
   std::vector<int> posList{ _startx, _starty };
   int basePos = to1d( _startx, _starty );
@@ -907,33 +688,17 @@ std::vector<char> GameLevel::pathMapChar( int _startx, int _starty){
   return ret;
 }
 
-/*
-bool GameLevel::isTraversable( int _x, int _y ){
-  int pos1d;
+template<typename T>
+float Level<T>::getTileSpeed( int _x, int _y ){
   if( _y < 0 ){
-    pos1d = _x;
+    return tiles[ _x ]->getSpeed();
   }else{
-    pos1d = to1d( _x, _y );
-  }
-  if( tiles[ pos1d ]->getWayType() != 0 ){
-    return true;
-  }
-  if( intMap[ pos1d ] < 0 ){
-    return false;
-  }
-  return true;
-};
-*/
-
-float GameLevel::getTileSpeed( int _x, int _y ){
-  if( _y < 0 ){
-    return moveMap[ _x ];
-  }else{
-    return moveMap[ to1d( _x, _y ) ];
+    return tiles[ to1d( _x, _y ) ]->getSpeed();
   }
 }
 
-void GameLevel::addDestinationPoint( int _x, int _y ){
+template<typename T>
+void Level<T>::addDestinationPoint( int _x, int _y ){
   int l = destinationPoints.size();
   int pos1d;
   if( _y < 0 ){
@@ -947,7 +712,8 @@ void GameLevel::addDestinationPoint( int _x, int _y ){
   destinationPoints.push_back( DestinationPt( pos1d, getSize() ) );
 };
 
-void GameLevel::removeDestinationPoint( int _x, int _y ){
+template<typename T>
+void Level<T>::removeDestinationPoint( int _x, int _y ){
   int pos1d;
   if( _y < 0 ){
     pos1d = _x;
@@ -962,7 +728,8 @@ void GameLevel::removeDestinationPoint( int _x, int _y ){
   }
 };
 
-DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y ){
+template<typename T>
+DestinationPt& Level<T>::getOrAddDestinationPt( int _x, int _y ){
   int pos1d = to1d( _x, _y );
   int l = destinationPoints.size();
   for( int i = 0; i < l; i++ ){
@@ -981,7 +748,8 @@ DestinationPt& GameLevel::getOrAddDestinationPt( int _x, int _y ){
   return refToNullDestinationPt;
 }
 
-DestinationPt& GameLevel::getDestinationPt( int _x, int _y ){
+template<typename T>
+DestinationPt& Level<T>::getDestinationPt( int _x, int _y ){
   int pos1d = to1d( _x, _y );
   int ll = destinationPoints.size();
   for( int ii = 0; ii < ll; ii++ ){
@@ -993,7 +761,8 @@ DestinationPt& GameLevel::getDestinationPt( int _x, int _y ){
   return refToNullDestinationPt;
 }
 
-float GameLevel::lineSight( int x0, int y0, int x1, int y1 ){
+template<typename T>
+float Level<T>::lineSight( int x0, int y0, int x1, int y1 ){
   int nx = x1 - x0;
   int ny = y1 - y0;
   int sign_x = 1;
@@ -1039,42 +808,19 @@ float GameLevel::lineSight( int x0, int y0, int x1, int y1 ){
   return speedsSum / (float)nbTiles;
 }
 
-float dist( int x0, int y0, int x1, int y1 ){
+float distance( int x0, int y0, int x1, int y1 ){
   int dx = x1 - x0;
   int dy = y1 - y0;
   return (float) sqrt( dx * dx + dy * dy );
 }
-/*
-void GameLevel::tethaCheck( int tx, int ty, std::vector<TethaSearchTile> &retMap, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
-  TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
-  float distByNeighbour = hDist * getTileSpeed( neighbx, neighby ) + nv;
-  float sightDistToParent = lineSight( tx , ty, parentx, parenty );
-  float distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal;
-  bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
-  bool testToParent = t.hVal > distByParent ? true : false;
-  if( testToParent == true && sightDistToParent > 0.0 ){
-    //t.parentPos = to1d( parentx, parenty );
-    t.setParentPos( to1d( parentx, parenty ) );
-    //t.hVal = distByParent;
-    t.setHVal( distByParent );
-    newList.push_back( tx );
-    newList.push_back( ty );
-  }else if( testToNeighbour == true ){
-    //t.parentPos = to1d( neighbx, neighby );
-    t.setParentPos( to1d( neighbx, neighby ) );
-    //t.hVal = distByNeighbour;
-    t.setHVal( distByNeighbour );
-    newList.push_back( tx );
-    newList.push_back( ty );
-  }
-}
-*/
-void GameLevel::tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
+
+template<typename T>
+void Level<T>::tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
   //TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
   float distByNeighbour = hDist * tiles[ to1d( neighbx, neighby ) ]->getSpeed() + nv;
   //float distByNeighbour = hDist * t.getSpeed() + nv;
   float sightDistToParent = lineSight( tx , ty, parentx, parenty );
-  float distByParent = sightDistToParent * dist( tx, ty, parentx, parenty ) + parentVal;
+  float distByParent = sightDistToParent * distance( tx, ty, parentx, parenty ) + parentVal;
   bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
   bool testToParent = t.hVal > distByParent ? true : false;
   if( testToParent == true && sightDistToParent > 0.0 ){
@@ -1093,7 +839,9 @@ void GameLevel::tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, in
     newList.push_back( ty );
   }
 }
-void GameLevel::tethaSearch( int _startx, int _starty ){
+
+template<typename T>
+void Level<T>::tethaSearch( int _startx, int _starty ){
   int w = width();
   int h = height();
   int mapL = getSize();
@@ -1167,79 +915,9 @@ void GameLevel::tethaSearch( int _startx, int _starty ){
     destPt.setPointTarget( j, ret[ j ].parentPos );
   }
 }
-/*
-void GameLevel::tethaSearch( int _startx, int _starty ){
-  int w = width();
-  int h = height();
-  int mapL = getSize();
-  std::vector<TethaSearchTile> ret ( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
-  std::vector<int> openList{ _startx, _starty };
-  int basePos = to1d( _startx, _starty );
-  TethaSearchTile  &baseTile = ret[ basePos ];
-  //baseTile.parentPos = to1d( _startx, _starty );
-  baseTile.setParentPos( basePos );
-  //baseTile.hVal = 0.0;
-  baseTile.setHVal( 0.0 );
-  for( int q = 0; q!= -1; q+=0 ){
-    std::vector<int> newList;
-    int l = openList.size() / 2;
-    for( int i = 0; i < l; i++ ){
-      int& neighbx = openList[ i * 2 ];
-      int& neighby = openList[ i * 2 + 1 ];
-      TethaSearchTile& neighbour = ret[ to1d( neighbx, neighby ) ];
-      float& nv = neighbour.hVal;
-      std::vector<int> parentPos = to2d( neighbour.parentPos );
-      int& parentx = parentPos[ 0 ];
-      int& parenty = parentPos[ 1 ];
-      TethaSearchTile& parentTile = ret[ to1d( parentx, parenty ) ];
-      float& parentVal = parentTile.hVal;
 
-      if( neighbx > 0 ){
-        if( isTraversable( neighbx - 1, neighby ) ){
-          tethaCheck( neighbx - 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-        }
-        if( neighby > 0 && isTraversable( neighbx - 1, neighby - 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
-          tethaCheck( neighbx - 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-        if( neighby < h - 1 && isTraversable( neighbx - 1, neighby + 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
-          tethaCheck( neighbx - 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-      }
-      if( neighbx < w - 1 ){
-        if( isTraversable( neighbx + 1, neighby ) ){
-          tethaCheck( neighbx + 1, neighby, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-        }
-        if( neighby > 0 && isTraversable( neighbx + 1, neighby - 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
-          tethaCheck( neighbx + 1, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-        if( neighby < h - 1 && isTraversable( neighbx + 1, neighby + 1 ) && ( isTraversable( neighbx + 1, neighby ) && isTraversable( neighbx, neighby + 1 ) ) ){
-          tethaCheck( neighbx + 1, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-      }
-      if( neighby > 0 && isTraversable( neighbx, neighby - 1 ) ){
-        tethaCheck( neighbx, neighby - 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-      }
-      if( neighby < h - 1 && isTraversable( neighbx, neighby + 1 ) ){
-        tethaCheck( neighbx, neighby + 1, ret, neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-      }
-    }
-    if( newList.size() > 0 ){
-      openList = newList;
-    }else{
-      break;
-    }
-
-  }
-  //return ret;
-  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
-  destPt.init( mapL );
-  for( int j = 0; j < mapL; j++ ){
-    //destPt.pathPoints[ j ] = ret[ j ].parentPos;
-    destPt.setPointTarget( j, ret[ j ].parentPos );
-  }
-}
-*/
-void GameLevel::updateAllTethaPaths(){
+template<typename T>
+void Level<T>::updateAllTethaPaths(){
   int nbDestPts = destinationPoints.size();
   if( nbDestPts == 0 ){ return void(); };
   for( int i = 0; i < nbDestPts; i++ ){
@@ -1248,7 +926,8 @@ void GameLevel::updateAllTethaPaths(){
   }
 }
 
-std::vector<int> GameLevel::getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy ){
+template<typename T>
+std::vector<int> Level<T>::getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy ){
   //if( _startx < 0 || _starty < 0 || _startx >=  width() || _starty >= height() ){ return std::vector<int>(); }
   int lastPos1d = to1d( _startx, _starty );
   if( getTile( lastPos1d )->getStructure() ){ return std::vector<int>(); }
@@ -1269,122 +948,5 @@ std::vector<int> GameLevel::getTethaPath( int _startx, int _starty, int _destina
     lastPos1d = parentPos1d;
   }
   return ret;
-}
-/*
-void GameLevel::tethaSearchN( int _startx, int _starty ){
-  int w = width();
-  int h = height();
-  int mapL = getSize();
-  //std::vector<TethaSearchTile> ret ( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
-  TethaSearchTile ret[ mapL ];// = { TethaSearchTile( -1, std::numeric_limits<float>::max() ) };
-  for( int u = 0; u < mapL; u++ ){ ret[ u ] = TethaSearchTile( -1, std::numeric_limits<float>::max() ); };
-  int basePos = to1d( _startx, _starty );
-  std::vector<Tile*> openList{ tiles[ basePos ] };
-
-  TethaSearchTile  &baseTile = ret[ basePos ];
-  baseTile.setParentPos( basePos );
-  baseTile.setHVal( -1.0 );
-  for( int q = 0; q!= -1; q+=0 ){
-    std::vector<Tile*> newList;
-    int l = openList.size();
-    for( int i = 0; i < l; i++ ){
-      //int& neighbx = openList[ i * 2 ];
-      //int& neighby = openList[ i * 2 + 1 ];
-      Tile* neighb = openList[ i ];
-      int neighbx = neighb->getx();
-      int neighby = neighb->gety();
-      TethaSearchTile& neighbour = ret[ to1d( neighb->getx(), neighb->gety() ) ];
-      float& nv = neighbour.hVal;
-      std::vector<int> parentPos = to2d( neighbour.parentPos );
-      int& parentx = parentPos[ 0 ];
-      int& parenty = parentPos[ 1 ];
-      TethaSearchTile& parentTile = ret[ to1d( parentx, parenty ) ];
-      float& parentVal = parentTile.hVal;
-
-      Tile* left = neighb->getNeighbour( "left" );
-      Tile* topLeft = neighb->getNeighbour( "topLeft" );
-      Tile* top = neighb->getNeighbour( "top" );
-      Tile* topRight = neighb->getNeighbour( "topRight" );
-      Tile* right = neighb->getNeighbour( "right" );
-      Tile* bottomRight = neighb->getNeighbour( "bottomRight" );
-      Tile* bottom = neighb->getNeighbour( "bottom" );
-      Tile* bottomLeft = neighb->getNeighbour( "bottomLeft" );
-
-      if( left ){
-        if( left->isTraversable() ){
-          tethaCheckN( left, ret[ to1d( left->getx(), left->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-        }
-
-        if( topLeft && topLeft->isTraversable() && top->isTraversable() && left->isTraversable() ){
-          tethaCheckN( topLeft, ret[ to1d( topLeft->getx(), topLeft->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-
-        if( bottomLeft && bottomLeft->isTraversable() && bottom->isTraversable() && left->isTraversable() ){
-          tethaCheckN( bottomLeft, ret[ to1d( bottomLeft->getx(), bottomLeft->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-      }
-
-      if( right ){
-        if( right->isTraversable() ){
-          tethaCheckN( right, ret[ to1d( right->getx(), right->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-        }
-
-        if( topRight && topRight->isTraversable() && top->isTraversable() && right->isTraversable() ){
-          tethaCheckN( topRight, ret[ to1d( topRight->getx(), topRight->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-
-        if( bottomRight && bottomRight->isTraversable() && bottom->isTraversable() && right->isTraversable() ){
-          tethaCheckN( bottomRight, ret[ to1d( bottomRight->getx(), bottomRight->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.414, newList );
-        }
-      }
-
-      if( top && top->isTraversable() ){
-        tethaCheckN( top, ret[ to1d( top->getx(), top->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-      }
-
-      if( bottom && bottom->isTraversable() ){
-        tethaCheckN( bottom, ret[ to1d( bottom->getx(), bottom->gety() ) ], neighbx, neighby, parentx, parenty, parentVal, nv, 1.0, newList );
-      }
-
-    }
-    if( newList.size() > 0 ){
-      openList = newList;
-    }else{
-      break;
-    }
-
-  }
-  //return ret;
-  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
-  destPt.init( mapL );
-  for( int j = 0; j < mapL; j++ ){
-    //destPt.pathPoints[ j ] = ret[ j ].parentPos;
-    destPt.setPointTarget( j, ret[ j ].parentPos );
-  }
-}
-
-void GameLevel::tethaCheckN( Tile* testedTile, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<Tile*> &newList ){
-  //TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
-  float distByNeighbour = hDist * tiles[ to1d( neighbx, neighby ) ]->getSpeed() + nv;
-  //float distByNeighbour = hDist * t.getSpeed() + nv;
-  int ttlx = testedTile->getx();
-  int ttly = testedTile->gety();
-  float sightDistToParent = lineSight( ttlx, ttly, parentx, parenty );
-  float distByParent = sightDistToParent * dist( ttlx, ttly, parentx, parenty ) + parentVal;
-  bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
-  bool testToParent = t.hVal > distByParent ? true : false;
-  if( testToParent == true && sightDistToParent > 0.0 ){
-    //t.parentPos = to1d( parentx, parenty );
-    t.setParentPos( to1d( parentx, parenty ) );
-    //t.hVal = distByParent;
-    t.setHVal( distByParent );
-    newList.push_back( testedTile );
-  }else if( testToNeighbour == true ){
-    //t.parentPos = to1d( neighbx, neighby );
-    t.setParentPos( to1d( neighbx, neighby ) );
-    //t.hVal = distByNeighbour;
-    t.setHVal( distByNeighbour );
-    newList.push_back( testedTile );
-  }
 }
 */

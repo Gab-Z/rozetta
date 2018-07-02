@@ -6,7 +6,6 @@
 #include <string>
 #include "./StructureDef.h"
 
-const int idCounter = 0;
 
 class Structure {
 

@@ -11,6 +11,8 @@
 #include "../converter/converter.h"
 #include "DestinationPt.h"
 #include "TethaSearchTile.h"
+#include "../Character/Character.h"
+#include "../Character/characterTypeList.h"
 
 class GameLevelBase {
 
@@ -20,6 +22,7 @@ class GameLevelBase {
   std::vector<int> startPoints;
   std::vector<int> endPoints;
   std::vector<Structure*> structures;
+  std::vector<Character*> ennemies;
 
   public:
 
@@ -66,11 +69,14 @@ class GameLevelBase {
     //virtual bool isTraversable( int _x, int _y ){ return false; };
     virtual float getTileSpeed( int _x, int _y ){ return 0.0; };
 
-    virtual void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){};
+    //virtual void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){};
+    //virtual void tethaCheckN( Tile* testedTile, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<Tile*> &newList ){};
     virtual void tethaSearch( int _startx, int _starty ){};
+    virtual void tethaSearchN( int _startx, int _starty ){};
     virtual float lineSight( int x0, int y0, int x1, int y1 ){ return 0.0; };
     virtual void updateAllTethaPaths(){};
     virtual std::vector<int> getTethaPath( int _startx, int _starty, int _destinationx, int _destinationy ){ return std::vector<int>(); };
+
 
     virtual void addDestinationPoint( int _x, int _y ){};
     virtual void removeDestinationPoint( int _x, int _y ){};

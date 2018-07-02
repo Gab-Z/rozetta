@@ -7,24 +7,24 @@
 #include "../Floor/floorsList.h"
 #include "../Structure/Structure.h"
 #include "../Structure/structuresDefList.h"
+#include "../geometry/Vec2.h"
 
 class Tile {
 
-  int x;
-  int y;
-  //int structureId = 0;
+  //int x;
+  //int y;
+  Vec2<int> pos;
   int floorTypeId = 0;
   int isWayInOrOut = 0;
   Structure* structure = nullptr;
-  //Floor* floor = nullptr;
-
 
   public:
 
     Tile();
     Tile( int _x, int _y );
     Tile( int _x, int _y, int _floorTypeId );
-    std::vector<int> getPosition();
+    Tile( Vec2<int> _pos, int _floorTypeId );
+    Vec2<int> getPos();
     int getx();
     int gety();
     int getStructureId();
@@ -41,6 +41,10 @@ class Tile {
     bool isBuildable();
     bool isTraversable();
     float getSpeed();
+    /*
+    void setNeighbour( std::string _dir, Tile* _neighbourTile );
+    Tile* getNeighbour( std::string _dir );
+    */
 };
 
 #endif

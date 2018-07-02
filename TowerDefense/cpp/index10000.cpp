@@ -5,7 +5,7 @@
 #include "./classes/Tile/Tile.h"
 
 NAN_MODULE_INIT(InitModule) {
-  TowerDefense<std::vector<Tile*>>::Init(target);
+  TowerDefense<std::array<Tile*, 10000>>::Init(target);
 }
 
 

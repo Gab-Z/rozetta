@@ -3,5 +3,6 @@
 
 #include "GameLevelBase.h"
 #include "GameLevel.h"
+#include "Level.h"
 
 #endif

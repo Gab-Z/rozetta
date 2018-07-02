@@ -4,7 +4,7 @@ const bindings = require("bindings");
 const td = bindings("towerdef");
 const PIXI = require("pixi.js");
 const defaults = {
-  tileSize: 30,
+  tileSize: 20,
   mapW: 20,
   mapH: 20,
   menuHeight: 50,
@@ -73,6 +73,7 @@ let endPts = [  defaults.mapW - 1, defaults.mapH - 1,
  ]
 //const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], [ defaults.mapW - 1, defaults.mapH - 1 ] );
 const towerDef = new td.TowerDefense( defaults.mapW, defaults.mapH, [ 0, 0 ], endPts, randomMap( defaults.mapW, defaults.mapH, {  bareGround:{ id: 1, proba: 10}/*, water: { id: 2, proba: 1 }*/ } ) );
+
 const app = new PIXI.Application( { width: defaults.screenW,
                                     height: defaults.screenH,
                                     antialias: true } );
@@ -313,6 +314,16 @@ const funcTools = {
       if( lineVueCont ) lineVueCont.destroy( true );
       setEvtState("basicSelect");
     }
+  },
+
+  runTest:{
+    init: (e) => {
+      let timer = towerDef.runTest();
+      console.log( "timer : " + ( timer / 1000 ) )
+    },
+    cancel:() => {
+
+    }
   }
 
 }
@@ -487,7 +498,9 @@ function setupToolsPicker(){
         { textureName: "destroyStructure",
           funcName: "destroyStructures" },
         { textureName: "vue",
-            funcName: "lineSight" }
+            funcName: "lineSight" },
+        { textureName: "lab",
+            funcName: "runTest" }
       ],
       direction = {
         x: 0,
@@ -881,8 +894,14 @@ function onEndStructPositioning( e ){
       structPosCont = stageCont.getChildByName( "structPosCont" ),
       structureData = structPosCont.structureData,
       posData = getStructPosDragData( m, structPosCont.draggedZone, structureData  ),
+
+      startdate = Date.now(),
+
       addstructures = towerDef.addStructures( posData.structPositions, structureData.name, structureData.rotation );
-  if( addstructures == false ) console.log( "You can't close any part of the map" );
+
+  console.log( "lapse : " + ( addstructures.timer / 1000 ) );
+
+  if( addstructures.added == false ) console.log( "You can't close any part of the map" );
   cancelStructPositioning();
   updateStructures();
 }
@@ -918,21 +937,8 @@ function updateStructures(){
       structuresCont.addChild( sp );
       sp.interactive = true;
       structureSprites.push( sp );
-      //sp.on( "mouseover", structSpriteOver );
-      //sp.on( "mouseout", strucSpriteOut );
     }
   })
-  //console.log( towerDef.getMoveMap() )
-  //drawMoveMap();
-  //console.log(JSON.stringify(towerDef.getPathMap( 0, 0 )))
-  //drawPathMap( towerDef.getPathMap( 0, 0 ) );
-  //drawPathMapBuffer( towerDef.getPathMapBuffer( 0, 0 ) );
-  //.log("bitTest :: " + towerDef.getPathMapBuffer( 0, 0 ).readFloatLE(0) );
-  //console.log( "line of sight : " + towerDef.lineOfSight( towerDef.width - 1, 1,  1, towerDef.height - 1 ) );
-
-  //drawTheta();
-  //tethaMap = tethaPathfinder( 0, 0 );
-  //console.log( JSON.stringify( tethaMap ) );
 }
 
 function cancelStructureSelection(){

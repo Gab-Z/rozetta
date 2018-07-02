@@ -1,19 +1,23 @@
 #include "Tile.h"
 
-Tile::Tile(){
-
-}
+Tile::Tile(){}
 Tile::Tile( int _x, int _y ){
-  x = _x;
-  y = _y;
+  //x = _x;
+  //y = _y;
+  pos = Vec2<int>( _x, _y );
 }
 Tile::Tile( int _x, int _y, int _floorTypeId ){
-  x = _x;
-  y = _y;
+  //x = _x;
+  //y = _y;
+  pos = Vec2<int>( _x, _y );
   floorTypeId = _floorTypeId;
 }
-std::vector<int> Tile::getPosition(){
-  return std::vector<int> { x, y };
+Tile::Tile( Vec2<int> _pos, int _floorTypeId ){
+  pos = _pos;
+  floorTypeId = _floorTypeId;
+}
+Vec2<int> Tile::getPos(){
+  return pos;
 }
 int Tile::getStructureId(){
   if( structure ){
@@ -25,8 +29,10 @@ int Tile::getFloorTypeId(){
   return floorTypeId;
 }
 void Tile::setPosition( int _x, int _y ){
-  x = _x;
-  y = _y;
+  //x = _x;
+  //y = _y;
+  pos.x = _x;
+  pos.y = _y;
 }
 /*
 void Tile::setStructureId( int _id ){
@@ -46,10 +52,10 @@ void Tile::setFloorTypeId( int _id ){
   floorTypeId = _id;
 }
 int Tile::getx(){
-  return x;
+  return pos.x;
 }
 int Tile::gety(){
-  return y;
+  return pos.y;
 }
 v8::Local<v8::Object> Tile::toObj(){
   v8::Local<v8::Object> ret = Nan::New<v8::Object>();
