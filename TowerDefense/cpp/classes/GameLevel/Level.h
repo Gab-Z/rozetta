@@ -21,6 +21,8 @@ template <typename T>
 
 class Level{
 
+
+
   int mapWidth;
   int mapHeight;
   int size;
@@ -164,9 +166,6 @@ class Level{
     DestinationPt& getDestinationPt( int _x, int _y );
 */
 
-
-
-
 int width(){
   return mapWidth;
 }
@@ -191,18 +190,6 @@ Vec2<int> to2d( int _idx ){
   return pos;
   */
   return Vec2<int>( _idx % mapWidth, (int) _idx / mapWidth );
-}
-
-GridPos gridPos( int _x, int _y ){
-  return GridPos( _x, _y, to1d( _x, _y ) );
-}
-
-GridPos gridPos( Vec2<int> _vec2 ){
-  return GridPos( _vec2.x, _vec2.y, to1d( _vec2 ) );
-}
-
-GridPos gridPos( int _idx ){
-  return GridPos( _idx % mapWidth, (int) _idx / mapWidth, _idx );
 }
 
 int getSize(){
@@ -532,11 +519,13 @@ bool newStructuresBlockingTest( std::vector<std::vector<int>> _positions, std::v
   return testCharMapOpening( testMap );
 }
 
+
 bool testCharMapOpening( std::vector<char> testMap ){
   int l = getSize();
-  GridPos startPos = gridPos( getStartByIndex( 0 ) );
+
+  GridPos startPos( mapWidth, getStartByIndex( 0 ) );
   std::vector<GridPos> openList { startPos };
-  testMap[ startPos.pos1d ] = 2;
+  testMap[ startPos.idx ] = 2;
   bool endFound = false;
   int mw = width();
   int mh = height();
@@ -545,45 +534,49 @@ bool testCharMapOpening( std::vector<char> testMap ){
     int l = openList.size();
     for( int i = 0; i < l; i++ ){
       GridPos testedPos = openList[ i ];
-      int px = testedPos.x;
-      int py = testedPos.y;
-      if( px > 0 ){
-        int leftPos = to1d( px - 1, py );
-        if( testMap[ leftPos ] == 0 ){
-            testMap[ leftPos ] = 1;
+      //int px = testedPos.x();
+      //int py = testedPos.y();
+      if( testedPos.x() > 0 ){
+        //int leftPos = to1d( px - 1, py );
+        GridPos leftPos = testedPos + Vec2<int>( -1, 0 );
+        if( testMap[ leftPos.idx ] == 0 ){
+            testMap[ leftPos.idx ] = 1;
             //newList.push_back( px - 1 );
             //newList.push_back( py );
-            newList.push_back( gridPos( px - 1, py ) );
+            newList.push_back( leftPos );
         }
       }
-      if( px < mw - 1 ){
-        int rightPos = to1d( px + 1, py );
-        if( testMap[ rightPos ] == 0 ){
-            testMap[ rightPos ] = 1;
+      if( testedPos.x() < mw - 1 ){
+        //int rightPos = to1d( px + 1, py );
+        GridPos rightPos = testedPos + Vec2<int>( 1, 0 );
+        if( testMap[ rightPos.idx ] == 0 ){
+            testMap[ rightPos.idx ] = 1;
             //newList.push_back( px + 1 );
             //newList.push_back( py );
-            newList.push_back( gridPos( px + 1, py ) );
+            newList.push_back( rightPos );
         }
       }
-      if( py > 0 ){
-        int topPos = to1d( px, py - 1 );
-        if( testMap[ topPos ] == 0 ){
+      if( testedPos.y() > 0 ){
+        //int topPos = to1d( px, py - 1 );
+        GridPos topPos = testedPos + Vec2<int>( 0, -1 );
+        if( testMap[ topPos.idx ] == 0 ){
           //int intMapVal = intMap[ topPos ];
-            testMap[ topPos ] = 1;
+            testMap[ topPos.idx ] = 1;
             //newList.push_back( px );
             //newList.push_back( py - 1 );
-            newList.push_back( gridPos( px, py - 1 ) );
+            newList.push_back( topPos );
         }
       }
 
-      if( py < mh - 1){
-        int bottomPos = to1d( px, py + 1 );
-        if( testMap[ bottomPos ] == 0 ){
+      if( testedPos.y() < mh - 1){
+        //int bottomPos = to1d( px, py + 1 );
+        GridPos bottomPos = testedPos + Vec2<int>( 0, 1 );
+        if( testMap[ bottomPos.idx ] == 0 ){
           //int intMapVal = intMap[ bottomPos ];
-            testMap[ bottomPos ] = 1;
+            testMap[ bottomPos.idx ] = 1;
             //newList.push_back( px );
             //newList.push_back( py + 1 );
-            newList.push_back( gridPos( px, py + 1 ) );
+            newList.push_back( bottomPos );
         }
       }
     }
@@ -601,6 +594,80 @@ bool testCharMapOpening( std::vector<char> testMap ){
   }
   return true;
 }
+
+
+/*
+bool testCharMapOpening( std::vector<char> testMap ){
+  int l = getSize();
+
+  GridPos startPos( mapWidth, getStartByIndex( 0 ) );
+  std::vector<GridPos> openList { startPos };
+  testMap[ startPos.idx ] = 2;
+  bool endFound = false;
+  int mw = width();
+  int mh = height();
+  for( int s = 0; endFound == false; s++ ){
+    std::vector<GridPos> newList;
+    int l = openList.size();
+    for( int i = 0; i < l; i++ ){
+      GridPos testedPos = openList[ i ];
+      int px = testedPos.x();
+      int py = testedPos.y();
+      if( px > 0 ){
+        int leftPos = to1d( px - 1, py );
+        if( testMap[ leftPos ] == 0 ){
+            testMap[ leftPos ] = 1;
+            //newList.push_back( px - 1 );
+            //newList.push_back( py );
+            newList.push_back( GridPos( mapWidth, px - 1, py ) );
+        }
+      }
+      if( px < mw - 1 ){
+        int rightPos = to1d( px + 1, py );
+        if( testMap[ rightPos ] == 0 ){
+            testMap[ rightPos ] = 1;
+            //newList.push_back( px + 1 );
+            //newList.push_back( py );
+            newList.push_back( GridPos( mapWidth, px + 1, py ) );
+        }
+      }
+      if( py > 0 ){
+        int topPos = to1d( px, py - 1 );
+        if( testMap[ topPos ] == 0 ){
+          //int intMapVal = intMap[ topPos ];
+            testMap[ topPos ] = 1;
+            //newList.push_back( px );
+            //newList.push_back( py - 1 );
+            newList.push_back( GridPos( mapWidth, px, py - 1 ) );
+        }
+      }
+
+      if( py < mh - 1){
+        int bottomPos = to1d( px, py + 1 );
+        if( testMap[ bottomPos ] == 0 ){
+          //int intMapVal = intMap[ bottomPos ];
+            testMap[ bottomPos ] = 1;
+            //newList.push_back( px );
+            //newList.push_back( py + 1 );
+            newList.push_back( GridPos( mapWidth, px, py + 1 ) );
+        }
+      }
+    }
+    if( newList.size() > 0 ){
+      openList = newList;
+    }else{
+      endFound = true;
+      break;
+    }
+  }
+  for ( int n = 0; n < l; n++ ){
+    if( testMap[ n ] == 0 ){
+      return false;
+    }
+  }
+  return true;
+}
+*/
 
 bool removeStructuresBlockingTest( std::vector<int> _positions ){
   std::vector<char> charMap = getCharMap();

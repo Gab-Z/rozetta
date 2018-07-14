@@ -5,6 +5,22 @@ void Level<std::vector<Tile*>>::initSize( int _size ){
   tiles.reserve( _size );
 }
 
+/*
+template<typename T>
+Level<T>::GridPos::GridPos(){};
+template<typename T>
+Level<T>::GridPos::GridPos( int _x, int _y, int _pos1d ):pos( Vec2<int>( _x, _y ) ), idx( _pos1d ){};
+template<typename T>
+Level<T>::GridPos::GridPos( int _x, int _y ):pos( Vec2<int>( _x, _y ) ), idx( to1d( _x, _y ) ){};
+template<typename T>
+Level<T>::GridPos::GridPos( Vec2<int> _pos ):pos( _pos ), idx( to1d( _pos ) ){};
+template<typename T>
+Level<T>::GridPos::GridPos( int _idx ):idx( _idx ),pos( to2d( _idx ) ){};
+template<typename T>
+int Level<T>::GridPos::x(){ return pos.x; };
+template<typename T>
+int Level<T>::GridPos::y(){ return pos.y; };
+*/
 
 /*
 template<typename T>

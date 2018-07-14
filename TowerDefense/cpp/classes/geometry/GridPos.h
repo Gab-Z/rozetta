@@ -1,16 +1,34 @@
 #ifndef DEF_GridPos
 #define DEF_GridPos
 
-struct GridPos {
+#include "./Vec2.h"
+#include <utility>
+#include <algorithm>
 
-  int x;
-  int y;
-  int pos1d;
-  //void(*)(update2d);
-  //void(*)(update1d);
+class GridPos {
+public:
+  int& gridWidth;
+  Vec2<int> pos;
+  int idx;
 
-  GridPos();
-  GridPos( int _x, int _y, int _pos1d );
+  GridPos( int& _gridWidth );
+  GridPos( int& _gridWidth, int _x, int _y, int _idx );
+  GridPos( int& _gridWidth, int _x, int _y );
+  GridPos( int& _gridWidth, Vec2<int> _pos );
+  GridPos( int& _gridWidth, int _idx );
+
+  ~GridPos();
+
+  GridPos& operator=( const GridPos& copy );
+  friend GridPos operator+( const GridPos& gridpos, const Vec2<int>& vec2 );
+
+  int x();
+  int y();
+
+  int to1d( int _x, int _y );
+  int to1d( Vec2<int> _pos );
+  Vec2<int> to2d( int _idx );
+
 
 };
 
