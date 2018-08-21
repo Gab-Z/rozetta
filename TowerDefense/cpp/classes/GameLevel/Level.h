@@ -1014,12 +1014,65 @@ float lineSight( int x0, int y0, int x1, int y1 ){
   return speedsSum / (float)nbTiles;
 }
 
+float lineSight( GridPos p0, GridPos p1 ){
+  int nx = p1.pos.x - p0.pos.x;
+  int ny = p1.pos.y - p0.pos.y;
+  int sign_x = 1;
+  int sign_y = 1;
+  if( nx < 0 ){
+    nx = -nx;
+    sign_x = -1;
+  }
+  if( ny < 0 ){
+    ny = -ny;
+    sign_y = -1;
+  }
+  int px = p0.pos.x;
+  int py = p0.pos.y;
+  float speedsSum = 0;
+  int nbTiles = 0;
+  for ( int ix = 0, iy = 0; ix < nx || iy < ny; ) {
+      if ( ( 0.5 + (float)ix ) / (float)nx == (0.5+(float)iy) / (float)ny) {
+          // next step is diagonal
+
+          if( ! tiles[ to1d( px, py + sign_y ) ]->isTraversable() || ! tiles[ to1d( px + sign_x, py ) ]->isTraversable() ) return 0.0;
+          px += sign_x;
+          py += sign_y;
+          ix++;
+          iy++;
+      } else if ((0.5+(float)ix) / (float)nx < (0.5+(float)iy) / (float)ny) {
+          // next step is horizontal
+          px += sign_x;
+          ix++;
+      } else {
+          // next step is vertical
+          py += sign_y;
+          iy++;
+      }
+      Tile* nextTile = tiles[ to1d( px, py ) ];
+      if( nextTile->isTraversable() ){
+        nbTiles++;
+        speedsSum += nextTile->getSpeed();
+      }else{
+        return 0.0;
+      }
+  }
+  return speedsSum / (float)nbTiles;
+}
+
+
 float distance( int x0, int y0, int x1, int y1 ){
   int dx = x1 - x0;
   int dy = y1 - y0;
   return (float) sqrt( dx * dx + dy * dy );
 }
+float distance( GridPos& p0, GridPos& p1 ){
+  int dx = p1.pos.x - p0.pos.x;
+  int dy = p1.pos.y - p0.pos.y;
+  return (float) sqrt( dx * dx + dy * dy );
+}
 
+/*
 void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby, int &parentx, int &parenty, float &parentVal, float &nv, float hDist, std::vector<int> &newList ){
   //TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
   float distByNeighbour = hDist * tiles[ to1d( neighbx, neighby ) ]->getSpeed() + nv;
@@ -1044,7 +1097,143 @@ void tethaCheck( int tx, int ty, TethaSearchTile& t, int &neighbx, int &neighby,
     newList.push_back( ty );
   }
 }
+*/
 
+void tethaCheck( GridPos& _target, TethaSearchTile& t, GridPos& _neighb, GridPos& _parent, float &parentVal, float &nv, float hDist, std::vector<GridPos> &newList ){
+  //TethaSearchTile& t = retMap[ to1d( tx, ty ) ];
+  float distByNeighbour = hDist * tiles[ _neighb.idx ]->getSpeed() + nv;
+  //float distByNeighbour = hDist * t.getSpeed() + nv;
+  float sightDistToParent = lineSight( _target, _parent );
+  float distByParent = sightDistToParent * distance( _target, _parent ) + parentVal;
+  bool testToNeighbour = t.hVal > distByNeighbour ? true : false;
+  bool testToParent = t.hVal > distByParent ? true : false;
+  if( testToParent == true && sightDistToParent > 0.0 ){
+    //t.parentPos = to1d( parentx, parenty );
+    t.setParentPos( _parent.idx );
+    //t.hVal = distByParent;
+    t.setHVal( distByParent );
+    newList.push_back( _target );
+  }else if( testToNeighbour == true ){
+    //t.parentPos = to1d( neighbx, neighby );
+    t.setParentPos( _neighb.idx );
+    //t.hVal = distByNeighbour;
+    t.setHVal( distByNeighbour );
+    newList.push_back( _target );
+  }
+}
+
+
+void tethaSearch( int _startx, int _starty ){
+
+  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
+  int mapL = getSize();
+  destPt.init( mapL );
+
+  int w = width();
+  int h = height();
+
+  //std::vector<TethaSearchTile> ret ( mapL, TethaSearchTile( -1, std::numeric_limits<float>::max() ) );
+//  TethaSearchTile ret[ mapL ];// = { TethaSearchTile( -1, std::numeric_limits<float>::max() ) };
+  std::vector<TethaSearchTile>& ret = destPt.getPathPoints();
+  for( int u = 0; u < mapL; u++ ){ ret[ u ].set( -1, std::numeric_limits<float>::max() ); };
+  //std::vector<int> openList{ _startx, _starty };
+  GridPos basePos( w, _startx, _starty );
+  std::vector<GridPos> openList{ basePos };
+  //int basePos = to1d( _startx, _starty );
+  TethaSearchTile  &baseTile = ret[ basePos.idx ];
+  //baseTile.parentPos = to1d( _startx, _starty );
+  baseTile.setParentPos( basePos.idx );
+  //baseTile.hVal = 0.0;
+  baseTile.setHVal( -1.0 );
+  for( int q = 0; q!= -1; q+=0 ){
+    std::vector<GridPos> newList;
+    int l = openList.size();
+    for( int i = 0; i < l; i++ ){
+      //int& neighbx = openList[ i * 2 ];
+      //int& neighby = openList[ i * 2 + 1 ];
+      GridPos& neighb = openList[ i ];
+      TethaSearchTile& neighbour = ret[ neighb.idx ];
+      float& nv = neighbour.hVal;
+      //Vec2<int> parentPos = to2d( neighbour.parentPos );
+      //int& parentx = parentPos.x;
+      //int& parenty = parentPos.y;
+      GridPos parent( neighbour.parentPos );
+      TethaSearchTile& parentTile = ret[ parent.idx ];
+      float& parentVal = parentTile.hVal;
+
+      if( neighb.pos.x > 0 ){
+        //if( isTraversable( neighbx - 1, neighby ) ){
+        GridPos left( w, neighb.pos.x - 1, neighb.pos.y );
+        if( tiles[ left.idx ]->isTraversable() ){
+          tethaCheck( left, ret[ left.idx ], neighb, parent, parentVal, nv, 1.0, newList );
+        }
+        //if( neighby > 0 && isTraversable( neighbx - 1, neighby - 1 ) && ( isTraversable( neighbx - 1, neighby ) && isTraversable( neighbx, neighby - 1 ) ) ){
+        if( neighb.pos.y > 0 ){
+          GridPos topLeft( w, neighb.pos.x - 1, neighb.pos.y - 1 );
+          if( tiles[ topLeft.idx ]->isTraversable() && ( tiles[ to1d( neighb.pos.x - 1, neighb.pos.y ) ]->isTraversable() && tiles[ to1d( neighb.pos.x, neighb.pos.y - 1 ) ]->isTraversable() ) ){
+            tethaCheck( topLeft, ret[ topLeft.idx ], neighb, parent, parentVal, nv, 1.414, newList );
+          }
+        }
+        if( neighb.pos.y < h - 1 ){
+          GridPos bottomLeft( w, neighb.pos.x - 1, neighb.pos.y + 1 );
+          if( tiles[ bottomLeft.idx ]->isTraversable() && ( tiles[ to1d( neighb.pos.x - 1, neighb.pos.y ) ]->isTraversable() && tiles[ to1d( neighb.pos.x, neighb.pos.y + 1 ) ]->isTraversable() ) ){
+            tethaCheck( bottomLeft, ret[ bottomLeft.idx ], neighb, parent, parentVal, nv, 1.414, newList );
+          }
+        }
+      }
+
+      if( neighb.pos.x < w - 1 ){
+        GridPos right( w, neighb.pos.x + 1, neighb.pos.y );
+        if( tiles[ right.idx ]->isTraversable() ){
+          tethaCheck( right, ret[ right.idx ], neighb, parent, parentVal, nv, 1.0, newList );
+        }
+        if( neighb.pos.y > 0 ){
+          GridPos topRight( w, neighb.pos.x + 1, neighb.pos.y - 1 );
+          if( tiles[ topRight.idx ]->isTraversable() && ( tiles[ to1d( neighb.pos.x + 1, neighb.pos.y ) ]->isTraversable() && tiles[ to1d( neighb.pos.x, neighb.pos.y - 1 ) ]->isTraversable() ) ){
+            tethaCheck( topRight, ret[ topRight.idx ], neighb, parent, parentVal, nv, 1.414, newList );
+          }
+        }
+        if( neighb.pos.y < h - 1 ){
+          GridPos bottomRight( w, neighb.pos.x + 1, neighb.pos.y + 1 );
+          if( tiles[ bottomRight.idx ]->isTraversable() && ( tiles[ to1d( neighb.pos.x + 1, neighb.pos.y ) ]->isTraversable() && tiles[ to1d( neighb.pos.x, neighb.pos.y + 1 ) ]->isTraversable() ) ){
+            tethaCheck( bottomRight, ret[ bottomRight.idx ], neighb, parent, parentVal, nv, 1.414, newList );
+          }
+        }
+      }
+      if( neighb.pos.y > 0 ){
+        GridPos top( w, neighb.pos.x, neighb.pos.y - 1 );
+        if( tiles[ top.idx ]->isTraversable() ){
+          tethaCheck( top, ret[ top.idx ], neighb, parent, parentVal, nv, 1.0, newList );
+        }
+      }
+      if( neighb.pos.y < h - 1 ){
+        GridPos bottom( w, neighb.pos.x, neighb.pos.y + 1 );
+        if( tiles[ bottom.idx ]->isTraversable() ){
+          tethaCheck( bottom, ret[ bottom.idx ], neighb, parent, parentVal, nv, 1.0, newList );
+        }
+      }
+
+    }
+    if( newList.size() > 0 ){
+      openList = newList;
+    }else{
+      break;
+    }
+
+  }
+  /*
+  DestinationPt& destPt = getOrAddDestinationPt( _startx, _starty );
+  destPt.init( mapL );
+  for( int j = 0; j < mapL; j++ ){
+    //destPt.pathPoints[ j ] = ret[ j ].parentPos;
+    destPt.setPointTarget( j, ret[ j ].parentPos );
+  }
+  */
+
+
+}
+
+/*
 void tethaSearch( int _startx, int _starty ){
   int w = width();
   int h = height();
@@ -1119,7 +1308,7 @@ void tethaSearch( int _startx, int _starty ){
     destPt.setPointTarget( j, ret[ j ].parentPos );
   }
 }
-
+*/
 void updateAllTethaPaths(){
   int nbDestPts = destinationPoints.size();
   if( nbDestPts == 0 ){ return void(); };
@@ -1139,16 +1328,16 @@ std::vector<int> getTethaPath( int _startx, int _starty, int _destinationx, int 
 
   ret.push_back( _startx );
   ret.push_back( _starty );
-  std::vector<int>& pathPoints = destPt.pathPoints;
+  std::vector<TethaSearchTile>& pathPoints = destPt.getPathPoints();
   for( int i = 0; i != 1; i+=0 ){
-    int parentPos1d = pathPoints[ lastPos1d ];
-    if( parentPos1d == lastPos1d ){
+    TethaSearchTile& parentPos1d = pathPoints[ lastPos1d ];
+    if( parentPos1d.parentPos == lastPos1d ){
       return ret;
     }
-    Vec2<int> parentPos2d = to2d( parentPos1d );
+    Vec2<int> parentPos2d = to2d( parentPos1d.parentPos );
     ret.push_back( parentPos2d.x );
     ret.push_back( parentPos2d.y );
-    lastPos1d = parentPos1d;
+    lastPos1d = parentPos1d.parentPos;
   }
   return ret;
 }
